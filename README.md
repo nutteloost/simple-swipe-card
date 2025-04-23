@@ -59,13 +59,24 @@ card_spacing: 15
 ```
 
 ## Visual Editor
-![Editor](images/editor.png)
 
 The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
-- Drag and drop card reordering
+- Reorder cards for swiping order
 - Visual on/off toggle for pagination dots
 - Simple number input for card spacing
 - Real-time preview of changes
+  
+
+#### Search for 'Simple Swipe Card'
+<img src="images/visual_editor_search.png" width="250">
+
+#### Edit the card
+<img src="images/visual_editor_card_editor.png" width="750">
+
+You can search for cards you want to add to the Simple Swipe Card in the search bar. Click on them to add them to the configuration. 
+
+
+You can edit the added cards by clicking on the :pencil2: icon. 
 
 ## Support
 If you find this card useful, please consider:
