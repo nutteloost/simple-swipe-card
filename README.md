@@ -1,6 +1,6 @@
 # Simple Swipe Card
 
-A swipeable container card for Home Assistant that allows you to stack multiple cards and swipe between them.
+A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
 
 ![Example](images/example.gif)
 
@@ -20,15 +20,6 @@ A swipeable container card for Home Assistant that allows you to stack multiple 
 5. Add this repository URL
 6. Click "Add"
 7. Search for "Simple Swipe Card" and install it
-
-### Manual Installation
-1. Download `simple-swipe-card.js` from the latest release
-2. Copy it to `config/www/simple-swipe-card/simple-swipe-card.js`
-3. Add the following to your configuration.yaml:
-   ```
-     resources:
-       - url: /local/simple-swipe-card/simple-swipe-card.js
-         type: module
 
 
 ### Manual Installation
