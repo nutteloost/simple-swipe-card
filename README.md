@@ -29,3 +29,54 @@ A swipeable container card for Home Assistant that allows you to stack multiple 
      resources:
        - url: /local/simple-swipe-card/simple-swipe-card.js
          type: module
+
+
+### Manual Installation
+1. Download `simple-swipe-card.js` from the latest release
+2. Copy it to `config/www/simple-swipe-card/simple-swipe-card.js`
+3. Add the following to your configuration.yaml:
+   ```yaml
+   lovelace:
+     resources:
+       - url: /local/simple-swipe-card/simple-swipe-card.js
+         type: module
+   ```
+4. Restart Home Assistant
+
+## Configuration
+This card can be configured using the visual editor or YAML.
+
+### Options
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| cards | list | Required | List of cards to display |
+| show_pagination | boolean | true | Show/hide pagination dots |
+| card_spacing | number | 15 | Space between cards in pixels |
+
+### Example Configuration
+```yaml
+type: custom:simple-swipe-card
+cards:
+  - type: weather-forecast
+    entity: weather.home
+  - type: entities
+    entities:
+      - sensor.temperature
+      - sensor.humidity
+show_pagination: true
+card_spacing: 15
+```
+
+## Visual Editor
+![Editor](images/editor.png)
+
+The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
+- Drag and drop card reordering
+- Visual on/off toggle for pagination dots
+- Simple number input for card spacing
+- Real-time preview of changes
+
+## Support
+If you find this card useful, please consider:
+- Starring the repository
+- Sharing with the community
