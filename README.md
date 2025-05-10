@@ -2,9 +2,10 @@
 
 A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
 
+<img src="images/simple-swipe-card-example.gif" width="400" alt="Example">
+
 Simple Swipe Card is a customizable container for Home Assistant that lets you place multiple cards in a single space and navigate between them with intuitive swipe gestures. The card optimizes dashboard space by grouping related information while providing a mobile-friendly interface with smooth touch and mouse navigation. It features pagination indicators, adjustable card spacing, and full visual editor support. Ideal for creating room-specific views, device dashboards, or organizing related information without cluttering your dashboard, Simple Swipe Card enhances both functionality and user experience with minimal configuration.
 
-![Example](images/example.gif)
 
 ## Features
 - Swipe between multiple cards
