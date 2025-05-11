@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author Martijn Oost (nutteloost)
- * @version 1.3.7
+ * @version 1.3.8
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.3.7";
+const CARD_VERSION = "1.3.8";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
