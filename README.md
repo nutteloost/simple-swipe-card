@@ -37,6 +37,26 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
    ```
 4. Restart Home Assistant
 
+## Visual Editor
+
+The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
+- Reorder cards for swiping order
+- Visual on/off toggle for pagination dots
+- Simple number input for card spacing
+- Real-time preview of changes
+  
+
+#### Search for 'Simple Swipe Card'
+<img src="images/visual_editor_search.png" width="250">
+
+#### Edit the card
+<img src="images/visual_editor_card_editor.png" width="750">
+
+You can search for cards you want to add to the Simple Swipe Card in the search bar. Click on them to add them to the configuration. 
+
+
+You can edit the added cards by clicking on the :pencil2: icon. 
+
 ## Configuration
 This card can be configured using the visual editor or YAML.
 
@@ -61,25 +81,49 @@ show_pagination: true
 card_spacing: 15
 ```
 
-## Visual Editor
+## Customizing Pagination Dots
 
-The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
-- Reorder cards for swiping order
-- Visual on/off toggle for pagination dots
-- Simple number input for card spacing
-- Real-time preview of changes
-  
+The pagination dots use your Home Assistant theme colors by default. You can customize their appearance in two ways:
 
-#### Search for 'Simple Swipe Card'
-<img src="images/visual_editor_search.png" width="250">
+### Method 1: Using Home Assistant Themes
 
-#### Edit the card
-<img src="images/visual_editor_card_editor.png" width="750">
+The active dot uses your `primary-color` theme variable. To change it, you can create or edit a theme in your `configuration.yaml`:
 
-You can search for cards you want to add to the Simple Swipe Card in the search bar. Click on them to add them to the configuration. 
+```yaml
+frontend:
+  themes:
+    my_custom_theme:
+      primary-color: "#ff5722"  # Change to your preferred color
+```
 
+### Method 2: Using card-mod
 
-You can edit the added cards by clicking on the :pencil2: icon. 
+1. Install card-mod through HACS
+2. Add custom styling to the Simple Swipe Card:
+
+```yaml
+type: custom:simple-swipe-card
+card_mod:
+  style: |
+    .pagination-dot {
+      background-color: rgba(150, 150, 150, 0.6) !important; /* Inactive dots */
+      width: 10px !important; /* Size of dots */
+      height: 10px !important;
+    }
+    .pagination-dot.active {
+      background-color: red !important; /* Active dot */
+    }
+cards:
+  - type: weather-forecast
+    entity: weather.home
+  - type: entities
+    entities:
+      - sensor.temperature
+show_pagination: true
+card_spacing: 15
+```
+
+This allows complete customization of the pagination dots' appearance including size, color, and opacity.
 
 ## My Other Custom Cards
 
