@@ -81,6 +81,13 @@ You can search for cards you want to add to the Simple Swipe Card in the search 
 
 You can edit the added cards by clicking on the :pencil2: icon. 
 
+## My Other Custom Cards
+
+Check out my other custom cards for Home Assistant:
+
+* [Todo Swipe Card](https://github.com/nutteloost/todo-swipe-card) - A specialized swipe card for todo lists in Home Assistant with custom styling
+* [Actions Card](https://github.com/nutteloost/actions-card) - Wraps another Home Assistant card to add tap, hold, and double-tap actions
+
 ## Support
 If you find this card useful, please consider:
 - Starring the repository
