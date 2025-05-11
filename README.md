@@ -131,8 +131,3 @@ Check out my other custom cards for Home Assistant:
 
 * [Todo Swipe Card](https://github.com/nutteloost/todo-swipe-card) - A specialized swipe card for todo lists in Home Assistant with custom styling
 * [Actions Card](https://github.com/nutteloost/actions-card) - Wraps another Home Assistant card to add tap, hold, and double-tap actions
-
-## Support
-If you find this card useful, please consider:
-- Starring the repository
-- Sharing with the community
