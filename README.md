@@ -97,7 +97,7 @@ frontend:
   themes:
     my_custom_theme:
       primary-color: "#ff5722"  # Change to your preferred color
-```
+``` 
 
 ### Method 2: Using card-mod
 
