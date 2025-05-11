@@ -49,6 +49,9 @@ The Simple Swipe Card includes a visual editor that appears when you add or edit
 #### Search for 'Simple Swipe Card'
 <img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_search.png" width="250">
 
+#### Search for the cards you want to wrap in the card picker and add them
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/card-picker.png" width="350">
+
 #### Edit the card
 <img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_card_editor.png" width="750">
 
