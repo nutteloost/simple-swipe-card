@@ -20,7 +20,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 2. Go to "Frontend" section
 3. Click on the three dots in the top right corner
 4. Select "Custom repositories"
-5. Add this repository URL
+5. Add this repository URL (https://github.com/nutteloost/simple-swipe-card)
 6. Click "Add"
 7. Search for "Simple Swipe Card" and install it
 
