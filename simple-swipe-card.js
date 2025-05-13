@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author Martijn Oost (nutteloost)
- * @version 1.3.8
+ * @version 1.3.9
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.3.8";
+const CARD_VERSION = "1.3.9";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -223,7 +223,7 @@ class SimpleSwipeCard extends HTMLElement {
                         cardInstance.element.setConfig(cardConfig);
                         cardInstance.config = JSON.parse(JSON.stringify(cardConfig));
                     } catch (e) {
-                        logDebug("ERROR", `Error setting config on child card ${index}:`, e);
+                        console.error(`Error setting config on child card ${index}:`, e);
                     }
                 }
             }
@@ -272,7 +272,7 @@ class SimpleSwipeCard extends HTMLElement {
                     try {
                         card.element.hass = hass;
                     } catch (e) {
-                        logDebug("ERROR", "Error setting hass on child card:", e);
+                        console.error("Error setting hass on child card:", e);
                     }
                 }
             });
@@ -431,7 +431,7 @@ class SimpleSwipeCard extends HTMLElement {
                 this._domObserver = null;
             }
         } catch (error) {
-            logDebug("ERROR", "Error during cleanup:", error);
+            console.warn("Error during cleanup:", error);
         }
 
         // Clean up any open dialogs
@@ -488,7 +488,7 @@ class SimpleSwipeCard extends HTMLElement {
 
         const helpers = await HELPERS;
         if (!helpers) {
-            logDebug("ERROR", "Card helpers not loaded.");
+            console.error("SimpleSwipeCard: Card helpers not loaded.");
             root.innerHTML = `<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>`;
             this.building = false;
             this.initialized = false;
@@ -1755,38 +1755,66 @@ class SimpleSwipeCardEditor extends LitElement {
             return;
         }
         logDebug("EDITOR", "_ensureCardPickerLoaded called");
-
+    
         const container = this.shadowRoot.querySelector('#card-picker-container');
         if (container) {
             container.style.display = 'block';
-
+    
             if (!container.hasAttribute('event-barrier-applied')) {
                 container.setAttribute('event-barrier-applied', 'true');
+                
+                // Add a comprehensive event barrier for all config-changed events
                 container.addEventListener('config-changed', (e) => {
-                    // Let element editor events pass through
-                    if (this._isElementEditorEvent(e)) {
-                        logDebug("ELEMENT", "Element editor event at container level, allowing propagation");
-                        return;
-                    }
+                    // Stop ALL config-changed events at the container level
+                    logDebug("EDITOR", "Intercepted config-changed at container level:", e.detail?.config?.type);
                     
-                    if (e.target?.tagName?.toLowerCase() === 'hui-card-picker' && container.contains(e.target)) {
-                        const isActionCard = e.detail?.config?.type === 'custom:actions-card';
-                        if (isActionCard) {
-                            logDebug("EDITOR", "Intercepted actions-card selection at container level");
-                            this._safelyAddCard(e.detail.config);
-                            e.stopPropagation();
-                            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                            return false;
+                    // Process the card selection here directly
+                    if (e.target && e.target.tagName && 
+                        e.target.tagName.toLowerCase() === 'hui-card-picker' && 
+                        e.detail && e.detail.config) {
+                        
+                        const cardConfig = e.detail.config;
+                        logDebug("EDITOR", "Processing card selection:", cardConfig.type);
+                        
+                        // Add the card to our config
+                        if (this._config) {
+                            const cards = Array.isArray(this._config.cards) ? [...this._config.cards] : [];
+                            cards.push(cardConfig);
+                            
+                            this._config = {
+                                ...this._config,
+                                cards
+                            };
+                            
+                            // Fire our own config-changed event
+                            this._fireConfigChanged({
+                                cardAdded: true,
+                                cardType: cardConfig.type
+                            });
+                            
+                            this.requestUpdate();
                         }
                     }
+                    
+                    // Always stop propagation
+                    e.stopPropagation();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                    return false;
                 }, { capture: true });
             }
-
+    
             const picker = container.querySelector('hui-card-picker');
             if (picker) {
                 picker.style.display = 'block';
+                
+                // If picker has no content, try to refresh it
+                if (picker.requestUpdate) {
+                    picker.requestUpdate();
+                }
             }
         }
+        
+        this.requestUpdate();
     }
 
     static get styles() {
@@ -2153,55 +2181,28 @@ class SimpleSwipeCardEditor extends LitElement {
      * @private
      */
     _handleCardPicked(ev) {
-        // Check for element editor events first
-        if (this._isElementEditorEvent(ev)) {
-            logDebug("ELEMENT", "Card picked event from element editor, allowing propagation");
-            return;
-        }
+        // This is a fallback - all events should be caught by the container listener
+        logDebug("EDITOR", "Fallback _handleCardPicked called:", ev.detail?.config?.type);
         
         // Stop propagation to prevent editor replacement
-        if (ev.stopPropagation) ev.stopPropagation();
-
-        // Check if this event is specifically for another editor
-        if (ev.detail?.fromExternalEditor ||
-            (ev.detail?.editorId && ev.detail.editorId !== this._editorId)) {
-            logDebug("EDITOR", "Ignoring card picked event from other editor");
-            return;
-        }
-
+        ev.stopPropagation();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    
         if (!ev.detail?.config) return;
-
-        // Special handling for action cards - we need to prevent the editor switch
-        const isActionCard = ev.detail.config.type === 'custom:actions-card';
-
-        if (isActionCard) {
-            // If we just processed this card already, skip processing again
-            if (this._ignoreNextCardPicker) {
-                this._ignoreNextCardPicker = false;
-                return;
-            }
-
-            logDebug("EDITOR", "Handling actions-card pick with safe method");
-
-            // Add it safely to prevent editor replacement
-            this._safelyAddCard(ev.detail.config);
-            return;
-        }
-
-        // Standard handling for other card types
+    
+        // Add the card to our config
         const newCardConfig = ev.detail.config;
-        logDebug("EDITOR", "Adding standard card:", newCardConfig.type);
-
+        logDebug("EDITOR", "Adding card in fallback handler:", newCardConfig.type);
+    
         const currentCards = Array.isArray(this._config.cards) ? [...this._config.cards] : [];
         const updatedConfig = {
             ...this._config,
             cards: [...currentCards, newCardConfig]
         };
-
+    
         this._config = updatedConfig;
         this._fireConfigChanged();
         this.requestUpdate();
-        setTimeout(() => this._ensureCardPickerLoaded(), 50);
     }
 
     /**
