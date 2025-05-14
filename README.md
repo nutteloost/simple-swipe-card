@@ -86,47 +86,17 @@ card_spacing: 15
 
 ## Customizing Pagination Dots
 
-The pagination dots use your Home Assistant theme colors by default. You can customize their appearance in two ways:
-
-### Method 1: Using Home Assistant Themes
-
-The active dot uses your `primary-color` theme variable. To change it, you can create or edit a theme in your `configuration.yaml`:
+The pagination dots can be customized only by theme variables. You can customize the color for both the active and inactive pagination dots.
+To change it, you can create or edit a theme in your `configuration.yaml`:
 
 ```yaml
 frontend:
   themes:
     my_custom_theme:
-      primary-color: "#ff5722"  # Change to your preferred color
+      simple-swipe-card-pagination-dot-active-color: "#ff5722"  # Change to your preferred color
+      simple-swipe-card-pagination-dot-inactive-color: "red"  # Change to your preferred color
 ``` 
 
-### Method 2: Using card-mod
-
-1. Install card-mod through HACS
-2. Add custom styling to the Simple Swipe Card:
-
-```yaml
-type: custom:simple-swipe-card
-card_mod:
-  style: |
-    .pagination-dot {
-      background-color: rgba(150, 150, 150, 0.6) !important; /* Inactive dots */
-      width: 10px !important; /* Size of dots */
-      height: 10px !important;
-    }
-    .pagination-dot.active {
-      background-color: red !important; /* Active dot */
-    }
-cards:
-  - type: weather-forecast
-    entity: weather.home
-  - type: entities
-    entities:
-      - sensor.temperature
-show_pagination: true
-card_spacing: 15
-```
-
-This allows complete customization of the pagination dots' appearance including size, color, and opacity.
 
 ## My Other Custom Cards
 
