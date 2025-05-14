@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author Martijn Oost (nutteloost)
- * @version 1.3.9
+ * @version 1.3.10
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.3.9";
+const CARD_VERSION = "1.3.10";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -697,13 +697,13 @@ class SimpleSwipeCard extends HTMLElement {
             height: 8px;
             border-radius: 50%;
             margin: 0 4px;
-            background-color: rgba(127, 127, 127, 0.6);
+            background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
             cursor: pointer;
             transition: background-color 0.2s ease;
             border: none;
          }
          .pagination-dot.active {
-            background-color: var(--primary-color, #03a9f4);
+            background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
          }
          ha-alert {
             display: block;
