@@ -84,18 +84,39 @@ show_pagination: true
 card_spacing: 15
 ```
 
-## Customizing Pagination Dots
+## Customizing with Theme Variables
 
-The pagination dots can be customized only by theme variables. You can customize the color for both the active and inactive pagination dots.
-To change it, you can create or edit a theme in your `configuration.yaml`:
+The Simple Swipe Card can be extensively customized through Home Assistant theme variables. These customizations affect the visual appearance and behavior of the card.
+
+To apply these customizations, add them to your theme in your `configuration.yaml`:
 
 ```yaml
 frontend:
   themes:
     my_custom_theme:
-      simple-swipe-card-pagination-dot-active-color: "#ff5722"  # Change to your preferred color
-      simple-swipe-card-pagination-dot-inactive-color: "red"  # Change to your preferred color
-``` 
+      # Pagination dot colors
+      simple-swipe-card-pagination-dot-active-color: '#03a9f4'                     # Color of the currently selected dot
+      simple-swipe-card-pagination-dot-inactive-color: 'rgba(127, 127, 127, 0.6)'  # Color of inactive dots
+      
+      # Pagination dot sizes
+      simple-swipe-card-pagination-dot-size: '8px'                                 # Size of inactive dots
+      simple-swipe-card-pagination-dot-active-size: '10px'                         # Size of active dot
+      simple-swipe-card-pagination-dot-spacing: '4px'                              # Space between dots
+      simple-swipe-card-pagination-border-radius: '50%'                            # Shape of dots (50% = circle)
+      
+      # Pagination container styling
+      simple-swipe-card-pagination-background: 'transparent'                       # Background of pagination container
+      simple-swipe-card-pagination-padding: '4px 8px'                              # Padding around pagination dots
+      simple-swipe-card-pagination-bottom: '8px'                                   # Distance from bottom of card
+      
+      # Pagination dot opacity
+      simple-swipe-card-pagination-dot-inactive-opacity: '0.6'                     # Opacity of inactive dots
+      simple-swipe-card-pagination-dot-active-opacity: '1'                         # Opacity of active dot
+      
+      # Slide animation
+      simple-swipe-card-transition-speed: '0.3s'                                   # Duration of slide transition
+      simple-swipe-card-transition-easing: 'ease-out'                              # Easing function for animation
+```
 
 
 ## My Other Custom Cards
