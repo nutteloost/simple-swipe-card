@@ -118,6 +118,29 @@ frontend:
       simple-swipe-card-transition-easing: 'ease-out'                              # Easing function for animation
 ```
 
+## Animation Customization Examples
+
+You can use any valid CSS transition timing function for `simple-swipe-card-transition-easing`:
+
+```yaml
+# Example animation customizations
+simple-swipe-card-transition-speed: '0.5s'                          # Slower animation
+simple-swipe-card-transition-easing: 'ease-in-out'                  # Smooth in and out
+simple-swipe-card-transition-easing: 'cubic-bezier(0.4, 0, 0.2, 1)' # Material Design easing
+simple-swipe-card-transition-easing: 'linear'                       # Constant speed
+simple-swipe-card-transition-easing: 'ease-in'                      # Slow start, fast end
+```
+
+## Standard Home Assistant Variables
+
+The card also respects these standard Home Assistant theme variables:
+
+```yaml
+primary-color: '#03a9f4'                            # Used for active dot (if no custom color set)
+ha-card-border-radius: '12px'                       # Card border radius
+ha-card-background: 'var(--card-background-color)'  # Primary background for slides
+card-background-color: 'rgba(255,255,255,0.8)'      # Secondary fallback for slide backgrounds
+```
 
 ## My Other Custom Cards
 
