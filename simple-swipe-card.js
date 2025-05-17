@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author Martijn Oost (nutteloost)
- * @version 1.3.10
+ * @version 1.3.11
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.3.10";
+const CARD_VERSION = "1.3.11";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -657,7 +657,7 @@ class SimpleSwipeCard extends HTMLElement {
             position: relative;
             display: flex;
             height: 100%;
-            transition: transform 0.3s ease-out;
+            transition: transform var(--simple-swipe-card-transition-speed, 0.3s) var(--simple-swipe-card-transition-easing, ease-out);
             will-change: transform;
             background: transparent;
          }
@@ -674,37 +674,41 @@ class SimpleSwipeCard extends HTMLElement {
             background: var(--ha-card-background, var(--card-background-color, white));
             /* Removed no-cards-message specific styles as preview is handled separately */
          }
-         .pagination {
+        .pagination {
             position: absolute;
-            bottom: 8px;
+            bottom: var(--simple-swipe-card-pagination-bottom, 8px);
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             justify-content: center;
             z-index: 1;
-            background-color: transparent;
-            padding: 4px 8px;
+            background-color: var(--simple-swipe-card-pagination-background, transparent);
+            padding: var(--simple-swipe-card-pagination-padding, 4px 8px);
             border-radius: 12px;
             pointer-events: auto;
             transition: opacity 0.2s ease-in-out;
-         }
+        }
          .pagination.hide {
             opacity: 0;
             pointer-events: none;
          }
-         .pagination-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin: 0 4px;
+        .pagination-dot {
+            width: var(--simple-swipe-card-pagination-dot-size, 8px);
+            height: var(--simple-swipe-card-pagination-dot-size, 8px);
+            border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);
+            margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);
             background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease;
             border: none;
-         }
-         .pagination-dot.active {
+            opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);
+        }
+        .pagination-dot.active {
             background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
-         }
+            width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
+            height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
+            opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);
+        }
          ha-alert {
             display: block;
             margin: 0;
@@ -932,6 +936,31 @@ class SimpleSwipeCard extends HTMLElement {
         }
     }
 
+    /**
+     * Gets transition CSS properties with fallbacks
+     * @param {boolean} animate - Whether to apply animation
+     * @returns {string} - Transition style value
+     * @private
+     */
+    _getTransitionStyle(animate) {
+        if (!animate) return 'none';
+        
+        // Get computed values if connected to DOM
+        let speed = '0.3s';
+        let easing = 'ease-out';
+        
+        if (this.isConnected) {
+            const computedStyle = getComputedStyle(this);
+            const speedValue = computedStyle.getPropertyValue('--simple-swipe-card-transition-speed').trim();
+            const easingValue = computedStyle.getPropertyValue('--simple-swipe-card-transition-easing').trim();
+            
+            if (speedValue) speed = speedValue;
+            if (easingValue) easing = easingValue;
+        }
+        
+        return `transform ${speed} ${easing}`;
+    }
+
     // --- Swipe Gesture Handling ---
 
     /**
@@ -1007,7 +1036,7 @@ class SimpleSwipeCard extends HTMLElement {
             const style = window.getComputedStyle(this.sliderElement);
             const matrix = new DOMMatrixReadOnly(style.transform);
             this._initialTransform = matrix.m41;
-            this.sliderElement.style.transition = 'none';
+            this.sliderElement.style.transition = this._getTransitionStyle(false);
             this.sliderElement.style.cursor = 'grabbing';
             logDebug("SWIPE", "Swipe Start Details:", {startX: this._startX, initialTransform: this._initialTransform});
         }
@@ -1096,7 +1125,7 @@ class SimpleSwipeCard extends HTMLElement {
             const wasDragging = this._isDragging;
             this._isDragging = false;
 
-            this.sliderElement.style.transition = 'transform 0.3s ease-out';
+            this.sliderElement.style.transition = this._getTransitionStyle(true);
             this.sliderElement.style.cursor = '';
 
             if (!wasDragging) {
@@ -1231,7 +1260,7 @@ class SimpleSwipeCard extends HTMLElement {
         this.sliderElement.style.gap = `${cardSpacing}px`;
         const translateAmount = this.currentIndex * (this.slideWidth + cardSpacing);
 
-        this.sliderElement.style.transition = animate ? 'transform 0.3s ease-out' : 'none';
+        this.sliderElement.style.transition = this._getTransitionStyle(animate);
         this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
 
         // Remove any existing margins that could interfere with transparency
