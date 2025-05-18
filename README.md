@@ -12,6 +12,8 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Pagination dots
 - Configurable card spacing
 - Visual editor support
+- Loopback mode for continuous navigation
+- Support for both horizontal and vertical swiping
 
 ## Installation
 
@@ -69,6 +71,8 @@ This card can be configured using the visual editor or YAML.
 | cards | list | Required | List of cards to display |
 | show_pagination | boolean | true | Show/hide pagination dots |
 | card_spacing | number | 15 | Space between cards in pixels |
+| enable_loopback | boolean | false | When enabled, swiping past the last card will circle back to the first card, and vice versa |
+| swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical' |
 
 ### Example Configuration
 ```yaml
@@ -80,8 +84,12 @@ cards:
     entities:
       - sensor.temperature
       - sensor.humidity
+  - type: media-control
+    entity: media_player.living_room
 show_pagination: true
 card_spacing: 15
+enable_loopback: true
+swipe_direction: horizontal
 ```
 
 ## Customizing with Theme Variables
