@@ -31,7 +31,7 @@ const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 const CARD_VERSION = "1.4.0";
 
 // Debug configuration - set to false for production
-const DEBUG = true;
+const DEBUG = false;
 
 /**
  * Enhanced debugging function that categorizes log messages
