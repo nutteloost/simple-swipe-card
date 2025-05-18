@@ -4,8 +4,8 @@
  * A swipeable container card that allows users to swipe between multiple cards.
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
- * @author Martijn Oost (nutteloost)
- * @version 1.4.0
+ * @author nutteloost
+ * @version 1.4.1
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.4.0";
+const CARD_VERSION = "1.4.1";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -921,13 +921,14 @@ class SimpleSwipeCard extends HTMLElement {
         this.paginationElement?.remove();
         this.paginationElement = null;
         const showPagination = this._config.show_pagination !== false;
-
-        if (showPagination && this.cards.length > 1) {
+    
+        if (showPagination && this._config.cards && this._config.cards.length > 1) {
             logDebug("INIT", "Creating pagination");
             this.paginationElement = document.createElement('div');
             this.paginationElement.className = `pagination ${this._swipeDirection}`;
             
-            for (let i = 0; i < this.cards.length; i++) {
+            // Use this._config.cards.length instead of this.cards.length
+            for (let i = 0; i < this._config.cards.length; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'pagination-dot';
                 if (i === this.currentIndex) dot.classList.add('active');
@@ -1429,11 +1430,9 @@ class SimpleSwipeCard extends HTMLElement {
             this.updateSlider(true);
             
             // After transition, preload adjacent cards for loopback mode
-            if (loopbackEnabled) {
-                setTimeout(() => {
-                    this._preloadAdjacentCards(this.currentIndex);
-                }, 300); // Wait for transition to complete
-            }
+            setTimeout(() => {
+                this._preloadAdjacentCards(this.currentIndex);
+            }, 300); // Wait for transition to complete
         });
     }
 
