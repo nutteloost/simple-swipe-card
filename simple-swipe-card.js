@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author Martijn Oost (nutteloost)
- * @version 1.3.11
+ * @version 1.4.0
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,10 +28,10 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.3.11";
+const CARD_VERSION = "1.4.0";
 
 // Debug configuration - set to false for production
-const DEBUG = false;
+const DEBUG = true;
 
 /**
  * Enhanced debugging function that categorizes log messages
@@ -78,6 +78,7 @@ class SimpleSwipeCard extends HTMLElement {
         this.cards = [];
         this.currentIndex = 0;
         this.slideWidth = 0;
+        this.slideHeight = 0;
         this.cardContainer = null;
         this.sliderElement = null;
         this.paginationElement = null;
@@ -91,9 +92,11 @@ class SimpleSwipeCard extends HTMLElement {
         this._startX = 0;
         this._startY = 0;
         this._currentX = 0;
+        this._currentY = 0;
         this._initialTransform = 0;
         this._lastMoveTime = 0;
         this._isScrolling = false;
+        this._swipeDirection = 'horizontal'; // Default swipe direction
 
         // Bind event handlers for proper cleanup
         this._boundHandleSwipeStart = this._handleSwipeStart.bind(this);
@@ -128,7 +131,9 @@ class SimpleSwipeCard extends HTMLElement {
         return {
             cards: [],
             show_pagination: true,
-            card_spacing: 15
+            card_spacing: 15,
+            enable_loopback: false,
+            swipe_direction: 'horizontal'
         };
     }
 
@@ -147,7 +152,13 @@ class SimpleSwipeCard extends HTMLElement {
 
         if (!config.cards || !Array.isArray(config.cards)) {
             logDebug("CONFIG", "No cards array found in configuration, creating empty array");
-            this._config = { cards: [], show_pagination: true, card_spacing: 15 };
+            this._config = { 
+                cards: [], 
+                show_pagination: true, 
+                card_spacing: 15, 
+                enable_loopback: false,
+                swipe_direction: 'horizontal'
+            };
             if (this.isConnected) this._build();
             return;
         }
@@ -180,6 +191,18 @@ class SimpleSwipeCard extends HTMLElement {
                 this._config.card_spacing = 15;
             }
         }
+        // Set default for enable_loopback if not defined
+        if (this._config.enable_loopback === undefined) this._config.enable_loopback = false;
+        
+        // Set default for swipe_direction if not defined
+        if (this._config.swipe_direction === undefined || 
+            !['horizontal', 'vertical'].includes(this._config.swipe_direction)) {
+            this._config.swipe_direction = 'horizontal';
+        }
+        
+        // Store the current swipe direction for internal use
+        this._swipeDirection = this._config.swipe_direction;
+        
         delete this._config.title; // Remove title if present (legacy)
 
         // Determine if rebuild is needed
@@ -202,7 +225,13 @@ class SimpleSwipeCard extends HTMLElement {
      */
     _handleInvalidConfig(message) {
         logDebug("ERROR", `${message}`);
-        this._config = { cards: [], show_pagination: true, card_spacing: 15 };
+        this._config = { 
+            cards: [], 
+            show_pagination: true, 
+            card_spacing: 15,
+            enable_loopback: false,
+            swipe_direction: 'horizontal'
+        };
         if (this.isConnected) this._build();
     }
 
@@ -235,9 +264,17 @@ class SimpleSwipeCard extends HTMLElement {
      * @private
      */
     _updateLayoutOptions() {
-        logDebug("CONFIG", "Updating layout options (pagination, spacing)");
+        logDebug("CONFIG", "Updating layout options (pagination, spacing, direction)");
         const showPagination = this._config.show_pagination !== false;
         const cardSpacing = this._config.card_spacing || 0;
+        
+        // Update swipe direction
+        if (this._swipeDirection !== this._config.swipe_direction) {
+            this._swipeDirection = this._config.swipe_direction;
+            // Need to rebuild for direction change
+            this._build();
+            return;
+        }
 
         // Update pagination visibility
         if (showPagination && this.cards.length > 1) {
@@ -506,6 +543,8 @@ class SimpleSwipeCard extends HTMLElement {
 
         this.sliderElement = document.createElement('div');
         this.sliderElement.className = 'slider';
+        // Add swipe direction as a data attribute
+        this.sliderElement.setAttribute('data-swipe-direction', this._swipeDirection);
         this.cardContainer.appendChild(this.sliderElement);
         root.appendChild(this.cardContainer);
 
@@ -518,7 +557,10 @@ class SimpleSwipeCard extends HTMLElement {
             const iconContainer = document.createElement('div');
             iconContainer.className = 'preview-icon-container';
             const icon = document.createElement('ha-icon');
-            icon.icon = 'mdi:gesture-swipe-horizontal';
+            // Use appropriate icon based on swipe direction
+            icon.icon = this._swipeDirection === 'horizontal' 
+                ? 'mdi:gesture-swipe-horizontal' 
+                : 'mdi:gesture-swipe-vertical';
             iconContainer.appendChild(icon);
 
             const textContainer = document.createElement('div');
@@ -528,7 +570,7 @@ class SimpleSwipeCard extends HTMLElement {
             title.textContent = "Simple Swipe Card";
             const description = document.createElement('div');
             description.className = 'preview-description';
-            description.textContent = "Create a swipeable container with multiple cards. Open the editor to add your first card.";
+            description.textContent = `Create a swipeable container with multiple cards. Swipe ${this._swipeDirection === 'horizontal' ? 'horizontally' : 'vertically'} between cards. Open the editor to add your first card.`;
             textContainer.appendChild(title);
             textContainer.appendChild(description);
 
@@ -556,13 +598,37 @@ class SimpleSwipeCard extends HTMLElement {
             return;
         }
 
-        // Build cards
+        // Build cards - with optimization for loopback mode
         logDebug("INIT", "Building cards:", this._config.cards.length);
-        const cardPromises = this._config.cards.map((cardConfig, i) => this._createCard(cardConfig, i, helpers));
+        
+        // Determine which cards to load initially
+        let cardsToLoad;
+        if (this._config.cards.length <= 3) {
+            // For 3 or fewer cards, load all of them
+            cardsToLoad = Array.from({ length: this._config.cards.length }, (_, i) => i);
+        } else {
+            // For more cards, load current, prev, and next (with loopback considerations)
+            cardsToLoad = [0]; // Start with first card
+            
+            // Add prev card (last card if loopback enabled)
+            if (this._config.enable_loopback) {
+                cardsToLoad.push(this._config.cards.length - 1);
+            }
+            
+            // Add next card
+            if (this._config.cards.length > 1) {
+                cardsToLoad.push(1);
+            }
+        }
+        
+        const cardPromises = cardsToLoad.map((index) => {
+            return this._createCard(this._config.cards[index], index, helpers);
+        });
+        
         await Promise.allSettled(cardPromises);
 
         // Sort and append cards
-        this.cards.sort((a, b) => a.index - b.index).forEach(cardData => {
+        this.cards.filter(Boolean).sort((a, b) => a.index - b.index).forEach(cardData => {
             if (cardData.slide) {
                 // Add data-index attribute for event targeting
                 cardData.slide.setAttribute('data-index', cardData.index);
@@ -661,33 +727,58 @@ class SimpleSwipeCard extends HTMLElement {
             will-change: transform;
             background: transparent;
          }
+         
+         /* Horizontal slider (default) */
+         .slider[data-swipe-direction="horizontal"] {
+            flex-direction: row;
+         }
+         
+         /* Vertical slider */
+         .slider[data-swipe-direction="vertical"] {
+            flex-direction: column;
+         }
+         
          .slide {
             flex: 0 0 100%;
             width: 100%;
             min-width: 100%;
             height: 100%;
+            min-height: 100%;
             box-sizing: border-box;
             position: relative;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             background: var(--ha-card-background, var(--card-background-color, white));
-            /* Removed no-cards-message specific styles as preview is handled separately */
          }
         .pagination {
             position: absolute;
-            bottom: var(--simple-swipe-card-pagination-bottom, 8px);
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             justify-content: center;
             z-index: 1;
             background-color: var(--simple-swipe-card-pagination-background, transparent);
-            padding: var(--simple-swipe-card-pagination-padding, 4px 8px);
-            border-radius: 12px;
             pointer-events: auto;
             transition: opacity 0.2s ease-in-out;
+            padding: var(--simple-swipe-card-pagination-padding, 4px 8px);
+            border-radius: 12px;
         }
+        
+        /* Horizontal pagination (bottom) */
+        .pagination.horizontal {
+            bottom: var(--simple-swipe-card-pagination-bottom, 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: row;
+        }
+        
+        /* Vertical pagination (right) */
+        .pagination.vertical {
+            right: var(--simple-swipe-card-pagination-right, 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+        }
+        
          .pagination.hide {
             opacity: 0;
             pointer-events: none;
@@ -696,13 +787,23 @@ class SimpleSwipeCard extends HTMLElement {
             width: var(--simple-swipe-card-pagination-dot-size, 8px);
             height: var(--simple-swipe-card-pagination-dot-size, 8px);
             border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);
-            margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);
             background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
             cursor: pointer;
             transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease;
             border: none;
             opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);
         }
+        
+        /* Spacing for horizontal pagination dots */
+        .pagination.horizontal .pagination-dot {
+            margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);
+        }
+        
+        /* Spacing for vertical pagination dots */
+        .pagination.vertical .pagination-dot {
+            margin: var(--simple-swipe-card-pagination-dot-spacing, 4px) 0;
+        }
+        
         .pagination-dot.active {
             background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
             width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
@@ -824,7 +925,8 @@ class SimpleSwipeCard extends HTMLElement {
         if (showPagination && this.cards.length > 1) {
             logDebug("INIT", "Creating pagination");
             this.paginationElement = document.createElement('div');
-            this.paginationElement.className = 'pagination';
+            this.paginationElement.className = `pagination ${this._swipeDirection}`;
+            
             for (let i = 0; i < this.cards.length; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'pagination-dot';
@@ -851,17 +953,19 @@ class SimpleSwipeCard extends HTMLElement {
         logDebug("INIT", "Finishing build layout...");
 
         const containerWidth = this.cardContainer.offsetWidth;
-        if (containerWidth <= 0) {
+        const containerHeight = this.cardContainer.offsetHeight;
+        
+        if (containerWidth <= 0 || containerHeight <= 0) {
             if (this.offsetParent === null) {
                 logDebug("INIT", "Layout calculation skipped, element is hidden.");
                 return;
             }
-            logDebug("INIT", "Container width is 0, retrying layout...");
+            logDebug("INIT", "Container dimensions are 0, retrying layout...");
             this._layoutRetryCount = (this._layoutRetryCount || 0) + 1;
             if (this._layoutRetryCount < 5) {
                 setTimeout(() => requestAnimationFrame(() => this._finishBuildLayout()), 100);
             } else {
-                console.error("SimpleSwipeCard: Failed to get container width.");
+                console.error("SimpleSwipeCard: Failed to get container dimensions.");
                 this._layoutRetryCount = 0;
             }
             return;
@@ -869,6 +973,7 @@ class SimpleSwipeCard extends HTMLElement {
         this._layoutRetryCount = 0;
 
         this.slideWidth = containerWidth;
+        this.slideHeight = containerHeight;
 
         // Adjust index if out of bounds
         this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.cards.length - 1));
@@ -892,7 +997,74 @@ class SimpleSwipeCard extends HTMLElement {
             this._removeSwiperGesture();
         }
 
-        logDebug("INIT", "Layout finished, slideWidth:", this.slideWidth, "currentIndex:", this.currentIndex);
+        logDebug("INIT", "Layout finished, slideWidth:", this.slideWidth, "slideHeight:", this.slideHeight, "currentIndex:", this.currentIndex);
+        
+        // If loopback is enabled, preload relevant cards
+        if (this._config.enable_loopback && this.cards.length > 1) {
+            this._preloadAdjacentCards(this.currentIndex);
+        }
+    }
+
+    /**
+     * Preloads adjacent cards when needed (for loopback mode)
+     * @param {number} currentIndex - The current card index
+     * @private
+     */
+    _preloadAdjacentCards(currentIndex) {
+        if (!this._config || !this._config.cards || !this._hass || !this.initialized) return;
+        
+        const totalCards = this._config.cards.length;
+        if (totalCards <= 1) return;
+        
+        // In loopback mode, we need to preload the previous and next cards,
+        // which might be the last and first cards respectively
+        const loopbackEnabled = this._config.enable_loopback === true;
+        
+        // Determine which cards to preload
+        const cardsToLoad = [currentIndex]; // Always include current card
+        
+        // Add previous card
+        if (currentIndex > 0) {
+            cardsToLoad.push(currentIndex - 1);
+        } else if (loopbackEnabled) {
+            // In loopback mode, when on first card, preload the last card
+            cardsToLoad.push(totalCards - 1);
+        }
+        
+        // Add next card
+        if (currentIndex < totalCards - 1) {
+            cardsToLoad.push(currentIndex + 1);
+        } else if (loopbackEnabled) {
+            // In loopback mode, when on last card, preload the first card
+            cardsToLoad.push(0);
+        }
+        
+        // Find which cards need to be created
+        const cardsToCreate = cardsToLoad.filter(index => {
+            return !this.cards[index] || this.cards[index].error;
+        });
+        
+        if (cardsToCreate.length === 0) return;
+        
+        // Create the missing cards
+        logDebug("INIT", "Preloading cards for loopback:", cardsToCreate);
+        
+        HELPERS.then(helpers => {
+            cardsToCreate.forEach(async (index) => {
+                if (!this.cards[index] || this.cards[index].error) {
+                    await this._createCard(this._config.cards[index], index, helpers);
+                    
+                    // Add the card to the DOM if not already there
+                    if (this.cards[index] && this.cards[index].slide && !this.sliderElement.contains(this.cards[index].slide)) {
+                        this.cards[index].slide.setAttribute('data-index', index);
+                        if (this.cards[index].config && this.cards[index].config.type) {
+                            this.cards[index].slide.setAttribute('data-card-type', this.cards[index].config.type);
+                        }
+                        this.sliderElement.appendChild(this.cards[index].slide);
+                    }
+                }
+            });
+        });
     }
 
     /**
@@ -907,10 +1079,16 @@ class SimpleSwipeCard extends HTMLElement {
                 if (!this.isConnected || !this.cardContainer) return;
                 for (let entry of entries) {
                     const newWidth = entry.contentRect.width;
+                    const newHeight = entry.contentRect.height;
                     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
                     this.resizeTimeout = setTimeout(() => {
-                        if (this.cardContainer && newWidth > 0 && Math.abs(newWidth - this.slideWidth) > 1) {
-                            logDebug("INIT", "Resize detected, recalculating layout.", { old: this.slideWidth, new: newWidth});
+                        if (this.cardContainer && 
+                            ((newWidth > 0 && Math.abs(newWidth - this.slideWidth) > 1) ||
+                             (newHeight > 0 && Math.abs(newHeight - this.slideHeight) > 1))) {
+                            logDebug("INIT", "Resize detected, recalculating layout.", { 
+                                oldWidth: this.slideWidth, newWidth, 
+                                oldHeight: this.slideHeight, newHeight 
+                            });
                             this._finishBuildLayout();
                         }
                     }, 50);
@@ -1030,15 +1208,24 @@ class SimpleSwipeCard extends HTMLElement {
         this._startX = point.clientX;
         this._startY = point.clientY;
         this._currentX = this._startX;
+        this._currentY = this._startY;
         this._lastMoveTime = Date.now();
 
         if (this.sliderElement) {
             const style = window.getComputedStyle(this.sliderElement);
             const matrix = new DOMMatrixReadOnly(style.transform);
-            this._initialTransform = matrix.m41;
+            this._initialTransform = matrix.m41; // For horizontal, we track X transform
+            if (this._swipeDirection === 'vertical') {
+                this._initialTransform = matrix.m42; // For vertical, we track Y transform
+            }
             this.sliderElement.style.transition = this._getTransitionStyle(false);
             this.sliderElement.style.cursor = 'grabbing';
-            logDebug("SWIPE", "Swipe Start Details:", {startX: this._startX, initialTransform: this._initialTransform});
+            logDebug("SWIPE", "Swipe Start Details:", {
+                startX: this._startX, 
+                startY: this._startY, 
+                initialTransform: this._initialTransform,
+                direction: this._swipeDirection
+            });
         }
 
         if (e.type === 'mousedown') {
@@ -1067,33 +1254,54 @@ class SimpleSwipeCard extends HTMLElement {
         const deltaY = clientY - this._startY;
         const currentTime = Date.now();
 
-        // Check for vertical scroll intention
-        if (!this._isScrolling && Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
-            logDebug("SWIPE", "Vertical scroll detected, cancelling horizontal drag.");
+        // Determine if this is a horizontal or vertical swipe based on configuration
+        const isHorizontal = this._swipeDirection === 'horizontal';
+        
+        // Calculate the primary and secondary deltas based on swipe direction
+        const primaryDelta = isHorizontal ? deltaX : deltaY;
+        const secondaryDelta = isHorizontal ? deltaY : deltaX;
+
+        // Check for scrolling in the perpendicular direction
+        if (!this._isScrolling && Math.abs(secondaryDelta) > Math.abs(primaryDelta) && Math.abs(secondaryDelta) > 10) {
+            logDebug("SWIPE", `${isHorizontal ? 'Vertical' : 'Horizontal'} scroll detected, cancelling ${isHorizontal ? 'horizontal' : 'vertical'} drag.`);
             this._isScrolling = true;
         }
 
-        // Process horizontal movement
-        if (!this._isScrolling && Math.abs(deltaX) > 5) {
-            logDebug("SWIPE", "Horizontal move detected");
+        // Process movement in the primary direction
+        if (!this._isScrolling && Math.abs(primaryDelta) > 5) {
+            logDebug("SWIPE", `${isHorizontal ? 'Horizontal' : 'Vertical'} move detected`);
             if (e.cancelable) e.preventDefault();
 
-            this._currentX = clientX;
-            let dragAmount = deltaX;
+            // Update current position based on swipe direction
+            if (isHorizontal) {
+                this._currentX = clientX;
+            } else {
+                this._currentY = clientY;
+            }
+            
+            let dragAmount = primaryDelta;
 
-            // Apply resistance at edges
-            const atLeftEdge = this.currentIndex === 0;
-            const atRightEdge = this.currentIndex === this.cards.length - 1;
-            if ((atLeftEdge && dragAmount > 0) || (atRightEdge && dragAmount < 0)) {
-                const resistanceFactor = 0.3 + 0.7 / (1 + Math.abs(dragAmount) / (this.slideWidth * 0.5));
-                dragAmount *= resistanceFactor * 0.5;
+            // Apply resistance at edges (only if loopback mode is not enabled)
+            const loopbackEnabled = this._config.enable_loopback === true;
+            if (!loopbackEnabled) {
+                const atFirstEdge = this.currentIndex === 0;
+                const atLastEdge = this.currentIndex === this.cards.length - 1;
+                if ((atFirstEdge && dragAmount > 0) || (atLastEdge && dragAmount < 0)) {
+                    const resistanceFactor = 0.3 + 0.7 / (1 + Math.abs(dragAmount) / (isHorizontal ? this.slideWidth : this.slideHeight) * 0.5);
+                    dragAmount *= resistanceFactor * 0.5;
+                }
             }
 
             const newTransform = this._initialTransform + dragAmount;
 
             if (this.sliderElement) {
                 logDebug("SWIPE", "Applying transform:", newTransform);
-                this.sliderElement.style.transform = `translateX(${newTransform}px)`;
+                // Apply transform based on swipe direction
+                if (isHorizontal) {
+                    this.sliderElement.style.transform = `translateX(${newTransform}px)`;
+                } else {
+                    this.sliderElement.style.transform = `translateY(${newTransform}px)`;
+                }
             }
             this._lastMoveTime = currentTime;
         }
@@ -1140,21 +1348,47 @@ class SimpleSwipeCard extends HTMLElement {
                 return;
             }
 
-            // Calculate movement and velocity
-            const totalMoveX = this._currentX - this._startX;
+            // Determine if this is a horizontal or vertical swipe based on configuration
+            const isHorizontal = this._swipeDirection === 'horizontal';
+            
+            // Calculate movement and velocity based on swipe direction
+            const totalMove = isHorizontal 
+                ? this._currentX - this._startX 
+                : this._currentY - this._startY;
+                
             const timeDiff = Date.now() - this._lastMoveTime;
-            const velocity = timeDiff > 10 ? totalMoveX / timeDiff : 0;
+            const velocity = timeDiff > 10 ? totalMove / timeDiff : 0;
             const SWIPE_VELOCITY_THRESHOLD = 0.4;
-            logDebug("SWIPE", "Swipe End Details:", { totalMoveX, velocity });
+            logDebug("SWIPE", "Swipe End Details:", { totalMove, velocity });
 
-            const threshold = this.slideWidth * 0.2;
+            // Use the appropriate dimension for threshold calculation
+            const slideSize = isHorizontal ? this.slideWidth : this.slideHeight;
+            const threshold = slideSize * 0.2;
 
             let nextIndex = this.currentIndex;
-            if (Math.abs(totalMoveX) > threshold || Math.abs(velocity) > SWIPE_VELOCITY_THRESHOLD) {
-                if (totalMoveX > 0 && this.currentIndex > 0) {
-                    nextIndex--;
-                } else if (totalMoveX < 0 && this.currentIndex < this.cards.length - 1) {
-                    nextIndex++;
+            const loopbackEnabled = this._config.enable_loopback === true;
+            
+            if (Math.abs(totalMove) > threshold || Math.abs(velocity) > SWIPE_VELOCITY_THRESHOLD) {
+                if (totalMove > 0) {
+                    // Swiping right/down - go to previous card
+                    if (this.currentIndex > 0) {
+                        // Normal case: not at first card
+                        nextIndex--;
+                    } else if (loopbackEnabled && this.cards.length > 1) {
+                        // Loopback mode: at first card, loop to last
+                        nextIndex = this.cards.length - 1;
+                        logDebug("SWIPE", "Loopback: Looping from first to last card");
+                    }
+                } else if (totalMove < 0) {
+                    // Swiping left/up - go to next card
+                    if (this.currentIndex < this.cards.length - 1) {
+                        // Normal case: not at last card
+                        nextIndex++;
+                    } else if (loopbackEnabled && this.cards.length > 1) {
+                        // Loopback mode: at last card, loop to first
+                        nextIndex = 0;
+                        logDebug("SWIPE", "Loopback: Looping from last to first card");
+                    }
                 }
             }
 
@@ -1166,6 +1400,13 @@ class SimpleSwipeCard extends HTMLElement {
             }
 
             this.updateSlider(true);
+            
+            // After transition, preload adjacent cards for loopback mode
+            if (loopbackEnabled) {
+                setTimeout(() => {
+                    this._preloadAdjacentCards(this.currentIndex);
+                }, 300); // Wait for transition to complete
+            }
         });
     }
 
@@ -1235,11 +1476,31 @@ class SimpleSwipeCard extends HTMLElement {
      */
     goToSlide(index) {
         if (!this.cards || this.cards.length <= 1 || !this.initialized || this.building) return;
-        index = Math.max(0, Math.min(index, this.cards.length - 1));
+        
+        const loopbackEnabled = this._config.enable_loopback === true;
+        
+        if (loopbackEnabled && this.cards.length > 1) {
+            // In loopback mode, wrap around if needed
+            if (index < 0) {
+                index = this.cards.length - 1;
+            } else if (index >= this.cards.length) {
+                index = 0;
+            }
+        } else {
+            // Standard behavior - clamp to valid range
+            index = Math.max(0, Math.min(index, this.cards.length - 1));
+        }
+        
         if (index === this.currentIndex) return;
+        
         logDebug("SWIPE", `Going to slide ${index}`);
         this.currentIndex = index;
         this.updateSlider();
+        
+        // Preload adjacent cards in loopback mode
+        if (loopbackEnabled) {
+            this._preloadAdjacentCards(index);
+        }
     }
 
     /**
@@ -1248,26 +1509,50 @@ class SimpleSwipeCard extends HTMLElement {
      */
     updateSlider(animate = true) {
         logDebug("SWIPE", `Updating slider to index ${this.currentIndex}`, { animate });
-        if (!this.sliderElement || !this.cards || this.cards.length === 0 || !this.initialized || this.building || this.slideWidth <= 0) {
-            logDebug("SWIPE", "updateSlider skipped", { slider: !!this.sliderElement, cards: this.cards?.length, init: this.initialized, building: this.building, width: this.slideWidth });
+        if (!this.sliderElement || !this.cards || this.cards.length === 0 || !this.initialized || this.building) {
+            logDebug("SWIPE", "updateSlider skipped", { slider: !!this.sliderElement, cards: this.cards?.length, init: this.initialized, building: this.building });
             return;
         }
 
         const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
-        this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.cards.length - 1));
+        const isHorizontal = this._swipeDirection === 'horizontal';
+        
+        // Handle loopback mode for index wrapping
+        const loopbackEnabled = this._config.enable_loopback === true;
+        if (loopbackEnabled && this.cards.length > 1) {
+            // For loopback, we allow any index but wrap it around
+            if (this.currentIndex < 0) {
+                this.currentIndex = this.cards.length - 1;
+            } else if (this.currentIndex >= this.cards.length) {
+                this.currentIndex = 0;
+            }
+        } else {
+            // Standard behavior - clamp to valid range
+            this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.cards.length - 1));
+        }
 
         // Use gap for spacing instead of margins to maintain transparency
         this.sliderElement.style.gap = `${cardSpacing}px`;
-        const translateAmount = this.currentIndex * (this.slideWidth + cardSpacing);
+        
+        // Calculate transform amount based on direction
+        const translateAmount = this.currentIndex * (isHorizontal ? this.slideWidth + cardSpacing : this.slideHeight + cardSpacing);
 
         this.sliderElement.style.transition = this._getTransitionStyle(animate);
-        this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
+        
+        // Apply transform based on swipe direction
+        if (isHorizontal) {
+            this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
+        } else {
+            this.sliderElement.style.transform = `translateY(-${translateAmount}px)`;
+        }
 
         // Remove any existing margins that could interfere with transparency
         this.cards.forEach((cardData) => {
             if (cardData.slide) {
                 cardData.slide.style.marginRight = '0px';
                 cardData.slide.style.marginLeft = '0px';
+                cardData.slide.style.marginTop = '0px';
+                cardData.slide.style.marginBottom = '0px';
             }
         });
 
@@ -1277,7 +1562,7 @@ class SimpleSwipeCard extends HTMLElement {
                 dot.classList.toggle('active', i === this.currentIndex);
             });
         }
-        logDebug("SWIPE", `Slider updated, translateX: -${translateAmount}px`);
+        logDebug("SWIPE", `Slider updated, transform: -${translateAmount}px along ${isHorizontal ? 'X' : 'Y'} axis`);
     }
 
     /**
@@ -1638,7 +1923,11 @@ class SimpleSwipeCardEditor extends LitElement {
         // Clean up any tracked dialogs
         this._activeChildEditors.forEach(dialog => {
             if (dialog.parentNode) {
-                dialog.parentNode.removeChild(dialog);
+                try {
+                    dialog.parentNode.removeChild(dialog);
+                } catch (error) {
+                    console.warn("Error removing dialog:", error);
+                }
             }
         });
         this._activeChildEditors.clear();
@@ -2048,6 +2337,10 @@ class SimpleSwipeCardEditor extends LitElement {
             ha-textfield {
                 width: 100%;
             }
+            
+            ha-select {
+                width: 100%;
+            }
 
             /* Nested cards styling */
             .nested-cards-container {
@@ -2119,6 +2412,14 @@ class SimpleSwipeCardEditor extends LitElement {
             .nested-card-actions ha-icon-button:hover {
                 color: var(--primary-text-color);
             }
+            
+            /* Direction icon styling */
+            .direction-icon {
+                width: 32px;
+                height: 32px;
+                margin-left: 8px;
+                color: var(--primary-color);
+            }
         `;
     }
 
@@ -2141,6 +2442,15 @@ class SimpleSwipeCardEditor extends LitElement {
             const spacing = parseInt(this._config.card_spacing);
             this._config.card_spacing = (isNaN(spacing) || spacing < 0) ? 15 : spacing;
         }
+        // Set default for enable_loopback
+        if (this._config.enable_loopback === undefined) this._config.enable_loopback = false;
+        
+        // Set default for swipe_direction
+        if (this._config.swipe_direction === undefined || 
+            !['horizontal', 'vertical'].includes(this._config.swipe_direction)) {
+            this._config.swipe_direction = 'horizontal';
+        }
+        
         delete this._config.title;
 
         // Ensure card picker is loaded after config is set
@@ -2159,7 +2469,7 @@ class SimpleSwipeCardEditor extends LitElement {
         const parentOption = target.parentElement?.configValue || target.parentElement?.getAttribute('data-option');
         const finalOption = option || parentOption;
         if (!finalOption) return;
-
+    
         let value;
         if (target.localName === 'ha-switch') {
             value = target.checked;
@@ -2169,11 +2479,18 @@ class SimpleSwipeCardEditor extends LitElement {
         } else {
             value = target.value;
         }
-
+    
+        // Guard against redundant updates to prevent loops
         if (this._config[finalOption] !== value) {
             logDebug("EDITOR", `Value changed for ${finalOption}:`, value);
+            
+            // Create a new config object to ensure reactivity
             this._config = { ...this._config, [finalOption]: value };
+            
+            // Fire config changed without requesting an update
             this._fireConfigChanged();
+            
+            // Don't call requestUpdate() here as it may cause update loops
         }
     }
 
@@ -2919,6 +3236,8 @@ class SimpleSwipeCardEditor extends LitElement {
         const cards = this._config.cards || [];
         const showPagination = this._config.show_pagination !== false;
         const cardSpacing = this._config.card_spacing ?? 15;
+        const enableLoopback = this._config.enable_loopback === true;
+        const swipeDirection = this._config.swipe_direction || 'horizontal';
 
         return html`
             <div class="card-config">
@@ -2949,6 +3268,29 @@ class SimpleSwipeCardEditor extends LitElement {
                     ></ha-textfield>
 
                     <div class="help-text">Visual gap between cards when swiping (in pixels)</div>
+                    
+                    <div class="option-row">
+                        <div class="option-label">Swipe direction</div>
+                        <div class="option-control">
+                            <ha-select
+                                .value=${swipeDirection}
+                                data-option="swipe_direction"
+                                @change=${this._valueChanged}
+                                @closed=${(ev) => ev.stopPropagation()}
+                            >
+                                <ha-list-item .value=${'horizontal'}>
+                                    Horizontal
+                                    <ha-icon slot="graphic" class="direction-icon" icon="mdi:gesture-swipe-horizontal"></ha-icon>
+                                </ha-list-item>
+                                <ha-list-item .value=${'vertical'}>
+                                    Vertical
+                                    <ha-icon slot="graphic" class="direction-icon" icon="mdi:gesture-swipe-vertical"></ha-icon>
+                                </ha-list-item>
+                            </ha-select>
+                        </div>
+                    </div>
+                    
+                    <div class="help-text">The direction to swipe between cards</div>
 
                     <div class="option-row">
                         <div class="option-label">Show pagination dots</div>
@@ -2960,6 +3302,19 @@ class SimpleSwipeCardEditor extends LitElement {
                             ></ha-switch>
                         </div>
                     </div>
+                    
+                    <div class="option-row">
+                        <div class="option-label">Enable loopback mode</div>
+                        <div class="option-control">
+                            <ha-switch
+                                .checked=${enableLoopback}
+                                data-option="enable_loopback"
+                                @change=${this._valueChanged}
+                            ></ha-switch>
+                        </div>
+                    </div>
+
+                    <div class="help-text">When enabled, swiping past the last card will circle back to the first card, and vice versa.</div>
                 </div>
 
                 <!-- Cards Management -->
