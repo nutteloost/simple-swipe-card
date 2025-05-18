@@ -1054,13 +1054,40 @@ class SimpleSwipeCard extends HTMLElement {
                 if (!this.cards[index] || this.cards[index].error) {
                     await this._createCard(this._config.cards[index], index, helpers);
                     
-                    // Add the card to the DOM if not already there
+                    // Add the card to the DOM if not already there, ensuring correct order
                     if (this.cards[index] && this.cards[index].slide && !this.sliderElement.contains(this.cards[index].slide)) {
+                        // Set attributes
                         this.cards[index].slide.setAttribute('data-index', index);
                         if (this.cards[index].config && this.cards[index].config.type) {
                             this.cards[index].slide.setAttribute('data-card-type', this.cards[index].config.type);
                         }
-                        this.sliderElement.appendChild(this.cards[index].slide);
+                        
+                        // Find the correct position to insert this card
+                        let inserted = false;
+                        
+                        // Get all existing slide elements
+                        const existingSlides = Array.from(this.sliderElement.children);
+                        
+                        // Find the first slide with a higher index than the current one
+                        for (const slide of existingSlides) {
+                            const slideIndex = parseInt(slide.getAttribute('data-index'), 10);
+                            if (!isNaN(slideIndex) && slideIndex > index) {
+                                // Insert before this slide
+                                this.sliderElement.insertBefore(this.cards[index].slide, slide);
+                                inserted = true;
+                                logDebug("INIT", `Inserted card ${index} before card ${slideIndex}`);
+                                break;
+                            }
+                        }
+                        
+                        // If no insertion point was found, append at the end
+                        if (!inserted) {
+                            this.sliderElement.appendChild(this.cards[index].slide);
+                            logDebug("INIT", `Appended card ${index} at the end`);
+                        }
+                        
+                        // Force a recalculation of layout after insertion
+                        this._finishBuildLayout();
                     }
                 }
             });
