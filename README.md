@@ -27,7 +27,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 7. Search for "Simple Swipe Card" and install it
 
 
-### Manual Installation 
+### Manual Installation
 1. Download `simple-swipe-card.js` from the latest release
 2. Copy it to `config/www/simple-swipe-card/simple-swipe-card.js`
 3. Add the following to your configuration.yaml:
