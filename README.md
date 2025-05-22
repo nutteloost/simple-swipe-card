@@ -14,6 +14,10 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Visual editor support
 - Loopback mode for continuous navigation
 - Support for both horizontal and vertical swiping
+- Automatic Slideshow (Auto-Swipe):
+    - Cards can cycle automatically at a user-defined interval
+    - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
+    - Integrates with Loopback Mode for continuous cycling or uses a "ping-pong" effect if loopback is disabled
 
 ## Installation
 
@@ -45,6 +49,10 @@ The Simple Swipe Card includes a visual editor that appears when you add or edit
 - Reorder cards for swiping order
 - Visual on/off toggle for pagination dots
 - Simple number input for card spacing
+- Selection for swipe direction (horizontal/vertical)
+- Toggle for loopback mode
+- Toggle for enabling auto-swipe
+- Number input for auto-swipe interval (in milliseconds)
 - Real-time preview of changes
   
 
@@ -73,6 +81,8 @@ This card can be configured using the visual editor or YAML.
 | card_spacing | number | 15 | Space between cards in pixels |
 | enable_loopback | boolean | false | When enabled, swiping past the last card will circle back to the first card, and vice versa |
 | swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical' |
+| enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides |
+| auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
 
 ### Example Configuration
 ```yaml
@@ -90,6 +100,8 @@ show_pagination: true
 card_spacing: 15
 enable_loopback: true
 swipe_direction: horizontal
+enable_auto_swipe: true
+auto_swipe_interval: 3000
 ```
 
 ## Customizing with Theme Variables
