@@ -183,17 +183,6 @@ All CSS variables listed below can be used in both Home Assistant themes and car
 --simple-swipe-card-transition-easing: ease-out;                                /* Easing function for slide animations */
 ```
 
-### Styling Hierarchy
-
-When both theme variables and card-mod styling are present, the following hierarchy applies:
-
-1. Card-mod styles (highest priority)
-2. Theme variables
-3. Default card styling (lowest priority)
-
-This hierarchy allows you to establish baseline styling through themes while maintaining the flexibility to customize individual card instances as needed.
-
-
 ### Animation Customization Examples
 
 You can use any valid CSS transition timing function for `simple-swipe-card-transition-easing`:
@@ -206,6 +195,16 @@ simple-swipe-card-transition-easing: 'cubic-bezier(0.4, 0, 0.2, 1)' # Material D
 simple-swipe-card-transition-easing: 'linear'                       # Constant speed
 simple-swipe-card-transition-easing: 'ease-in'                      # Slow start, fast end
 ```
+
+### Styling Hierarchy
+
+When both theme variables and card-mod styling are present, the following hierarchy applies:
+
+1. Card-mod styles (highest priority)
+2. Theme variables
+3. Default card styling (lowest priority)
+
+This hierarchy allows you to establish baseline styling through themes while maintaining the flexibility to customize individual card instances as needed.
 
 ## My Other Custom Cards
 
