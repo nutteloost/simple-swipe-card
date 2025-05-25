@@ -111,39 +111,90 @@ auto_swipe_interval: 3000
 
 ## Customizing with Theme Variables
 
-The Simple Swipe Card can be extensively customized through Home Assistant theme variables. These customizations affect the visual appearance and behavior of the card.
+The Simple Swipe Card provides extensive customization capabilities through two primary methods: Home Assistant themes and card-mod styling. This flexible approach allows you to establish consistent styling across all card instances while maintaining the ability to customize individual cards as needed.
+
+### Method 1: Home Assistant Themes
+
+Apply styling globally across all instances of Simple Swipe Card by adding theme variables to your Home Assistant configuration. This method is ideal for maintaining consistent styling throughout your dashboard.
 
 To apply these customizations, add them to your theme in your `configuration.yaml`:
 
 ```yaml
 frontend:
   themes:
-    my_custom_theme:
-      # Pagination dot colors
-      simple-swipe-card-pagination-dot-active-color: '#03a9f4'                     # Color of the currently selected dot
-      simple-swipe-card-pagination-dot-inactive-color: 'rgba(127, 127, 127, 0.6)'  # Color of inactive dots
+    simple_swipe_theme:
+      # Your existing theme properties
+      primary-color: '#2196f3'
       
-      # Pagination dot sizes
-      simple-swipe-card-pagination-dot-size: '8px'                                 # Size of inactive dots
-      simple-swipe-card-pagination-dot-active-size: '10px'                         # Size of active dot
-      simple-swipe-card-pagination-dot-spacing: '4px'                              # Space between dots
-      simple-swipe-card-pagination-border-radius: '50%'                            # Shape of dots (50% = circle)
-      
-      # Pagination container styling
-      simple-swipe-card-pagination-background: 'transparent'                       # Background of pagination container
-      simple-swipe-card-pagination-padding: '4px 8px'                              # Padding around pagination dots
-      simple-swipe-card-pagination-bottom: '8px'                                   # Distance from bottom of card
-      
-      # Pagination dot opacity
-      simple-swipe-card-pagination-dot-inactive-opacity: '0.6'                     # Opacity of inactive dots
-      simple-swipe-card-pagination-dot-active-opacity: '1'                         # Opacity of active dot
-      
-      # Slide animation
-      simple-swipe-card-transition-speed: '0.3s'                                   # Duration of slide transition
-      simple-swipe-card-transition-easing: 'ease-out'                              # Easing function for animation
+      # Simple Swipe Card customizations
+      simple-swipe-card-pagination-dot-active-color: '#ff5722'
+      simple-swipe-card-pagination-dot-size: '10px'
+      simple-swipe-card-pagination-dot-spacing: '6px'
+      simple-swipe-card-transition-speed: '0.4s'
+      simple-swipe-card-pagination-background: 'rgba(0, 0, 0, 0.1)'
+      # Add any other variables from the complete CSS reference
 ```
 
-## Animation Customization Examples
+### Method 2: Card-Mod Styling
+
+Apply styling directly to individual card instances using card-mod. This method provides maximum flexibility and allows for unique styling of specific cards. Card-mod styles take precedence over theme variables, enabling you to override global themes for specific instances.
+
+```yaml
+type: custom:simple-swipe-card
+cards:
+  - type: weather-forecast
+    entity: weather.home
+  - type: entities
+    entities:
+      - sensor.temperature
+card_mod:
+  style: |
+    :host {
+      --simple-swipe-card-pagination-dot-active-color: #ff5722;
+      --simple-swipe-card-pagination-dot-size: 12px;
+      --simple-swipe-card-transition-speed: 0.5s;
+      /* Add any other variables from the complete CSS reference */
+    }
+```
+
+### Available CSS Variables
+
+All CSS variables listed below can be used in both Home Assistant themes and card-mod styling configurations. These variables provide comprehensive control over the visual appearance and behavior of the Simple Swipe Card.
+
+```yaml
+/* Pagination Dot Styling */
+--simple-swipe-card-pagination-dot-size: 8px;                                   /* Diameter of inactive pagination dots */
+--simple-swipe-card-pagination-dot-active-size: 8px;                            /* Diameter of the active pagination dot */
+--simple-swipe-card-pagination-dot-active-color: var(--primary-color, #03a9f4); /* Color of the currently selected dot */
+--simple-swipe-card-pagination-dot-inactive-color: rgba(127, 127, 127, 0.6);    /* Color of inactive pagination dots */
+--simple-swipe-card-pagination-dot-spacing: 4px;                                /* Horizontal/vertical space between dots */
+--simple-swipe-card-pagination-border-radius: 50%;                              /* Border radius of dots (50% = circle) */
+--simple-swipe-card-pagination-dot-active-opacity: 1;                           /* Opacity of the active pagination dot */
+--simple-swipe-card-pagination-dot-inactive-opacity: 1;                         /* Opacity of inactive pagination dots */
+
+/* Pagination Container Styling */
+--simple-swipe-card-pagination-background: transparent;                         /* Background color of pagination container */
+--simple-swipe-card-pagination-padding: 4px 8px;                                /* Padding around the pagination dots */
+--simple-swipe-card-pagination-bottom: 8px;                                     /* Distance from bottom edge (horizontal mode) */
+--simple-swipe-card-pagination-right: 8px;                                      /* Distance from right edge (vertical mode) */
+
+/* Animation and Transition Effects */
+--simple-swipe-card-transition-speed: 0.3s;                                     /* Duration of slide transition animations */
+--simple-swipe-card-transition-easing: ease-out;                                /* Easing function for slide animations */
+```
+
+### Styling Hierarchy
+
+When both theme variables and card-mod styling are present, the following hierarchy applies:
+
+1. Card-mod styles (highest priority)
+2. Theme variables
+3. Default card styling (lowest priority)
+
+This hierarchy allows you to establish baseline styling through themes while maintaining the flexibility to customize individual card instances as needed.
+
+
+### Animation Customization Examples
 
 You can use any valid CSS transition timing function for `simple-swipe-card-transition-easing`:
 
@@ -154,17 +205,6 @@ simple-swipe-card-transition-easing: 'ease-in-out'                  # Smooth in 
 simple-swipe-card-transition-easing: 'cubic-bezier(0.4, 0, 0.2, 1)' # Material Design easing
 simple-swipe-card-transition-easing: 'linear'                       # Constant speed
 simple-swipe-card-transition-easing: 'ease-in'                      # Slow start, fast end
-```
-
-## Standard Home Assistant Variables
-
-The card also respects these standard Home Assistant theme variables:
-
-```yaml
-primary-color: '#03a9f4'                            # Used for active dot (if no custom color set)
-ha-card-border-radius: '12px'                       # Card border radius
-ha-card-background: 'var(--card-background-color)'  # Primary background for slides
-card-background-color: 'rgba(255,255,255,0.8)'      # Secondary fallback for slide backgrounds
 ```
 
 ## My Other Custom Cards
