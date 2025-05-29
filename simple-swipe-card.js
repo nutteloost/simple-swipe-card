@@ -5,7 +5,7 @@
  * Supports touch gestures and mouse interactions with full configuration UI editor.
  * 
  * @author nutteloost
- * @version 1.5.0
+ * @version 1.6.1
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  * 
@@ -28,7 +28,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.5.0";
+const CARD_VERSION = "1.6.1";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -50,7 +50,8 @@ const logDebug = (category, ...args) => {
         'SYSTEM': 'color: #00bcd4; font-weight: bold', 
         'DEFAULT': 'color: #607d8b; font-weight: bold',
         'ELEMENT': 'color: #e91e63; font-weight: bold',
-        'AUTO': 'color: #3f51b5; font-weight: bold' // Added category for auto-swipe logs
+        'AUTO': 'color: #3f51b5; font-weight: bold',
+        'CARD_MOD': 'color: #9932cc; font-weight: bold'
     };
 
     const style = categoryColors[category] || categoryColors.DEFAULT;
@@ -88,6 +89,10 @@ class SimpleSwipeCard extends HTMLElement {
         this.resizeObserver = null;
         this.resizeTimeout = null;
     
+        // Card-mod support
+        this._cardModConfig = null;
+        this._cardModObserver = null;
+
         // Swipe state management
         this._isDragging = false;
         this._startX = 0;
@@ -225,6 +230,14 @@ class SimpleSwipeCard extends HTMLElement {
             }
         }
         
+        // Store the card_mod configuration if present
+        if (config.card_mod) {
+            logDebug("CARD_MOD", "Card-mod configuration detected", config.card_mod);
+            this._cardModConfig = JSON.parse(JSON.stringify(config.card_mod));
+        } else {
+            this._cardModConfig = null;
+        }
+
         // Store the current swipe direction for internal use
         this._swipeDirection = this._config.swipe_direction;
         
@@ -317,6 +330,10 @@ class SimpleSwipeCard extends HTMLElement {
 
         // Update slider position with new spacing
         this.updateSlider(false);
+
+        if (this._cardModConfig) {
+            this._applyCardModStyles();
+        }
     }
 
     /**
@@ -476,6 +493,13 @@ class SimpleSwipeCard extends HTMLElement {
                     if (this.isConnected) this._addSwiperGesture();
                 }, 50);
             }
+
+            // Apply card-mod styles when connected to DOM
+            if (this._cardModConfig) {
+                this._applyCardModStyles();
+                this._setupCardModObserver();
+            }
+
             // Initialize or resume auto-swipe if enabled
             this._manageAutoSwipe();
         }
@@ -492,6 +516,13 @@ class SimpleSwipeCard extends HTMLElement {
             this._removeResizeObserver();
             this._removeSwiperGesture();
             this._stopAutoSwipe();
+
+            // Clean up card-mod observer
+            if (this._cardModObserver) {
+                this._cardModObserver.disconnect();
+                this._cardModObserver = null;
+                logDebug("CARD_MOD", "Disconnected card-mod observer");
+            }
 
             // Clean up any DOM observer
             if (this._domObserver) {
@@ -674,6 +705,8 @@ class SimpleSwipeCard extends HTMLElement {
 
         this._createPagination();
 
+        this._applyCardModStyles();
+
         // Defer layout and gestures until next frame
         requestAnimationFrame(() => this._finishBuildLayout());
 
@@ -781,7 +814,7 @@ class SimpleSwipeCard extends HTMLElement {
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: var(--ha-card-background, var(--card-background-color, white));
+            background: transparent;
          }
         .pagination {
             position: absolute;
@@ -870,6 +903,109 @@ class SimpleSwipeCard extends HTMLElement {
             flex-direction: column;
          }
        `;
+    }
+
+    /**
+     * Applies card-mod styles to the component
+     * @private
+     */
+    _applyCardModStyles() {
+        if (!this._cardModConfig || !this.shadowRoot) {
+            logDebug("CARD_MOD", "No card-mod config or shadow root, skipping style application");
+            return;
+        }
+        
+        // Handle card-mod style string
+        if (this._cardModConfig.style) {
+            logDebug("CARD_MOD", "Applying card-mod styles");
+            
+            // Create a style element for card-mod styles
+            const cardModStyle = document.createElement('style');
+            cardModStyle.setAttribute('id', 'card-mod-styles');
+            
+            // Add the style content
+            cardModStyle.textContent = this._cardModConfig.style;
+            
+            // Remove any existing card-mod styles first
+            const existingStyle = this.shadowRoot.querySelector('#card-mod-styles');
+            if (existingStyle) {
+                this.shadowRoot.removeChild(existingStyle);
+            }
+            
+            // Add the new style element
+            this.shadowRoot.appendChild(cardModStyle);
+            
+            // Forward CSS variables from host to shadow root for pagination styling
+            if (this.shadowRoot.host) {
+                logDebug("CARD_MOD", "Forwarding CSS variables from host to shadow DOM");
+                const hostStyles = window.getComputedStyle(this.shadowRoot.host);
+                const shadowElements = [
+                    this.shadowRoot.querySelector('.card-container'),
+                    this.sliderElement,
+                    this.paginationElement
+                ].filter(Boolean);
+                
+                // List of specific variables we want to forward
+                const variablesToForward = [
+                    '--simple-swipe-card-pagination-dot-inactive-color',
+                    '--simple-swipe-card-pagination-dot-active-color',
+                    '--simple-swipe-card-pagination-dot-inactive-opacity',
+                    '--simple-swipe-card-pagination-dot-active-opacity',
+                    '--simple-swipe-card-pagination-dot-size',
+                    '--simple-swipe-card-pagination-dot-active-size',
+                    '--simple-swipe-card-pagination-border-radius',
+                    '--simple-swipe-card-pagination-dot-spacing',
+                    '--simple-swipe-card-pagination-background',
+                    '--simple-swipe-card-pagination-padding',
+                    '--simple-swipe-card-pagination-bottom',
+                    '--simple-swipe-card-pagination-right'
+                ];
+                
+                shadowElements.forEach(element => {
+                    if (!element) return;
+                    
+                    // Forward all matching CSS variables
+                    variablesToForward.forEach(variable => {
+                        const value = hostStyles.getPropertyValue(variable);
+                        if (value) {
+                            logDebug("CARD_MOD", `Forwarding ${variable}: ${value}`);
+                            element.style.setProperty(variable, value);
+                        }
+                    });
+                });
+            }
+        }
+    }
+
+    /**
+     * Sets up a MutationObserver for card-mod style changes
+     * @private
+     */
+    _setupCardModObserver() {
+        if (this._cardModObserver) {
+            this._cardModObserver.disconnect();
+            this._cardModObserver = null;
+        }
+        
+        // Create observer to watch for style changes on the host element
+        this._cardModObserver = new MutationObserver((mutations) => {
+            const styleChanged = mutations.some(mutation => 
+                mutation.type === 'attributes' && 
+                (mutation.attributeName === 'style' || mutation.attributeName.includes('style')));
+                
+            if (styleChanged) {
+                logDebug("CARD_MOD", "Host style attribute changed, reapplying card-mod styles");
+                this._applyCardModStyles();
+            }
+        });
+        
+        if (this.shadowRoot && this.shadowRoot.host) {
+            this._cardModObserver.observe(this.shadowRoot.host, {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+            logDebug("CARD_MOD", "Set up mutation observer for style changes");
+        }
     }
 
     /**
@@ -971,6 +1107,10 @@ class SimpleSwipeCard extends HTMLElement {
                 this.paginationElement.appendChild(dot);
             }
             this.shadowRoot.appendChild(this.paginationElement);
+
+            if (this._cardModConfig) {
+                this._applyCardModStyles();
+            }
         }
     }
 
@@ -2010,7 +2150,7 @@ class SimpleSwipeCardEditor extends LitElement {
     }
 
     // Ensure card picker is properly loaded
-    connectedCallback() {
+    async connectedCallback() {
         super.connectedCallback();
         logDebug("EDITOR", "SimpleSwipeCardEditor connectedCallback");
         
@@ -2018,8 +2158,10 @@ class SimpleSwipeCardEditor extends LitElement {
         if (!window._simpleSwipeCardEditors) window._simpleSwipeCardEditors = new Set();
         window._simpleSwipeCardEditors.add(this);
         
+        // Ensure card picker is loaded before proceeding
+        await this._ensureComponentsLoaded();
+        
         // Call _ensureCardPickerLoaded after a short delay to ensure shadowRoot is ready
-        // and potentially after initial config is set by parent.
         setTimeout(() => this._ensureCardPickerLoaded(), 50);
 
         // Add enhanced event handling for nested card editors
@@ -2169,6 +2311,49 @@ class SimpleSwipeCardEditor extends LitElement {
         
         document.addEventListener('element-updated', this._elementEditorHandler, { capture: true });
         document.addEventListener('show-edit-element', this._elementEditorHandler, { capture: true });
+    }
+
+    async _ensureComponentsLoaded() {
+        const maxAttempts = 50; // 5 seconds max wait
+        let attempts = 0;
+        
+        while (!customElements.get("hui-card-picker") && attempts < maxAttempts) {
+            await this._loadCustomElements();
+            if (!customElements.get("hui-card-picker")) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+        }
+        
+        if (!customElements.get("hui-card-picker")) {
+            console.error("Failed to load hui-card-picker after multiple attempts");
+        }
+    }
+
+    async _loadCustomElements() {
+        if (!customElements.get("hui-card-picker")) {
+            try {
+                const attempts = [
+                    () => customElements.get("hui-entities-card")?.getConfigElement?.(),
+                    () => customElements.get("hui-conditional-card")?.getConfigElement?.(),
+                    () => customElements.get("hui-vertical-stack-card")?.getConfigElement?.(),
+                    () => customElements.get("hui-horizontal-stack-card")?.getConfigElement?.(),
+                ];
+    
+                for (const attempt of attempts) {
+                    try {
+                        await attempt();
+                        if (customElements.get("hui-card-picker")) {
+                            break;
+                        }
+                    } catch (e) {
+                        console.debug("Card picker load attempt failed:", e);
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not load hui-card-picker", e);
+            }
+        }
     }
 
     disconnectedCallback() {
