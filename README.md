@@ -1,9 +1,10 @@
 # Simple Swipe Card
 
 [![Github All Releases](https://img.shields.io/github/downloads/nutteloost/simple-swipe-card/total.svg)]()
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 [![Reddit Profile](https://img.shields.io/badge/Reddit-My%20stuff-orange?logo=reddit)](https://www.reddit.com/user/nutteloost/submitted/)
 [![Home Assistant Community Forum](https://img.shields.io/badge/Home%20Assistant-Community%20Forum-blue?logo=home-assistant)](https://community.home-assistant.io/t/simple-swipe-card-a-custom-card-for-easy-card-navigation/888415)
+
 
 A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
 
@@ -28,13 +29,19 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 
 ### HACS (Recommended)
 1. Open HACS
-2. Go to "Frontend" section
-3. Click on the three dots in the top right corner
-4. Select "Custom repositories"
-5. Add this repository URL (https://github.com/nutteloost/simple-swipe-card)
-6. Click "Add"
-7. Search for "Simple Swipe Card" and install it
+2. Search for "Simple Swipe Card" and install it
 
+Or click this button to open the repository page in HACS:
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=simple-swipe-card&category=integration&owner=nutteloost)
+
+### HACS (Manual)
+1. Open HACS
+2. Click on the three dots in the top right corner
+3. Select "Custom repositories"
+4. Add this repository URL (https://github.com/nutteloost/simple-swipe-card)
+5. Click "Add"
+6. Search for "Simple Swipe Card" and install it
 
 ### Manual Installation
 1. Download `simple-swipe-card.js` from the latest release
