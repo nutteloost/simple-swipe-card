@@ -1,19 +1,14 @@
 /**
- * Simple Swipe Card for Home Assistant
+ * Simple Swipe Card for Home Assistant with Visibility Support and Reset After Feature
  * 
  * A swipeable container card that allows users to swipe between multiple cards.
  * Supports touch gestures and mouse interactions with full configuration UI editor.
+ * Now includes support for child card visibility conditions and reset after timeout.
  * 
  * @author nutteloost
- * @version 1.6.1
+ * @version 1.7.0
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
- * 
- * Installation:
- * 1. Install HACS: https://hacs.xyz
- * 2. Add this repo as a custom repository in HACS: https://github.com/nutteloost/simple-swipe-card
- * 3. Install the card via HACS
- * 4. Add the card to your dashboard
  */
 
 import {
@@ -28,7 +23,7 @@ import {
 const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
 
 // Version management
-const CARD_VERSION = "1.6.1";
+const CARD_VERSION = "1.7.0";
 
 // Debug configuration - set to false for production
 const DEBUG = false;
@@ -51,7 +46,9 @@ const logDebug = (category, ...args) => {
         'DEFAULT': 'color: #607d8b; font-weight: bold',
         'ELEMENT': 'color: #e91e63; font-weight: bold',
         'AUTO': 'color: #3f51b5; font-weight: bold',
-        'CARD_MOD': 'color: #9932cc; font-weight: bold'
+        'CARD_MOD': 'color: #9932cc; font-weight: bold',
+        'VISIBILITY': 'color: #ff5722; font-weight: bold',
+        'RESET': 'color: #8bc34a; font-weight: bold'
     };
 
     const style = categoryColors[category] || categoryColors.DEFAULT;
@@ -61,6 +58,124 @@ const logDebug = (category, ...args) => {
 // Global dialog stack to maintain proper editor hierarchy
 if (!window._simpleSwipeDialogStack) {
     window._simpleSwipeDialogStack = [];
+}
+
+/**
+ * Evaluates visibility conditions for a card
+ * @param {Array} conditions - Array of visibility conditions
+ * @param {Object} hass - Home Assistant object
+ * @returns {boolean} True if the card should be visible
+ */
+function evaluateVisibilityConditions(conditions, hass) {
+    if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+        return true; // No conditions means always visible
+    }
+
+    if (!hass) {
+        logDebug("VISIBILITY", "No hass object available for condition evaluation");
+        return true; // Default to visible if we can't evaluate
+    }
+
+    // All conditions must be true for the card to be visible (AND logic)
+    return conditions.every(condition => {
+        try {
+            return evaluateSingleCondition(condition, hass);
+        } catch (error) {
+            logDebug("VISIBILITY", "Error evaluating condition:", condition, error);
+            return true; // Default to visible on error
+        }
+    });
+}
+
+/**
+ * Evaluates a single visibility condition
+ * @param {Object} condition - The condition to evaluate
+ * @param {Object} hass - Home Assistant object
+ * @returns {boolean} True if the condition is met
+ */
+function evaluateSingleCondition(condition, hass) {
+    if (!condition || typeof condition !== 'object') {
+        return true;
+    }
+
+    const { condition: conditionType, entity, state, state_not } = condition;
+
+    switch (conditionType) {
+        case 'state':
+            if (!entity || !hass.states[entity]) {
+                logDebug("VISIBILITY", `Entity ${entity} not found for state condition`);
+                return false;
+            }
+
+            const entityState = hass.states[entity].state;
+            
+            if (state !== undefined) {
+                const expectedState = String(state);
+                const actualState = String(entityState);
+                const result = actualState === expectedState;
+                logDebug("VISIBILITY", `State condition: ${entity} = ${actualState}, expected: ${expectedState}, result: ${result}`);
+                return result;
+            }
+            
+            if (state_not !== undefined) {
+                const notExpectedState = String(state_not);
+                const actualState = String(entityState);
+                const result = actualState !== notExpectedState;
+                logDebug("VISIBILITY", `State not condition: ${entity} = ${actualState}, not expected: ${notExpectedState}, result: ${result}`);
+                return result;
+            }
+            
+            return true;
+
+        case 'numeric_state':
+            if (!entity || !hass.states[entity]) {
+                logDebug("VISIBILITY", `Entity ${entity} not found for numeric_state condition`);
+                return false;
+            }
+
+            const numericValue = parseFloat(hass.states[entity].state);
+            if (isNaN(numericValue)) {
+                return false;
+            }
+
+            let result = true;
+            if (condition.above !== undefined) {
+                result = result && numericValue > parseFloat(condition.above);
+            }
+            if (condition.below !== undefined) {
+                result = result && numericValue < parseFloat(condition.below);
+            }
+
+            logDebug("VISIBILITY", `Numeric state condition: ${entity} = ${numericValue}, result: ${result}`);
+            return result;
+
+        case 'screen':
+            // Screen size conditions
+            const media = condition.media_query;
+            if (media && window.matchMedia) {
+                const mediaQuery = window.matchMedia(media);
+                const result = mediaQuery.matches;
+                logDebug("VISIBILITY", `Screen condition: ${media}, result: ${result}`);
+                return result;
+            }
+            return true;
+
+        case 'user':
+            // User-based conditions
+            if (condition.users && Array.isArray(condition.users)) {
+                const currentUser = hass.user;
+                if (currentUser && currentUser.id) {
+                    const result = condition.users.includes(currentUser.id);
+                    logDebug("VISIBILITY", `User condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`);
+                    return result;
+                }
+            }
+            return true;
+
+        default:
+            logDebug("VISIBILITY", `Unknown condition type: ${conditionType}`);
+            return true; // Unknown conditions default to visible
+    }
 }
 
 /**
@@ -78,6 +193,7 @@ class SimpleSwipeCard extends HTMLElement {
         this._config = {};
         this._hass = null;
         this.cards = [];
+        this.visibleCardIndices = []; // New: track which cards are currently visible
         this.currentIndex = 0;
         this.slideWidth = 0;
         this.slideHeight = 0;
@@ -103,13 +219,33 @@ class SimpleSwipeCard extends HTMLElement {
         this._lastMoveTime = 0;
         this._isScrolling = false;
         this._swipeDirection = 'horizontal'; // Default swipe direction
-    
+        this._isGestureActive = false;
+        this._gestureStartTime = 0;
+        this._totalMovement = 0;
+        this._hasMovedDuringGesture = false;
+        this._gestureThreshold = 8; // Minimum movement to consider as gesture
+        this._clickBlockTimer = null;
+        this._isClickBlocked = false;
+        this._clickBlockDuration = 300; // Block clicks for 300ms after swipe
+        this._lastSwipeTime = 0;
+        this._swipeVelocityThreshold = 0.3; // Lowered threshold for velocity detection
+        
+        // Bind click prevention methods
+        this._boundPreventClick = this._preventClick.bind(this);
+        this._boundPreventPointerEvents = this._preventPointerEvents.bind(this);
+            
         // Auto-swipe state management
         this._autoSwipeTimer = null;
         this._autoSwipePaused = false;
         this._autoSwipePauseTimer = null;
         this._autoSwipeInProgress = false; // Flag to track if auto-swipe is in progress
         this._autoSwipeDirection = 1; // 1 for forward, -1 for backward
+    
+        // Reset-after state management with preservation
+        this._resetAfterTimer = null;
+        this._lastUserInteraction = 0;
+        this._isResettingAfterTimeout = false; // Flag to distinguish auto-reset from user action
+        this._resetAfterPreservedState = null; // NEW: Preserve timer state during rebuilds
     
         // Bind event handlers for proper cleanup
         this._boundHandleSwipeStart = this._handleSwipeStart.bind(this);
@@ -118,6 +254,7 @@ class SimpleSwipeCard extends HTMLElement {
         this._boundMouseMove = this._handleSwipeMove.bind(this);
         this._boundMouseUp = this._handleSwipeEnd.bind(this);
         this._boundAutoSwipe = this._performAutoSwipe.bind(this);
+        this._boundPerformResetAfter = this._performResetAfter.bind(this);
     
         // Store open dialogs for tracking
         this._activeChildEditors = new Set();
@@ -149,7 +286,10 @@ class SimpleSwipeCard extends HTMLElement {
             enable_loopback: false,
             swipe_direction: 'horizontal',
             enable_auto_swipe: false,
-            auto_swipe_interval: 2000
+            auto_swipe_interval: 2000,
+            enable_reset_after: false,
+            reset_after_timeout: 30000,
+            reset_target_card: 0
         };
     }
 
@@ -175,7 +315,10 @@ class SimpleSwipeCard extends HTMLElement {
                 enable_loopback: false,
                 swipe_direction: 'horizontal',
                 enable_auto_swipe: false,
-                auto_swipe_interval: 2000
+                auto_swipe_interval: 2000,
+                enable_reset_after: false,
+                reset_after_timeout: 30000,
+                reset_target_card: 0
             };
             if (this.isConnected) this._build();
             return;
@@ -230,6 +373,19 @@ class SimpleSwipeCard extends HTMLElement {
             }
         }
         
+        // Set defaults for reset-after options
+        if (this._config.enable_reset_after === undefined) this._config.enable_reset_after = false;
+        if (this._config.reset_after_timeout === undefined) {
+            this._config.reset_after_timeout = 30000; // 30 seconds default
+        } else {
+            // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
+            this._config.reset_after_timeout = parseInt(this._config.reset_after_timeout);
+            if (isNaN(this._config.reset_after_timeout) || this._config.reset_after_timeout < 5000) {
+                this._config.reset_after_timeout = 30000;
+            }
+        }
+        if (this._config.reset_target_card === undefined) this._config.reset_target_card = 0;
+        
         // Store the card_mod configuration if present
         if (config.card_mod) {
             logDebug("CARD_MOD", "Card-mod configuration detected", config.card_mod);
@@ -243,8 +399,11 @@ class SimpleSwipeCard extends HTMLElement {
         
         delete this._config.title; // Remove title if present (legacy)
 
+        // Evaluate visibility conditions and update visible indices
+        this._updateVisibleCardIndices();
+
         // Determine if rebuild is needed
-        const needsRebuild = !this.initialized || !this.isConnected || this.cards.length !== this._config.cards.length;
+        const needsRebuild = !this.initialized || !this.isConnected || this.cards.length !== this.visibleCardIndices.length;
 
         if (needsRebuild && this.isConnected) {
             logDebug("CONFIG", "setConfig triggering rebuild");
@@ -254,6 +413,75 @@ class SimpleSwipeCard extends HTMLElement {
             this._updateChildCardConfigs();
             this._updateLayoutOptions();
             this._manageAutoSwipe();
+        }
+    }
+
+    /**
+     * Updates the list of visible card indices based on visibility conditions
+     * @private
+     */
+    _updateVisibleCardIndices() {
+        if (!this._config?.cards || !this._hass) {
+            this.visibleCardIndices = [];
+            return;
+        }
+
+        const previousVisibleIndices = [...this.visibleCardIndices];
+        this.visibleCardIndices = [];
+
+        this._config.cards.forEach((cardConfig, index) => {
+            const isVisible = evaluateVisibilityConditions(cardConfig.visibility, this._hass);
+            if (isVisible) {
+                this.visibleCardIndices.push(index);
+            }
+        });
+
+        logDebug("VISIBILITY", `Visible cards updated: ${this.visibleCardIndices.length}/${this._config.cards.length} visible`, this.visibleCardIndices);
+
+        // If the currently visible cards changed, we need to adjust the current index
+        if (JSON.stringify(previousVisibleIndices) !== JSON.stringify(this.visibleCardIndices)) {
+            this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+        }
+    }
+
+    /**
+     * Adjusts the current index when visibility changes (improved version)
+     * @param {Array} previousVisibleIndices - The previously visible card indices
+     * @private
+     */
+    _adjustCurrentIndexForVisibility(previousVisibleIndices) {
+        if (this.visibleCardIndices.length === 0) {
+            this.currentIndex = 0;
+            return;
+        }
+
+        // Try to stay on the same actual card if it's still visible
+        const currentCardOriginalIndex = previousVisibleIndices[this.currentIndex];
+        const newVisiblePosition = this.visibleCardIndices.indexOf(currentCardOriginalIndex);
+
+        if (newVisiblePosition !== -1) {
+            // Current card is still visible, update position
+            this.currentIndex = newVisiblePosition;
+            logDebug("VISIBILITY", `Current card still visible, adjusted index to ${this.currentIndex}`);
+        } else {
+            // Current card is no longer visible, try to stay close to current position
+            const totalVisibleCards = this.visibleCardIndices.length;
+            
+            // Try to find the next best card to show:
+            // 1. If we were at the end and cards were added, stay at the end
+            // 2. If we were in the middle, try to stay in similar relative position
+            // 3. If all else fails, go to first card
+            
+            if (this.currentIndex >= totalVisibleCards) {
+                // We were at or past the end, go to last visible card
+                this.currentIndex = totalVisibleCards - 1;
+                logDebug("VISIBILITY", `Adjusted to last visible card: ${this.currentIndex}`);
+            } else {
+                // Try to maintain relative position, but don't go to first card automatically
+                this.currentIndex = Math.min(this.currentIndex, totalVisibleCards - 1);
+                this.currentIndex = Math.max(0, this.currentIndex);
+                logDebug("VISIBILITY", `Adjusted to maintain relative position: ${this.currentIndex}`);
+            }
         }
     }
 
@@ -271,8 +499,12 @@ class SimpleSwipeCard extends HTMLElement {
             enable_loopback: false,
             swipe_direction: 'horizontal',
             enable_auto_swipe: false,
-            auto_swipe_interval: 2000
+            auto_swipe_interval: 2000,
+            enable_reset_after: false,
+            reset_after_timeout: 30000,
+            reset_target_card: 0
         };
+        this.visibleCardIndices = [];
         if (this.isConnected) this._build();
     }
 
@@ -282,18 +514,19 @@ class SimpleSwipeCard extends HTMLElement {
      */
     _updateChildCardConfigs() {
         logDebug("CONFIG", "Updating child card configs");
-        if (!this.cards || this.cards.length !== this._config.cards.length) return;
+        if (!this.cards || this.cards.length !== this.visibleCardIndices.length) return;
 
-        this._config.cards.forEach((cardConfig, index) => {
-            const cardInstance = this.cards[index];
+        this.visibleCardIndices.forEach((originalIndex, visibleIndex) => {
+            const cardConfig = this._config.cards[originalIndex];
+            const cardInstance = this.cards[visibleIndex];
             if (cardInstance && !cardInstance.error && cardInstance.element?.setConfig) {
                 if (JSON.stringify(cardInstance.config) !== JSON.stringify(cardConfig)) {
-                    logDebug("CONFIG", "Updating config for card", index);
+                    logDebug("CONFIG", "Updating config for visible card", visibleIndex, "original index", originalIndex);
                     try {
                         cardInstance.element.setConfig(cardConfig);
                         cardInstance.config = JSON.parse(JSON.stringify(cardConfig));
                     } catch (e) {
-                        console.error(`Error setting config on child card ${index}:`, e);
+                        console.error(`Error setting config on child card ${visibleIndex}:`, e);
                     }
                 }
             }
@@ -317,8 +550,8 @@ class SimpleSwipeCard extends HTMLElement {
             return;
         }
 
-        // Update pagination visibility
-        if (showPagination && this.cards.length > 1) {
+        // Update pagination visibility - use visible cards count
+        if (showPagination && this.visibleCardIndices.length > 1) {
             if (!this.paginationElement) {
                 this._createPagination();
             } else {
@@ -345,7 +578,29 @@ class SimpleSwipeCard extends HTMLElement {
             return;
         }
         logDebug("INIT", "Setting hass");
+        const oldHass = this._hass;
         this._hass = hass;
+
+        // Update visibility when hass changes, but be careful about rebuilds
+        if (oldHass !== hass) {
+            const oldVisibleIndices = [...this.visibleCardIndices];
+            this._updateVisibleCardIndices();
+            
+            // Only rebuild if the visible cards actually changed significantly
+            const visibilityChanged = JSON.stringify(oldVisibleIndices) !== JSON.stringify(this.visibleCardIndices);
+            
+            if (visibilityChanged && this.initialized && this.isConnected) {
+                // Use a debounced rebuild to prevent rapid flickering
+                if (this._visibilityRebuildTimeout) {
+                    clearTimeout(this._visibilityRebuildTimeout);
+                }
+                this._visibilityRebuildTimeout = setTimeout(() => {
+                    if (this.isConnected) {
+                        this._build();
+                    }
+                }, 50);
+            }
+        }
 
         // Update hass for all child cards
         if (this.cards) {
@@ -405,6 +660,9 @@ class SimpleSwipeCard extends HTMLElement {
                                 cards: updatedCards
                             };
 
+                            // Update visibility after config change
+                            this._updateVisibleCardIndices();
+
                             // Fire our own config-changed event
                             const newEvent = new CustomEvent('config-changed', {
                                 detail: {
@@ -441,6 +699,9 @@ class SimpleSwipeCard extends HTMLElement {
                                 ...this._config,
                                 cards: updatedCards
                             };
+
+                            // Update visibility after config change
+                            this._updateVisibleCardIndices();
 
                             // Fire our own config-changed event
                             const newEvent = new CustomEvent('config-changed', {
@@ -487,7 +748,7 @@ class SimpleSwipeCard extends HTMLElement {
         } else if (this.initialized && this.cardContainer) {
             logDebug("INIT", "connectedCallback: Re-initializing observers and gestures.");
             if (!this.resizeObserver) this._setupResizeObserver();
-            if (this.cards.length > 1) {
+            if (this.visibleCardIndices.length > 1) {
                 this._removeSwiperGesture();
                 setTimeout(() => {
                     if (this.isConnected) this._addSwiperGesture();
@@ -500,7 +761,7 @@ class SimpleSwipeCard extends HTMLElement {
                 this._setupCardModObserver();
             }
 
-            // Initialize or resume auto-swipe if enabled
+            // Initialize or resume auto-swipe and reset-after if enabled
             this._manageAutoSwipe();
         }
     }
@@ -510,12 +771,21 @@ class SimpleSwipeCard extends HTMLElement {
      */
     disconnectedCallback() {
         logDebug("INIT", "disconnectedCallback");
+        
+        this._isDragging = false;
 
         // Safely remove observers and gestures
         try {
             this._removeResizeObserver();
             this._removeSwiperGesture();
             this._stopAutoSwipe();
+            this._stopResetAfterTimer();
+
+            // Clean up visibility rebuild timeout
+            if (this._visibilityRebuildTimeout) {
+                clearTimeout(this._visibilityRebuildTimeout);
+                this._visibilityRebuildTimeout = null;
+            }
 
             // Clean up card-mod observer
             if (this._cardModObserver) {
@@ -528,6 +798,14 @@ class SimpleSwipeCard extends HTMLElement {
             if (this._domObserver) {
                 this._domObserver.disconnect();
                 this._domObserver = null;
+            }
+
+            // Clean up click blocking timer (ENHANCED)
+            if (this._clickBlockTimer) {
+                clearTimeout(this._clickBlockTimer);
+                this._clickBlockTimer = null;
+                this._isClickBlocked = false;
+                logDebug("SWIPE", "Cleared click blocking timer on disconnect");
             }
         } catch (error) {
             console.warn("Error during cleanup:", error);
@@ -560,6 +838,60 @@ class SimpleSwipeCard extends HTMLElement {
     }
 
     /**
+     * Preserves reset-after timer state before rebuild
+     * @private
+     */
+    _preserveResetAfterState() {
+        if (!this._config.enable_reset_after || this._config.enable_auto_swipe) {
+            this._resetAfterPreservedState = null;
+            return;
+        }
+        
+        // Only preserve if timer was actually running
+        if (this._resetAfterTimer) {
+            const remainingTime = this._config.reset_after_timeout - (Date.now() - this._lastUserInteraction);
+            
+            if (remainingTime > 1000) { // Only preserve if more than 1 second left
+                this._resetAfterPreservedState = {
+                    remainingTime: Math.max(1000, remainingTime), // Minimum 1 second
+                    targetCard: this._config.reset_target_card,
+                    wasActive: true
+                };
+                logDebug("RESET", "Preserved reset-after state:", this._resetAfterPreservedState);
+            } else {
+                this._resetAfterPreservedState = null;
+            }
+        } else {
+            this._resetAfterPreservedState = null;
+        }
+    }
+
+    /**
+     * Restores reset-after timer state after rebuild
+     * @private
+     */
+    _restoreResetAfterState() {
+        if (!this._resetAfterPreservedState || !this._config.enable_reset_after || this._config.enable_auto_swipe) {
+            this._resetAfterPreservedState = null;
+            return;
+        }
+        
+        // Restore timer with remaining time
+        if (this._resetAfterPreservedState.wasActive && this.visibleCardIndices.length > 1) {
+            logDebug("RESET", "Restoring reset-after timer with remaining time:", this._resetAfterPreservedState.remainingTime);
+            
+            this._lastUserInteraction = Date.now() - (this._config.reset_after_timeout - this._resetAfterPreservedState.remainingTime);
+            
+            this._resetAfterTimer = setTimeout(
+                this._boundPerformResetAfter,
+                this._resetAfterPreservedState.remainingTime
+            );
+        }
+        
+        this._resetAfterPreservedState = null;
+    }
+
+    /**
      * Builds or rebuilds the entire card
      * @private
      */
@@ -576,12 +908,16 @@ class SimpleSwipeCard extends HTMLElement {
         this.building = true;
         logDebug("INIT", "Starting build...");
 
+        // NEW: Preserve reset-after state before rebuild
+        this._preserveResetAfterState();
+
         // Reset state
         this.cards = [];
         this.currentIndex = 0;
         this._removeResizeObserver();
         this._removeSwiperGesture();
         this._stopAutoSwipe();
+        this._stopResetAfterTimer(); // This will be restored later
         if (this.shadowRoot) this.shadowRoot.innerHTML = '';
 
         const root = this.shadowRoot;
@@ -610,6 +946,9 @@ class SimpleSwipeCard extends HTMLElement {
         this.sliderElement.setAttribute('data-swipe-direction', this._swipeDirection);
         this.cardContainer.appendChild(this.sliderElement);
         root.appendChild(this.cardContainer);
+
+        // Update visible card indices
+        this._updateVisibleCardIndices();
 
         // Handle empty state (PREVIEW)
         if (this._config.cards.length === 0) {
@@ -661,40 +1000,66 @@ class SimpleSwipeCard extends HTMLElement {
             return;
         }
 
-        // Build cards - with optimization for loopback mode
-        logDebug("INIT", "Building cards:", this._config.cards.length);
+        // Handle case where no cards are visible
+        if (this.visibleCardIndices.length === 0) {
+            logDebug("INIT", "No visible cards, showing empty state.");
+            const emptyContainer = document.createElement('div');
+            emptyContainer.className = 'preview-container';
+            emptyContainer.innerHTML = `
+                <div class="preview-icon-container">
+                    <ha-icon icon="mdi:eye-off" style="color: var(--secondary-text-color); font-size: 48px; width: 48px; height: 48px;"></ha-icon>
+                </div>
+                <div class="preview-text-container">
+                    <div class="preview-title">No Visible Cards</div>
+                    <div class="preview-description">All cards in this swipe card are currently hidden due to their visibility conditions.</div>
+                </div>
+            `;
+
+            root.innerHTML = '';
+            root.appendChild(style);
+            root.appendChild(emptyContainer);
+
+            this.initialized = true;
+            this.building = false;
+            return;
+        }
+
+        // Build cards - only for visible cards
+        logDebug("INIT", "Building visible cards:", this.visibleCardIndices.length, "out of", this._config.cards.length);
         
-        // Determine which cards to load initially
+        // Determine which visible cards to load initially
         let cardsToLoad;
-        if (this._config.cards.length <= 3) {
-            // For 3 or fewer cards, load all of them
-            cardsToLoad = Array.from({ length: this._config.cards.length }, (_, i) => i);
+        if (this.visibleCardIndices.length <= 3) {
+            // For 3 or fewer visible cards, load all of them
+            cardsToLoad = Array.from({ length: this.visibleCardIndices.length }, (_, i) => i);
         } else {
             // For more cards, load current, prev, and next (with loopback considerations)
-            cardsToLoad = [0]; // Start with first card
+            cardsToLoad = [0]; // Start with first visible card
             
-            // Add prev card (last card if loopback enabled)
+            // Add prev card (last visible card if loopback enabled)
             if (this._config.enable_loopback) {
-                cardsToLoad.push(this._config.cards.length - 1);
+                cardsToLoad.push(this.visibleCardIndices.length - 1);
             }
             
             // Add next card
-            if (this._config.cards.length > 1) {
+            if (this.visibleCardIndices.length > 1) {
                 cardsToLoad.push(1);
             }
         }
         
-        const cardPromises = cardsToLoad.map((index) => {
-            return this._createCard(this._config.cards[index], index, helpers);
+        const cardPromises = cardsToLoad.map((visibleIndex) => {
+            const originalIndex = this.visibleCardIndices[visibleIndex];
+            return this._createCard(this._config.cards[originalIndex], visibleIndex, originalIndex, helpers);
         });
         
         await Promise.allSettled(cardPromises);
 
         // Sort and append cards
-        this.cards.filter(Boolean).sort((a, b) => a.index - b.index).forEach(cardData => {
+        this.cards.filter(Boolean).sort((a, b) => a.visibleIndex - b.visibleIndex).forEach(cardData => {
             if (cardData.slide) {
-                // Add data-index attribute for event targeting
-                cardData.slide.setAttribute('data-index', cardData.index);
+                // Add data-index attribute for event targeting (use original index)
+                cardData.slide.setAttribute('data-index', cardData.originalIndex);
+                cardData.slide.setAttribute('data-visible-index', cardData.visibleIndex);
                 // Add card type attribute for debugging and event filtering
                 if (cardData.config && cardData.config.type) {
                     cardData.slide.setAttribute('data-card-type', cardData.config.type);
@@ -713,6 +1078,9 @@ class SimpleSwipeCard extends HTMLElement {
         this.initialized = true;
         this.building = false;
         logDebug("INIT", "Build finished.");
+        
+        // NEW: Restore reset-after state after rebuild
+        this._restoreResetAfterState();
     }
 
     /**
@@ -1032,15 +1400,22 @@ class SimpleSwipeCard extends HTMLElement {
     /**
      * Creates a card element and adds it to the slider
      * @param {Object} cardConfig - Configuration for the card
-     * @param {number} index - Index of the card
+     * @param {number} visibleIndex - Index in the visible cards array
+     * @param {number} originalIndex - Original index in the full cards array
      * @param {Object} helpers - Home Assistant card helpers
      * @private
      */
-    async _createCard(cardConfig, index, helpers) {
+    async _createCard(cardConfig, visibleIndex, originalIndex, helpers) {
         const slideDiv = document.createElement('div');
         slideDiv.className = 'slide';
         let cardElement;
-        let cardData = { index, slide: slideDiv, config: JSON.parse(JSON.stringify(cardConfig)), error: false };
+        let cardData = { 
+            visibleIndex, 
+            originalIndex, 
+            slide: slideDiv, 
+            config: JSON.parse(JSON.stringify(cardConfig)), 
+            error: false 
+        };
 
         try {
             cardElement = await helpers.createCardElement(cardConfig);
@@ -1067,7 +1442,7 @@ class SimpleSwipeCard extends HTMLElement {
             });
             slideDiv.appendChild(cardElement);
         } catch (e) {
-            logDebug("ERROR", `Error creating card ${index}:`, cardConfig, e);
+            logDebug("ERROR", `Error creating card ${visibleIndex} (original ${originalIndex}):`, cardConfig, e);
             cardData.error = true;
             // Create error card with user-friendly message
             const errorCard = await helpers.createErrorCardElement({
@@ -1078,7 +1453,7 @@ class SimpleSwipeCard extends HTMLElement {
             cardData.element = errorCard;
             slideDiv.appendChild(errorCard);
         }
-        this.cards[index] = cardData;
+        this.cards[visibleIndex] = cardData;
     }
 
     /**
@@ -1090,13 +1465,13 @@ class SimpleSwipeCard extends HTMLElement {
         this.paginationElement = null;
         const showPagination = this._config.show_pagination !== false;
     
-        if (showPagination && this._config.cards && this._config.cards.length > 1) {
-            logDebug("INIT", "Creating pagination");
+        if (showPagination && this.visibleCardIndices.length > 1) {
+            logDebug("INIT", "Creating pagination for", this.visibleCardIndices.length, "visible cards");
             this.paginationElement = document.createElement('div');
             this.paginationElement.className = `pagination ${this._swipeDirection}`;
             
-            // Use this._config.cards.length instead of this.cards.length
-            for (let i = 0; i < this._config.cards.length; i++) {
+            // Use visible cards count for pagination
+            for (let i = 0; i < this.visibleCardIndices.length; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'pagination-dot';
                 if (i === this.currentIndex) dot.classList.add('active');
@@ -1148,39 +1523,38 @@ class SimpleSwipeCard extends HTMLElement {
         this.slideWidth = containerWidth;
         this.slideHeight = containerHeight;
 
-        const totalCards = this._config.cards ? this._config.cards.length : 0;
+        const totalVisibleCards = this.visibleCardIndices.length;
 
         // Adjust index if out of bounds
-        this.currentIndex = Math.max(0, Math.min(this.currentIndex, totalCards - 1));
+        this.currentIndex = Math.max(0, Math.min(this.currentIndex, totalVisibleCards - 1));
 
         // Apply matching border radius to all *loaded* slides
-        // this.cards refers to the array of loaded card elements
         const cardBorderRadius = getComputedStyle(this.cardContainer).borderRadius;
         this.cards.forEach(cardData => {
-            if (cardData && cardData.slide) { // Check if cardData exists
+            if (cardData && cardData.slide) {
                 cardData.slide.style.borderRadius = cardBorderRadius;
             }
         });
 
-        this.updateSlider(false); // updateSlider will use _config.cards.length
+        this.updateSlider(false);
 
         this._setupResizeObserver();
 
-        // Add swipe gestures if needed
-        if (totalCards > 1) {
+        // Add swipe gestures if needed (based on visible cards)
+        if (totalVisibleCards > 1) {
             this._addSwiperGesture();
         } else {
             this._removeSwiperGesture();
         }
 
-        logDebug("INIT", "Layout finished, slideWidth:", this.slideWidth, "slideHeight:", this.slideHeight, "currentIndex:", this.currentIndex);
+        logDebug("INIT", "Layout finished, slideWidth:", this.slideWidth, "slideHeight:", this.slideHeight, "currentIndex:", this.currentIndex, "visible cards:", totalVisibleCards);
         
         // If loopback is enabled, preload relevant cards
-        if (this._config.enable_loopback && totalCards > 1) {
+        if (this._config.enable_loopback && totalVisibleCards > 1) {
             this._preloadAdjacentCards(this.currentIndex);
         }
         
-        // Setup auto-swipe if enabled
+        // Setup auto-swipe and reset-after if enabled
         this._manageAutoSwipe();
     }
 
@@ -1194,11 +1568,14 @@ class SimpleSwipeCard extends HTMLElement {
         // Stop any existing auto-swipe
         this._stopAutoSwipe();
         
-        // If auto-swipe is enabled and we have multiple cards, start it
-        if (this._config.enable_auto_swipe && this.cards && this.cards.length > 1) {
+        // If auto-swipe is enabled and we have multiple visible cards, start it
+        if (this._config.enable_auto_swipe && this.visibleCardIndices.length > 1) {
             logDebug("AUTO", "Starting auto-swipe with interval:", this._config.auto_swipe_interval);
             this._startAutoSwipe();
         }
+        
+        // Manage reset-after when auto-swipe state changes
+        this._manageResetAfter();
     }
     
     /**
@@ -1209,16 +1586,13 @@ class SimpleSwipeCard extends HTMLElement {
         if (this._autoSwipeTimer) this._stopAutoSwipe();
         
         this._autoSwipeDirection = 1; // Reset direction to forward when starting/restarting
+        this._autoSwipePaused = false; // Ensure we're not paused
     
-        if (!this._autoSwipePaused) {
-            this._autoSwipeTimer = setInterval(
-                this._boundAutoSwipe, 
-                this._config.auto_swipe_interval
-            );
-            logDebug("AUTO", "Auto-swipe timer started");
-        } else {
-            logDebug("AUTO", "Auto-swipe is paused, not starting timer");
-        }
+        this._autoSwipeTimer = setInterval(
+            this._boundAutoSwipe, 
+            this._config.auto_swipe_interval
+        );
+        logDebug("AUTO", "Auto-swipe timer started with interval:", this._config.auto_swipe_interval);
     }
     
     /**
@@ -1248,12 +1622,15 @@ class SimpleSwipeCard extends HTMLElement {
     _pauseAutoSwipe(duration = 5000) {
         if (!this._config.enable_auto_swipe) return;
         
-        // Stop any existing auto-swipe and pause timers
-        this._stopAutoSwipe();
+        logDebug("AUTO", `Auto-swipe paused for ${duration}ms`);
         
         // Set the pause flag
         this._autoSwipePaused = true;
-        logDebug("AUTO", `Auto-swipe paused for ${duration}ms`);
+        
+        // Clear any existing pause timer
+        if (this._autoSwipePauseTimer) {
+            clearTimeout(this._autoSwipePauseTimer);
+        }
         
         // Set a timer to unpause
         this._autoSwipePauseTimer = setTimeout(() => {
@@ -1272,66 +1649,52 @@ class SimpleSwipeCard extends HTMLElement {
      * @private
      */
     _performAutoSwipe() {
-        const totalCards = this._config.cards.length;
+        const totalVisibleCards = this.visibleCardIndices.length;
     
-        if (!this.isConnected || !this.initialized || !this._config.cards || totalCards <= 0) { // Allow 1 card for potential direction change setup if logic demands
-            if (this._autoSwipeTimer) { // Stop if conditions are not met
-                 logDebug("AUTO", "Stopping auto-swipe, conditions not met or no cards.");
+        if (!this.isConnected || !this.initialized || totalVisibleCards <= 1) {
+            if (this._autoSwipeTimer) {
+                 logDebug("AUTO", "Stopping auto-swipe, conditions not met or insufficient visible cards.");
                  this._stopAutoSwipe();
             }
             return;
         }
-        
-        // If only one card, auto-swipe doesn't make sense.
-        if (totalCards === 1) {
-            if (this._autoSwipeTimer) {
-                logDebug("AUTO", "Stopping auto-swipe, only one card.");
-                this._stopAutoSwipe();
-            }
+
+        // Skip if currently dragging
+        if (this._isDragging) {
+            logDebug("AUTO", "Skipping auto-swipe: currently dragging");
             return;
         }
         
-        logDebug("AUTO", `Performing auto-swipe. Current index: ${this.currentIndex}, Direction: ${this._autoSwipeDirection}, Total cards: ${totalCards}`);
+        logDebug("AUTO", `Performing auto-swipe. Current index: ${this.currentIndex}, Direction: ${this._autoSwipeDirection}, Total visible cards: ${totalVisibleCards}`);
         
         let nextIndex;
     
         if (this._config.enable_loopback) {
-            // For loopback, always use the current _autoSwipeDirection (which should be 1 unless changed elsewhere, though simple loopback typically is forward)
-            // If _autoSwipeDirection can be -1, this logic needs to handle it or ensure it's always 1 for loopback.
-            // Assuming simple forward loopback:
             nextIndex = this.currentIndex + 1; 
-            if (nextIndex >= totalCards) {
+            if (nextIndex >= totalVisibleCards) {
                 nextIndex = 0;
             }
-            // If we wanted loopback to respect _autoSwipeDirection:
-            // nextIndex = this.currentIndex + this._autoSwipeDirection;
-            // if (nextIndex >= totalCards) nextIndex = 0;
-            // else if (nextIndex < 0) nextIndex = totalCards - 1;
-    
         } else {
             // Ping-pong logic for non-loopback
             if (this._autoSwipeDirection === 1) { // Moving forward
-                if (this.currentIndex >= totalCards - 1) { // At the last card
+                if (this.currentIndex >= totalVisibleCards - 1) { // At the last visible card
                     this._autoSwipeDirection = -1; // Change direction to backward
                     nextIndex = this.currentIndex - 1;
                 } else {
                     nextIndex = this.currentIndex + 1;
                 }
             } else { // Moving backward (this._autoSwipeDirection === -1)
-                if (this.currentIndex <= 0) { // At the first card
+                if (this.currentIndex <= 0) { // At the first visible card
                     this._autoSwipeDirection = 1; // Change direction to forward
                     nextIndex = this.currentIndex + 1;
                 } else {
                     nextIndex = this.currentIndex - 1;
                 }
             }
-            // Ensure nextIndex is valid, especially if totalCards is small (e.g. 1, though caught above)
-            if (totalCards > 0) { // Should always be true here due to earlier checks
-                 nextIndex = Math.max(0, Math.min(nextIndex, totalCards - 1));
-            }
+            nextIndex = Math.max(0, Math.min(nextIndex, totalVisibleCards - 1));
         }
         
-        logDebug("AUTO", `Calculated next index: ${nextIndex}, New direction (if changed): ${this._autoSwipeDirection}`);
+        logDebug("AUTO", `Going to next visible index: ${nextIndex}`);
     
         this._autoSwipeInProgress = true;
         this.goToSlide(nextIndex);
@@ -1339,60 +1702,177 @@ class SimpleSwipeCard extends HTMLElement {
     }
 
     /**
-     * Preloads adjacent cards when needed (for loopback mode)
-     * @param {number} currentIndex - The current card index
+     * Manages the reset-after functionality based on configuration
      * @private
      */
-    _preloadAdjacentCards(currentIndex) {
-        if (!this._config || !this._config.cards || !this._hass || !this.initialized) return;
+    _manageResetAfter() {
+        if (!this.initialized || !this.isConnected) return;
         
-        const totalCards = this._config.cards.length;
-        if (totalCards <= 1) return;
+        // Stop any existing reset-after timer
+        this._stopResetAfterTimer();
         
-        // In loopback mode, we need to preload the previous and next cards,
-        // which might be the last and first cards respectively
+        // Only enable reset-after if it's configured AND auto-swipe is disabled
+        if (this._config.enable_reset_after && 
+            !this._config.enable_auto_swipe && 
+            this.visibleCardIndices.length > 1) {
+            logDebug("RESET", "Reset-after feature enabled with timeout:", this._config.reset_after_timeout);
+            // Timer will be started after next user interaction
+        } else {
+            logDebug("RESET", "Reset-after feature disabled", {
+                enabled: this._config.enable_reset_after,
+                autoSwipeDisabled: !this._config.enable_auto_swipe,
+                multipleCards: this.visibleCardIndices.length > 1
+            });
+        }
+    }
+
+    /**
+     * Starts the reset-after timer
+     * @private
+     */
+    _startResetAfterTimer() {
+        // Only start if enabled, auto-swipe is off, and we have multiple visible cards
+        if (!this._config.enable_reset_after || 
+            this._config.enable_auto_swipe || 
+            this.visibleCardIndices.length <= 1 ||
+            !this.initialized ||
+            !this.isConnected) {
+            return;
+        }
+        
+        this._stopResetAfterTimer();
+        this._lastUserInteraction = Date.now();
+        
+        logDebug("RESET", `Starting reset-after timer: ${this._config.reset_after_timeout}ms`);
+        
+        this._resetAfterTimer = setTimeout(
+            this._boundPerformResetAfter,
+            this._config.reset_after_timeout
+        );
+    }
+
+    /**
+     * Stops the reset-after timer
+     * @private
+     */
+    _stopResetAfterTimer() {
+        if (this._resetAfterTimer) {
+            clearTimeout(this._resetAfterTimer);
+            this._resetAfterTimer = null;
+            logDebug("RESET", "Reset-after timer stopped");
+        }
+    }
+
+    /**
+     * Performs the reset after timeout (improved version)
+     * @private
+     */
+    _performResetAfter() {
+        const totalVisibleCards = this.visibleCardIndices.length;
+        
+        if (!this.isConnected || !this.initialized || totalVisibleCards <= 1) {
+            logDebug("RESET", "Reset-after skipped: conditions not met");
+            return;
+        }
+        
+        // Determine target card index (convert from 1-based YAML to 0-based internal)
+        let targetIndex = (parseInt(this._config.reset_target_card) || 1) - 1;
+        
+        // Convert from original card index to visible card index
+        const targetOriginalIndex = targetIndex;
+        const targetVisibleIndex = this.visibleCardIndices.indexOf(targetOriginalIndex);
+        
+        if (targetVisibleIndex !== -1) {
+            targetIndex = targetVisibleIndex;
+            logDebug("RESET", `Target card ${this._config.reset_target_card} is visible at position ${targetIndex}`);
+        } else {
+            // Target card is not visible, find the closest visible card
+            // Look for the next visible card after the target
+            let closestVisibleIndex = 0;
+            for (let i = 0; i < this.visibleCardIndices.length; i++) {
+                if (this.visibleCardIndices[i] >= targetOriginalIndex) {
+                    closestVisibleIndex = i;
+                    break;
+                }
+            }
+            targetIndex = closestVisibleIndex;
+            logDebug("RESET", `Target card ${this._config.reset_target_card} not visible, using closest visible card at position ${targetIndex}`);
+        }
+        
+        // Ensure target is within visible cards range
+        if (targetIndex >= totalVisibleCards) {
+            targetIndex = 0; // Default to first visible card
+            logDebug("RESET", `Target index out of range, using first visible card`);
+        }
+        
+        // Only reset if we're not already at the target
+        if (this.currentIndex !== targetIndex) {
+            logDebug("RESET", `Performing reset: current=${this.currentIndex}, target=${targetIndex}, timeout=${this._config.reset_after_timeout}ms`);
+            
+            this._isResettingAfterTimeout = true;
+            this.goToSlide(targetIndex);
+            this._isResettingAfterTimeout = false;
+        } else {
+            logDebug("RESET", "Reset-after skipped: already at target card");
+        }
+    }
+
+    /**
+     * Preloads adjacent cards when needed (for loopback mode)
+     * @param {number} currentVisibleIndex - The current visible card index
+     * @private
+     */
+    _preloadAdjacentCards(currentVisibleIndex) {
+        if (!this.visibleCardIndices || !this._hass || !this.initialized) return;
+        
+        const totalVisibleCards = this.visibleCardIndices.length;
+        if (totalVisibleCards <= 1) return;
+        
+        // In loopback mode, we need to preload the previous and next cards
         const loopbackEnabled = this._config.enable_loopback === true;
         
-        // Determine which cards to preload
-        const cardsToLoad = [currentIndex]; // Always include current card
+        // Determine which visible cards to preload
+        const visibleCardsToLoad = [currentVisibleIndex]; // Always include current visible card
         
-        // Add previous card
-        if (currentIndex > 0) {
-            cardsToLoad.push(currentIndex - 1);
+        // Add previous visible card
+        if (currentVisibleIndex > 0) {
+            visibleCardsToLoad.push(currentVisibleIndex - 1);
         } else if (loopbackEnabled) {
-            // In loopback mode, when on first card, preload the last card
-            cardsToLoad.push(totalCards - 1);
+            // In loopback mode, when on first visible card, preload the last visible card
+            visibleCardsToLoad.push(totalVisibleCards - 1);
         }
         
-        // Add next card
-        if (currentIndex < totalCards - 1) {
-            cardsToLoad.push(currentIndex + 1);
+        // Add next visible card
+        if (currentVisibleIndex < totalVisibleCards - 1) {
+            visibleCardsToLoad.push(currentVisibleIndex + 1);
         } else if (loopbackEnabled) {
-            // In loopback mode, when on last card, preload the first card
-            cardsToLoad.push(0);
+            // In loopback mode, when on last visible card, preload the first visible card
+            visibleCardsToLoad.push(0);
         }
         
-        // Find which cards need to be created
-        const cardsToCreate = cardsToLoad.filter(index => {
-            return !this.cards[index] || this.cards[index].error;
+        // Find which visible cards need to be created
+        const visibleCardsToCreate = visibleCardsToLoad.filter(visibleIndex => {
+            return !this.cards[visibleIndex] || this.cards[visibleIndex].error;
         });
         
-        if (cardsToCreate.length === 0) return;
+        if (visibleCardsToCreate.length === 0) return;
         
         // Create the missing cards
-        logDebug("INIT", "Preloading cards for loopback:", cardsToCreate);
+        logDebug("INIT", "Preloading visible cards for loopback:", visibleCardsToCreate);
         
         HELPERS.then(helpers => {
-            cardsToCreate.forEach(async (index) => {
-                if (!this.cards[index] || this.cards[index].error) {
-                    await this._createCard(this._config.cards[index], index, helpers);
+            visibleCardsToCreate.forEach(async (visibleIndex) => {
+                const originalIndex = this.visibleCardIndices[visibleIndex];
+                if (!this.cards[visibleIndex] || this.cards[visibleIndex].error) {
+                    await this._createCard(this._config.cards[originalIndex], visibleIndex, originalIndex, helpers);
                     
                     // Add the card to the DOM if not already there, ensuring correct order
-                    if (this.cards[index] && this.cards[index].slide && !this.sliderElement.contains(this.cards[index].slide)) {
+                    if (this.cards[visibleIndex] && this.cards[visibleIndex].slide && !this.sliderElement.contains(this.cards[visibleIndex].slide)) {
                         // Set attributes
-                        this.cards[index].slide.setAttribute('data-index', index);
-                        if (this.cards[index].config && this.cards[index].config.type) {
-                            this.cards[index].slide.setAttribute('data-card-type', this.cards[index].config.type);
+                        this.cards[visibleIndex].slide.setAttribute('data-index', originalIndex);
+                        this.cards[visibleIndex].slide.setAttribute('data-visible-index', visibleIndex);
+                        if (this.cards[visibleIndex].config && this.cards[visibleIndex].config.type) {
+                            this.cards[visibleIndex].slide.setAttribute('data-card-type', this.cards[visibleIndex].config.type);
                         }
                         
                         // Find the correct position to insert this card
@@ -1401,22 +1881,22 @@ class SimpleSwipeCard extends HTMLElement {
                         // Get all existing slide elements
                         const existingSlides = Array.from(this.sliderElement.children);
                         
-                        // Find the first slide with a higher index than the current one
+                        // Find the first slide with a higher visible index than the current one
                         for (const slide of existingSlides) {
-                            const slideIndex = parseInt(slide.getAttribute('data-index'), 10);
-                            if (!isNaN(slideIndex) && slideIndex > index) {
+                            const slideVisibleIndex = parseInt(slide.getAttribute('data-visible-index'), 10);
+                            if (!isNaN(slideVisibleIndex) && slideVisibleIndex > visibleIndex) {
                                 // Insert before this slide
-                                this.sliderElement.insertBefore(this.cards[index].slide, slide);
+                                this.sliderElement.insertBefore(this.cards[visibleIndex].slide, slide);
                                 inserted = true;
-                                logDebug("INIT", `Inserted card ${index} before card ${slideIndex}`);
+                                logDebug("INIT", `Inserted visible card ${visibleIndex} before visible card ${slideVisibleIndex}`);
                                 break;
                             }
                         }
                         
                         // If no insertion point was found, append at the end
                         if (!inserted) {
-                            this.sliderElement.appendChild(this.cards[index].slide);
-                            logDebug("INIT", `Appended card ${index} at the end`);
+                            this.sliderElement.appendChild(this.cards[visibleIndex].slide);
+                            logDebug("INIT", `Appended visible card ${visibleIndex} at the end`);
                         }
                         
                         // Force a recalculation of layout after insertion
@@ -1502,19 +1982,28 @@ class SimpleSwipeCard extends HTMLElement {
     // --- Swipe Gesture Handling ---
 
     /**
-     * Removes swipe event listeners
+     * Enhanced method to remove swipe gesture listeners
      * @private
      */
     _removeSwiperGesture() {
         logDebug("SWIPE", "Attempting to remove swipe listeners.");
         if (this.cardContainer) {
+            // Remove swipe gesture listeners
             this.cardContainer.removeEventListener('touchstart', this._boundHandleSwipeStart, { passive: true });
             this.cardContainer.removeEventListener('touchmove', this._boundHandleSwipeMove, { passive: false });
             this.cardContainer.removeEventListener('touchend', this._boundHandleSwipeEnd, { passive: true });
             this.cardContainer.removeEventListener('touchcancel', this._boundHandleSwipeEnd, { passive: true });
             this.cardContainer.removeEventListener('mousedown', this._boundHandleSwipeStart, { passive: false });
+            
+            // Remove click prevention listeners
+            this.cardContainer.removeEventListener('click', this._boundPreventClick, { capture: true });
+            this.cardContainer.removeEventListener('pointerdown', this._boundPreventPointerEvents, { capture: true });
+            this.cardContainer.removeEventListener('pointerup', this._boundPreventPointerEvents, { capture: true });
+            
             logDebug("SWIPE", "Removed swipe listeners from cardContainer.");
         }
+        
+        // Clean up window listeners
         window.removeEventListener('mousemove', this._boundMouseMove, { passive: false });
         window.removeEventListener('mouseup', this._boundMouseUp, { passive: true });
         logDebug("SWIPE", "Removed potential swipe listeners from window.");
@@ -1522,35 +2011,102 @@ class SimpleSwipeCard extends HTMLElement {
         // Reset state flags
         this._isDragging = false;
         this._isScrolling = false;
+        
+        // Clear click blocking timer
+        if (this._clickBlockTimer) {
+            clearTimeout(this._clickBlockTimer);
+            this._clickBlockTimer = null;
+            this._isClickBlocked = false;
+        }
     }
 
     /**
-     * Adds swipe event listeners
+     * Enhanced method to add swipe gesture listeners with click prevention
      * @private
      */
     _addSwiperGesture() {
         this._removeSwiperGesture();
-        if (!this.cardContainer || this.cards.length <= 1 || !this.initialized) {
-            logDebug("SWIPE", "Skipping addSwiperGesture", { container: !!this.cardContainer, count: this.cards.length, init: this.initialized });
+        if (!this.cardContainer || this.visibleCardIndices.length <= 1 || !this.initialized) {
+            logDebug("SWIPE", "Skipping addSwiperGesture", { 
+                container: !!this.cardContainer, 
+                visibleCount: this.visibleCardIndices.length, 
+                init: this.initialized 
+            });
             return;
         }
-        logDebug("SWIPE", "Adding swipe listeners.");
+        logDebug("SWIPE", "Adding swipe listeners with click prevention.");
 
-        // Add listeners using the bound handlers
+        // Add swipe gesture listeners
         this.cardContainer.addEventListener('touchstart', this._boundHandleSwipeStart, { passive: true });
         this.cardContainer.addEventListener('touchmove', this._boundHandleSwipeMove, { passive: false });
         this.cardContainer.addEventListener('touchend', this._boundHandleSwipeEnd, { passive: true });
         this.cardContainer.addEventListener('touchcancel', this._boundHandleSwipeEnd, { passive: true });
         this.cardContainer.addEventListener('mousedown', this._boundHandleSwipeStart, { passive: false });
+        
+        // Add comprehensive click prevention listeners
+        this.cardContainer.addEventListener('click', this._boundPreventClick, { capture: true });
+        this.cardContainer.addEventListener('pointerdown', this._boundPreventPointerEvents, { capture: true });
+        this.cardContainer.addEventListener('pointerup', this._boundPreventPointerEvents, { capture: true });
     }
 
     /**
-     * Handles swipe start events
+     * Prevents click events during and after swipe gestures
+     * @param {Event} e - Click event to potentially prevent
+     * @private
+     */
+    _preventClick(e) {
+        if (this._isClickBlocked || this._isDragging) {
+            logDebug("SWIPE", "Click prevented during/after swipe gesture");
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    }
+
+    /**
+     * Prevents pointer events during swipe gestures
+     * @param {Event} e - Pointer event to potentially prevent
+     * @private
+     */
+    _preventPointerEvents(e) {
+        if (this._isDragging && this._hasMovedDuringGesture) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    }
+
+    /**
+     * Blocks clicks for a specified duration
+     * @param {number} duration - Duration to block clicks in milliseconds
+     * @private
+     */
+    _blockClicksTemporarily(duration = this._clickBlockDuration) {
+        this._isClickBlocked = true;
+        this._lastSwipeTime = Date.now();
+        
+        if (this._clickBlockTimer) {
+            clearTimeout(this._clickBlockTimer);
+        }
+        
+        this._clickBlockTimer = setTimeout(() => {
+            this._isClickBlocked = false;
+            this._clickBlockTimer = null;
+            logDebug("SWIPE", "Click blocking period ended");
+        }, duration);
+        
+        logDebug("SWIPE", `Blocking clicks for ${duration}ms`);
+    }
+
+    /**
+     * Enhanced swipe start handler - simplified
      * @param {Event} e - Touch or mouse event
      * @private
      */
     _handleSwipeStart(e) {
         logDebug("SWIPE", "Swipe Start:", e.type);
+        
         if (this._isDragging || (e.type === 'mousedown' && e.button !== 0)) {
             logDebug("SWIPE", "Swipe Start ignored (already dragging or wrong button)");
             return;
@@ -1561,15 +2117,21 @@ class SimpleSwipeCard extends HTMLElement {
             return;
         }
 
+        // Reset gesture state
         this._isDragging = true;
         this._isScrolling = false;
+        this._hasMovedDuringGesture = false;
+        this._totalMovement = 0;
+        this._gestureStartTime = Date.now();
+        this._isGestureActive = true; // Mark gesture as active
+
         const isTouch = e.type === 'touchstart';
         const point = isTouch ? e.touches[0] : e;
         this._startX = point.clientX;
         this._startY = point.clientY;
         this._currentX = this._startX;
         this._currentY = this._startY;
-        this._lastMoveTime = Date.now();
+        this._lastMoveTime = this._gestureStartTime;
 
         if (this.sliderElement) {
             const style = window.getComputedStyle(this.sliderElement);
@@ -1580,12 +2142,6 @@ class SimpleSwipeCard extends HTMLElement {
             }
             this.sliderElement.style.transition = this._getTransitionStyle(false);
             this.sliderElement.style.cursor = 'grabbing';
-            logDebug("SWIPE", "Swipe Start Details:", {
-                startX: this._startX, 
-                startY: this._startY, 
-                initialTransform: this._initialTransform,
-                direction: this._swipeDirection
-            });
         }
 
         if (e.type === 'mousedown') {
@@ -1602,13 +2158,12 @@ class SimpleSwipeCard extends HTMLElement {
     }
 
     /**
-     * Handles swipe move events
+     * Enhanced swipe move handler - simplified
      * @param {Event} e - Touch or mouse event
      * @private
      */
     _handleSwipeMove(e) {
         if (!this._isDragging) return;
-        logDebug("SWIPE", "Swipe Move");
 
         const isTouch = e.type === 'touchmove';
         const point = isTouch ? e.touches[0] : e;
@@ -1618,6 +2173,10 @@ class SimpleSwipeCard extends HTMLElement {
         const deltaX = clientX - this._startX;
         const deltaY = clientY - this._startY;
         const currentTime = Date.now();
+
+        // Calculate total movement distance
+        const movementDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        this._totalMovement = Math.max(this._totalMovement, movementDistance);
 
         // Determine if this is a horizontal or vertical swipe based on configuration
         const isHorizontal = this._swipeDirection === 'horizontal';
@@ -1630,11 +2189,19 @@ class SimpleSwipeCard extends HTMLElement {
         if (!this._isScrolling && Math.abs(secondaryDelta) > Math.abs(primaryDelta) && Math.abs(secondaryDelta) > 10) {
             logDebug("SWIPE", `${isHorizontal ? 'Vertical' : 'Horizontal'} scroll detected, cancelling ${isHorizontal ? 'horizontal' : 'vertical'} drag.`);
             this._isScrolling = true;
+            this._isGestureActive = false; // Not a swipe gesture
+        }
+
+        // Mark that we've moved during this gesture if movement exceeds threshold
+        if (movementDistance > this._gestureThreshold) {
+            this._hasMovedDuringGesture = true;
         }
 
         // Process movement in the primary direction
-        if (!this._isScrolling && Math.abs(primaryDelta) > 5) {
+        if (!this._isScrolling && Math.abs(primaryDelta) > this._gestureThreshold) {
             logDebug("SWIPE", `${isHorizontal ? 'Horizontal' : 'Vertical'} move detected`);
+            
+            // THIS IS THE KEY: Only prevent default when we're actually swiping
             if (e.cancelable) e.preventDefault();
 
             // Update current position based on swipe direction
@@ -1650,7 +2217,7 @@ class SimpleSwipeCard extends HTMLElement {
             const loopbackEnabled = this._config.enable_loopback === true;
             if (!loopbackEnabled) {
                 const atFirstEdge = this.currentIndex === 0;
-                const atLastEdge = this.currentIndex === this.cards.length - 1;
+                const atLastEdge = this.currentIndex === this.visibleCardIndices.length - 1;
                 if ((atFirstEdge && dragAmount > 0) || (atLastEdge && dragAmount < 0)) {
                     const resistanceFactor = 0.3 + 0.7 / (1 + Math.abs(dragAmount) / (isHorizontal ? this.slideWidth : this.slideHeight) * 0.5);
                     dragAmount *= resistanceFactor * 0.5;
@@ -1660,7 +2227,6 @@ class SimpleSwipeCard extends HTMLElement {
             const newTransform = this._initialTransform + dragAmount;
 
             if (this.sliderElement) {
-                logDebug("SWIPE", "Applying transform:", newTransform);
                 // Apply transform based on swipe direction
                 if (isHorizontal) {
                     this.sliderElement.style.transform = `translateX(${newTransform}px)`;
@@ -1673,7 +2239,7 @@ class SimpleSwipeCard extends HTMLElement {
     }
 
     /**
-     * Handles swipe end events
+     * Enhanced swipe end handler with consolidated click prevention
      * @param {Event} e - Touch or mouse event
      * @private
      */
@@ -1691,7 +2257,42 @@ class SimpleSwipeCard extends HTMLElement {
             window.removeEventListener('mouseup', this._boundMouseUp);
         }
 
-        // Process swipe
+        // CONSOLIDATED CLICK PREVENTION LOGIC
+        const hasSignificantMovement = this._hasMovedDuringGesture && this._totalMovement > this._gestureThreshold;
+        const gestureTime = Date.now() - this._gestureStartTime;
+        const isQuickGesture = gestureTime < 200;
+        
+        // Calculate velocity (use consistent logic)
+        const isHorizontal = this._swipeDirection === 'horizontal';
+        const totalMove = isHorizontal 
+            ? this._currentX - this._startX 
+            : this._currentY - this._startY;
+        const timeDiff = Date.now() - this._lastMoveTime;
+        const velocity = timeDiff > 10 ? Math.abs(totalMove) / timeDiff : 0;
+        const hasHighVelocity = velocity > this._swipeVelocityThreshold;
+
+        const shouldPreventClicks = hasSignificantMovement || (isQuickGesture && hasHighVelocity);
+
+        if (shouldPreventClicks) {
+            // Immediate click prevention
+            if (e.cancelable) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Temporal click blocking
+            this._blockClicksTemporarily(hasHighVelocity ? 400 : 300);
+            logDebug("SWIPE", "Prevented clicks after swipe gesture", {
+                movement: this._totalMovement,
+                velocity: velocity,
+                gestureTime: gestureTime
+            });
+        }
+
+        // Reset gesture state
+        this._isGestureActive = false;
+
+        // Process swipe logic
         Promise.resolve().then(() => {
             if (!this.sliderElement) return;
 
@@ -1708,23 +2309,10 @@ class SimpleSwipeCard extends HTMLElement {
 
             if (this._isScrolling || (e.type === 'touchcancel')) {
                 logDebug("SWIPE", "Swipe End: Scrolling or Cancelled - Snapping back.");
-                this.updateSlider(); // updateSlider will handle using _config.cards.length
+                this.updateSlider();
                 this._isScrolling = false;
                 return;
             }
-
-            // Determine if this is a horizontal or vertical swipe based on configuration
-            const isHorizontal = this._swipeDirection === 'horizontal';
-            
-            // Calculate movement and velocity based on swipe direction
-            const totalMove = isHorizontal 
-                ? this._currentX - this._startX 
-                : this._currentY - this._startY;
-                
-            const timeDiff = Date.now() - this._lastMoveTime;
-            const velocity = timeDiff > 10 ? totalMove / timeDiff : 0;
-            const SWIPE_VELOCITY_THRESHOLD = 0.4;
-            logDebug("SWIPE", "Swipe End Details:", { totalMove, velocity });
 
             // Use the appropriate dimension for threshold calculation
             const slideSize = isHorizontal ? this.slideWidth : this.slideHeight;
@@ -1732,52 +2320,45 @@ class SimpleSwipeCard extends HTMLElement {
 
             let nextIndex = this.currentIndex;
             const loopbackEnabled = this._config.enable_loopback === true;
-            const totalCards = this._config.cards ? this._config.cards.length : 0;
+            const totalVisibleCards = this.visibleCardIndices.length;
             
-            if (Math.abs(totalMove) > threshold || Math.abs(velocity) > SWIPE_VELOCITY_THRESHOLD) {
+            // Use consistent velocity threshold
+            if (Math.abs(totalMove) > threshold || Math.abs(velocity) > this._swipeVelocityThreshold) {
                 if (totalMove > 0) {
-                    // Swiping right/down - go to previous card
+                    // Swiping right/down - go to previous visible card
                     if (this.currentIndex > 0) {
-                        // Normal case: not at first card
                         nextIndex--;
-                    } else if (loopbackEnabled && totalCards > 1) {
-                        // Loopback mode: at first card, loop to last
-                        nextIndex = totalCards - 1;
-                        logDebug("SWIPE", "Loopback: Looping from first to last card");
+                    } else if (loopbackEnabled && totalVisibleCards > 1) {
+                        nextIndex = totalVisibleCards - 1;
+                        logDebug("SWIPE", "Loopback: Looping from first to last visible card");
                     }
                 } else if (totalMove < 0) {
-                    // Swiping left/up - go to next card
-                    if (this.currentIndex < totalCards - 1) {
-                        // Normal case: not at last card
+                    // Swiping left/up - go to next visible card
+                    if (this.currentIndex < totalVisibleCards - 1) {
                         nextIndex++;
-                    } else if (loopbackEnabled && totalCards > 1) {
-                        // Loopback mode: at last card, loop to first
+                    } else if (loopbackEnabled && totalVisibleCards > 1) {
                         nextIndex = 0;
-                        logDebug("SWIPE", "Loopback: Looping from last to first card");
+                        logDebug("SWIPE", "Loopback: Looping from last to first visible card");
                     }
                 }
             }
 
             if (nextIndex !== this.currentIndex) {
                 logDebug("SWIPE", `Swipe resulted in index change to ${nextIndex}`);
-                // goToSlide will handle setting currentIndex and preloading
-                this.goToSlide(nextIndex); // Let goToSlide manage currentIndex and updates
+                this.goToSlide(nextIndex);
+                // Start reset-after timer for manual swipe interactions
+                setTimeout(() => {
+                    if (this.isConnected && !this._autoSwipeInProgress) {
+                        this._startResetAfterTimer();
+                    }
+                }, 100);
             } else {
                 logDebug("SWIPE", "Swipe did not cross threshold or velocity, snapping back.");
-                this.updateSlider(true); // Snap back to current position
-            }
-            
-            // Preloading is now handled within goToSlide or if index didn't change, can be called here if needed.
-            // However, if nextIndex === this.currentIndex, it means we snap back.
-            // If nextIndex !== this.currentIndex, goToSlide was called, which calls _preloadAdjacentCards if needed.
-            if (nextIndex === this.currentIndex && loopbackEnabled && totalCards > 1) {
-                 // If we snapped back but loopback is on, still good to ensure preloads are correct
-                 setTimeout(() => {
-                    if (this.isConnected) this._preloadAdjacentCards(this.currentIndex);
-                }, 300); // Wait for transition to complete
+                this.updateSlider(true);
             }
         });
     }
+    
 
     /**
      * Checks if an element is interactive or scrollable
@@ -1788,18 +2369,43 @@ class SimpleSwipeCard extends HTMLElement {
     _isInteractiveOrScrollable(element) {
         if (!element || element === this.cardContainer || element === this.sliderElement) return false;
 
-        const interactiveTags = ['input', 'textarea', 'select', 'button', 'a', 'ha-switch', 'ha-checkbox', 'mwc-checkbox', 'paper-checkbox', 'ha-textfield', 'ha-slider', 'paper-slider', 'ha-control-button', 'ha-control-select', 'ha-control-slider', 'ha-control-button-group', 'ha-text-input', 'mwc-button', 'paper-button', 'ha-icon-button', 'paper-icon-button', 'ha-select', 'paper-dropdown-menu', 'vaadin-combo-box'];
+        // Expanded list of interactive elements
+        const interactiveTags = [
+            'input', 'textarea', 'select', 'button', 'a', 'audio', 'video',
+            'ha-switch', 'ha-checkbox', 'mwc-checkbox', 'paper-checkbox', 
+            'ha-textfield', 'ha-slider', 'paper-slider', 'ha-control-button', 
+            'ha-control-select', 'ha-control-slider', 'ha-control-button-group', 
+            'ha-text-input', 'mwc-button', 'paper-button', 'ha-icon-button', 
+            'paper-icon-button', 'ha-select', 'paper-dropdown-menu', 'vaadin-combo-box',
+            'ha-card', 'hui-entities-card', 'hui-entity-button', 'more-info-content'
+        ];
+        
         const tagName = element.localName?.toLowerCase();
         const role = element.getAttribute('role');
 
         // Check basic interactive elements
-        if (interactiveTags.includes(tagName) || (role && ['button', 'checkbox', 'switch', 'slider', 'link', 'menuitem', 'textbox', 'combobox', 'option'].includes(role))) {
+        if (interactiveTags.includes(tagName) || 
+            (role && ['button', 'checkbox', 'switch', 'slider', 'link', 'menuitem', 'textbox', 'combobox', 'option'].includes(role))) {
             logDebug("SWIPE", "_isInteractiveOrScrollable: Found interactive tag/role:", tagName || role);
             return true;
         }
 
+        // Check for clickable elements (elements that might open more-info dialogs)
+        if (element.classList.contains('clickable') || 
+            element.hasAttribute('clickable') ||
+            element.getAttribute('data-domain') ||
+            element.closest('.entity, .clickable, [data-domain]')) {
+            logDebug("SWIPE", "_isInteractiveOrScrollable: Found clickable element");
+            return true;
+        }
+
         // Check common HA interactive components
-        if (element.closest('ha-control-button, ha-control-select, ha-control-slider, ha-control-button-group, ha-alert[action], ha-more-info-control, hui-buttons-base, ha-form, ha-formfield, ha-icon-button, mwc-list-item, paper-item, ha-list-item')) {
+        if (element.closest(`
+            ha-control-button, ha-control-select, ha-control-slider, ha-control-button-group, 
+            ha-alert[action], ha-more-info-control, hui-buttons-base, ha-form, ha-formfield, 
+            ha-icon-button, mwc-list-item, paper-item, ha-list-item, hui-entity-button,
+            more-info-content, ha-card[clickable], .clickable
+        `.replace(/\s+/g, ' ').trim())) {
             logDebug("SWIPE", "_isInteractiveOrScrollable: Found interactive ancestor component.");
             return true;
         }
@@ -1811,8 +2417,10 @@ class SimpleSwipeCard extends HTMLElement {
             if (current.nodeType === Node.ELEMENT_NODE) {
                 try {
                     const style = window.getComputedStyle(current);
-                    const hasVerticalScroll = (style.overflowY === 'auto' || style.overflowY === 'scroll') && current.scrollHeight > current.clientHeight + 1;
-                    const hasHorizontalScroll = (style.overflowX === 'auto' || style.overflowX === 'scroll') && current.scrollWidth > current.clientWidth + 1;
+                    const hasVerticalScroll = (style.overflowY === 'auto' || style.overflowY === 'scroll') && 
+                                            current.scrollHeight > current.clientHeight + 1;
+                    const hasHorizontalScroll = (style.overflowX === 'auto' || style.overflowX === 'scroll') && 
+                                              current.scrollWidth > current.clientWidth + 1;
 
                     if (hasVerticalScroll || hasHorizontalScroll) {
                         logDebug("SWIPE", "_isInteractiveOrScrollable: Found scrollable ancestor:", current);
@@ -1820,7 +2428,9 @@ class SimpleSwipeCard extends HTMLElement {
                     }
 
                     // Check specific known-scrollable cards
-                    if (current.localName === 'ha-logbook' || current.localName === 'hui-logbook-card' || current.localName === 'hui-history-graph-card') {
+                    if (current.localName === 'ha-logbook' || 
+                        current.localName === 'hui-logbook-card' || 
+                        current.localName === 'hui-history-graph-card') {
                         logDebug("SWIPE", "_isInteractiveOrScrollable: Found specific scrollable card type:", current.localName);
                         return true;
                     }
@@ -1830,7 +2440,9 @@ class SimpleSwipeCard extends HTMLElement {
             }
 
             // Traverse up
-            current = current.assignedSlot || current.parentNode || (current.getRootNode() instanceof ShadowRoot ? current.getRootNode().host : null);
+            current = current.assignedSlot || 
+                     current.parentNode || 
+                     (current.getRootNode() instanceof ShadowRoot ? current.getRootNode().host : null);
             depth++;
         }
 
@@ -1840,51 +2452,56 @@ class SimpleSwipeCard extends HTMLElement {
     // --- Slide Navigation ---
 
     /**
-     * Navigates to a specific slide
-     * @param {number} index - The slide index to navigate to
+     * Navigates to a specific visible slide
+     * @param {number} visibleIndex - The visible slide index to navigate to
      */
-    goToSlide(index) {
-        const totalCards = this._config.cards.length; // Use configured total
-        // Allow navigating if there are cards, even if not all initialized. Building check remains.
-        if (!this._config.cards || totalCards === 0 || !this.initialized || this.building) {
-            // If building, or no cards configured, or not initialized, don't proceed.
-            // If totalCards is 0, this.cards might be empty.
-            logDebug("SWIPE", "goToSlide skipped", { totalCards, initialized: this.initialized, building: this.building });
+    goToSlide(visibleIndex) {
+        const totalVisibleCards = this.visibleCardIndices.length;
+        
+        if (!this.visibleCardIndices || totalVisibleCards === 0 || !this.initialized || this.building) {
+            logDebug("SWIPE", "goToSlide skipped", { totalVisible: totalVisibleCards, initialized: this.initialized, building: this.building });
             return;
         }
         
         const loopbackEnabled = this._config.enable_loopback === true;
         
-        if (loopbackEnabled && totalCards > 1) {
-            if (index < 0) {
-                index = totalCards - 1;
-            } else if (index >= totalCards) {
-                index = 0;
+        if (loopbackEnabled && totalVisibleCards > 1) {
+            if (visibleIndex < 0) {
+                visibleIndex = totalVisibleCards - 1;
+            } else if (visibleIndex >= totalVisibleCards) {
+                visibleIndex = 0;
             }
         } else {
-            // Clamp to valid range based on total configured cards
-            index = Math.max(0, Math.min(index, totalCards - 1));
+            // Clamp to valid range based on visible cards
+            visibleIndex = Math.max(0, Math.min(visibleIndex, totalVisibleCards - 1));
         }
         
-        if (index === this.currentIndex && !this._autoSwipeInProgress) { // Allow re-snap if auto-swipe
-            logDebug("SWIPE", `goToSlide: index ${index} is current, no change needed.`);
+        if (visibleIndex === this.currentIndex && !this._autoSwipeInProgress && !this._isResettingAfterTimeout) {
+            logDebug("SWIPE", `goToSlide: visible index ${visibleIndex} is current, no change needed.`);
             return;
         }
         
-        logDebug("SWIPE", `Going to slide ${index}`);
+        logDebug("SWIPE", `Going to visible slide ${visibleIndex}`);
         const oldIndex = this.currentIndex;
-        this.currentIndex = index;
+        this.currentIndex = visibleIndex;
         
-        // Preload cards if the index actually changed or if it's an auto-swipe (which might re-trigger on same index if only 1 card)
+        // Preload cards if the index actually changed or if it's an auto-swipe
         if (oldIndex !== this.currentIndex || this._autoSwipeInProgress) {
-            if (loopbackEnabled || (this._config.cards && this._config.cards.length > 3)) { // Only preload if loopback or more than 3 cards (initial load strategy)
+            if (loopbackEnabled || totalVisibleCards > 3) {
                  this._preloadAdjacentCards(this.currentIndex);
             }
         }
         
-        this.updateSlider(); // updateSlider will use _config.cards.length internally now
+        this.updateSlider();
         
-        if (this._config.enable_auto_swipe && !this._autoSwipeInProgress) {
+        // Handle reset-after timer for manual user interactions
+        if (!this._autoSwipeInProgress && !this._isResettingAfterTimeout) {
+            // This was a manual user interaction, start reset-after timer
+            this._startResetAfterTimer();
+        }
+        
+        // Only pause auto-swipe for manual user interactions, not auto-swipe itself or reset-after
+        if (this._config.enable_auto_swipe && !this._autoSwipeInProgress && !this._isResettingAfterTimeout) {
             this._pauseAutoSwipe(5000);
         }
     }
@@ -1894,11 +2511,11 @@ class SimpleSwipeCard extends HTMLElement {
      * @param {boolean} [animate=true] - Whether to animate the transition
      */
     updateSlider(animate = true) {
-        const totalCards = this._config.cards ? this._config.cards.length : 0;
-        logDebug("SWIPE", `Updating slider to index ${this.currentIndex}`, { animate, totalCards });
+        const totalVisibleCards = this.visibleCardIndices.length;
+        logDebug("SWIPE", `Updating slider to visible index ${this.currentIndex}`, { animate, totalVisible: totalVisibleCards });
 
-        if (!this.sliderElement || !this._config.cards || totalCards === 0 || !this.initialized || this.building) {
-            logDebug("SWIPE", "updateSlider skipped", { slider: !!this.sliderElement, totalCards, init: this.initialized, building: this.building });
+        if (!this.sliderElement || totalVisibleCards === 0 || !this.initialized || this.building) {
+            logDebug("SWIPE", "updateSlider skipped", { slider: !!this.sliderElement, totalVisible: totalVisibleCards, init: this.initialized, building: this.building });
             return;
         }
 
@@ -1908,29 +2525,27 @@ class SimpleSwipeCard extends HTMLElement {
         // Handle loopback mode for index wrapping
         const loopbackEnabled = this._config.enable_loopback === true;
 
-        // Ensure currentIndex is valid according to total configured cards
-        if (loopbackEnabled && totalCards > 1) {
+        // Ensure currentIndex is valid according to visible cards
+        if (loopbackEnabled && totalVisibleCards > 1) {
             if (this.currentIndex < 0) {
-                this.currentIndex = totalCards - 1;
-            } else if (this.currentIndex >= totalCards) {
+                this.currentIndex = totalVisibleCards - 1;
+            } else if (this.currentIndex >= totalVisibleCards) {
                 this.currentIndex = 0;
             }
         } else {
-            this.currentIndex = Math.max(0, Math.min(this.currentIndex, totalCards - 1));
+            this.currentIndex = Math.max(0, Math.min(this.currentIndex, totalVisibleCards - 1));
         }
 
         // Use gap for spacing instead of margins to maintain transparency
         this.sliderElement.style.gap = `${cardSpacing}px`;
         
-        // Calculate transform amount based on direction
-        // This needs to account for all cards up to currentIndex, using the correct slideWidth/Height and spacing
+        // Calculate transform amount based on direction for visible cards
         let translateAmount = 0;
         if (isHorizontal) {
             translateAmount = this.currentIndex * (this.slideWidth + cardSpacing);
         } else {
             translateAmount = this.currentIndex * (this.slideHeight + cardSpacing);
         }
-
 
         this.sliderElement.style.transition = this._getTransitionStyle(animate);
         
@@ -1942,9 +2557,8 @@ class SimpleSwipeCard extends HTMLElement {
         }
 
         // Remove any existing margins that could interfere with transparency
-        // This iterates over *loaded* cards.
         this.cards.forEach((cardData) => {
-            if (cardData && cardData.slide) { // Check if cardData and slide exist
+            if (cardData && cardData.slide) {
                 cardData.slide.style.marginRight = '0px';
                 cardData.slide.style.marginLeft = '0px';
                 cardData.slide.style.marginTop = '0px';
@@ -1952,14 +2566,10 @@ class SimpleSwipeCard extends HTMLElement {
             }
         });
 
-        // Update pagination dots
-        // Pagination should also be based on totalConfiguredCards
+        // Update pagination dots - based on visible cards
         if (this.paginationElement) {
             const dots = this.paginationElement.querySelectorAll('.pagination-dot');
-            // Ensure dots length matches totalCards, if not, pagination might need rebuilding or dots logic adjusted
-            // For now, assume dots.length is correct or _createPagination handled it.
             dots.forEach((dot, i) => {
-                // The index i should correspond to the actual card index
                 dot.classList.toggle('active', i === this.currentIndex);
             });
         }
@@ -1972,7 +2582,7 @@ class SimpleSwipeCard extends HTMLElement {
      */
     getCardSize() {
         // If showing preview, return a moderate size
-        if (this._config?.cards?.length === 0) {
+        if (this.visibleCardIndices.length === 0) {
             return 3;
         }
 
@@ -1998,11 +2608,11 @@ class SimpleSwipeCard extends HTMLElement {
 }
 
 // ======================================================================
-// Editor Element
+// Editor Element (Enhanced with Visibility Support and Compact UI)
 // ======================================================================
 
 /**
- * Editor class for the Simple Swipe Card
+ * Editor class for the Simple Swipe Card with Visibility Support and Reset After
  * @extends LitElement
  */
 class SimpleSwipeCardEditor extends LitElement {
@@ -2037,6 +2647,12 @@ class SimpleSwipeCardEditor extends LitElement {
             elementId: null,
             timestamp: null,
             savedState: null
+        };
+        
+        // Collapsible sections state
+        this._collapsibleState = {
+            advanced: false, // Advanced options collapsed by default
+            cards: true      // Cards section expanded by default
         };
         
         // Create a registry of all editors and dialogs
@@ -2147,6 +2763,63 @@ class SimpleSwipeCardEditor extends LitElement {
      */
     _isPictureElementsCard(config) {
         return config && config.type === 'picture-elements';
+    }
+
+    /**
+     * Checks if a card has visibility conditions
+     * @param {Object} config - Card configuration
+     * @returns {boolean} True if the card has visibility conditions
+     * @private
+     */
+    _hasVisibilityConditions(config) {
+        return config && Array.isArray(config.visibility) && config.visibility.length > 0;
+    }
+
+    /**
+     * Gets a human-readable description of visibility conditions
+     * @param {Array} conditions - Array of visibility conditions
+     * @returns {string} Description of conditions
+     * @private
+     */
+    _getVisibilityDescription(conditions) {
+        if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+            return '';
+        }
+
+        const descriptions = conditions.map(condition => {
+            switch (condition.condition) {
+                case 'state':
+                    if (condition.state !== undefined) {
+                        return `${condition.entity} = ${condition.state}`;
+                    } else if (condition.state_not !== undefined) {
+                        return `${condition.entity} ≠ ${condition.state_not}`;
+                    }
+                    return condition.entity;
+                case 'numeric_state':
+                    let desc = condition.entity;
+                    if (condition.above !== undefined) desc += ` > ${condition.above}`;
+                    if (condition.below !== undefined) desc += ` < ${condition.below}`;
+                    return desc;
+                case 'user':
+                    return `User in [${condition.users?.join(', ') || 'none'}]`;
+                case 'screen':
+                    return `Screen: ${condition.media_query || 'unknown'}`;
+                default:
+                    return condition.condition || 'Unknown';
+            }
+        });
+
+        return descriptions.join(' AND ');
+    }
+
+    /**
+     * Toggles a collapsible section
+     * @param {string} section - Section name to toggle
+     * @private
+     */
+    _toggleSection(section) {
+        this._collapsibleState[section] = !this._collapsibleState[section];
+        this.requestUpdate();
     }
 
     // Ensure card picker is properly loaded
@@ -2586,7 +3259,7 @@ class SimpleSwipeCardEditor extends LitElement {
             .card-config {
                 /* Let HA handle padding */
             }
-
+    
             .info-panel {
                 display: flex;
                 align-items: flex-start;
@@ -2596,7 +3269,7 @@ class SimpleSwipeCardEditor extends LitElement {
                 border-radius: 8px;
                 border: 1px solid var(--divider-color);
             }
-
+    
             .info-icon {
                 display: flex;
                 align-items: center;
@@ -2609,45 +3282,47 @@ class SimpleSwipeCardEditor extends LitElement {
                 margin-right: 12px;
                 flex-shrink: 0;
             }
-
+    
             .info-text {
                 flex-grow: 1;
                 color: var(--primary-text-color);
                 font-size: 14px;
             }
-
+    
+            /* MAIN SECTION STYLES */
             .section {
-                margin-bottom: 20px;
-                padding-bottom: 16px;
-                border-bottom: 1px solid var(--divider-color);
+                margin: 16px 0;
+                padding: 16px;
+                border: 1px solid var(--divider-color);
+                border-radius: var(--ha-card-border-radius, 8px);
+                background-color: var(--card-background-color, var(--primary-background-color));
             }
-
-            .section:last-of-type {
-                border-bottom: none;
-                margin-bottom: 0;
-                padding-bottom: 0;
-            }
-
-            /* Ensure the cards section has a bottom border */
-            .cards-section {
-                border-bottom: 1px solid var(--divider-color);
-                margin-bottom: 0;
-            }
-
+    
             .section-header {
                 font-size: 16px;
                 font-weight: 500;
-                margin-bottom: 8px;
+                margin-bottom: 12px;
                 color: var(--primary-text-color);
-                padding-bottom: 4px;
             }
-
+    
             .option-row {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 8px 0;
-                min-height: 40px;
+                padding: 6px 0;
+                min-height: 36px;
+            }
+    
+            .option-row:not(:last-of-type) {
+                margin-bottom: 8px;
+            }
+
+            .option-row + .help-text {
+                margin-top: -33px;
+            }
+
+            .help-text + .option-row {
+                margin-top: 10px;
             }
 
             .option-label {
@@ -2656,20 +3331,158 @@ class SimpleSwipeCardEditor extends LitElement {
                 font-size: 14px;
                 color: var(--primary-text-color);
             }
-
+    
             .help-text {
                 color: var(--secondary-text-color);
                 font-size: 12px;
-                padding: 0 4px;
-                margin-top: 4px;
-                margin-bottom: 12px;
+                margin-top: 0px;
+                margin-bottom: 8px;
+            }
+    
+            .help-text:last-child {
+                margin-bottom: 4px; /* Even smaller for last help text */
             }
 
+            .pagination-option {
+                margin-bottom: -12px !important;
+            }
+
+            /* ADVANCED OPTIONS - COLLAPSIBLE SECTION */
+            .collapsible-section {
+                margin: 16px 0;
+                border: 1px solid var(--divider-color);
+                border-radius: var(--ha-card-border-radius, 8px);
+                background-color: var(--card-background-color, var(--primary-background-color));
+                overflow: hidden;
+            }
+    
+            .collapsible-section .section-toggle {
+                padding: 16px;
+                margin: 0;
+                background-color: inherit;
+            }
+    
+            .collapsible-section .section-toggle:hover {
+                background-color: var(--secondary-background-color);
+            }
+    
+            .collapsible-section .section-content.expanded::before {
+                content: '';
+                display: block;
+                height: 1px;
+                background-color: var(--divider-color);
+                margin: 0 -16px 16px -16px;
+            }
+    
+            .collapsible-section .section-content.expanded {
+                padding: 0 16px 16px 16px;
+                background-color: inherit;
+            }
+    
+            .section-toggle {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--divider-color);
+                margin-bottom: 12px;
+                user-select: none;
+            }
+    
+            .section-toggle:hover {
+                background-color: var(--secondary-background-color);
+                border-radius: 4px;
+            }
+
+            .section-toggle.expanded {
+                background-color: var(--secondary-background-color);
+                border-radius: 4px;
+            }
+    
+            .section-toggle-icon {
+                margin-right: 8px;
+                transition: transform 0.2s ease;
+                color: var(--secondary-text-color);
+            }
+    
+            .section-toggle-icon.expanded {
+                transform: rotate(90deg);
+            }
+    
+            .section-toggle-title {
+                font-size: 15px;
+                font-weight: 500;
+                color: var(--primary-text-color);
+                flex-grow: 1;
+            }
+    
+            .section-toggle-badge {
+                background-color: var(--primary-color);
+                color: var(--text-primary-color);
+                border-radius: 12px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 500;
+                margin-left: 8px;
+            }
+    
+            .section-toggle-badge.blocked-status {
+                background-color: var(--warning-color, #ff9800);
+                color: var(--text-primary-color);
+            }
+    
+            .section-toggle-badge.mixed-status {
+                background-color: var(--info-color, #2196f3);
+                color: var(--text-primary-color);
+                font-size: 10px;
+            }
+    
+            .section-toggle-badge.blocked-only {
+                background-color: var(--warning-color, #ff9800);
+                color: var(--text-primary-color);
+                margin-left: 4px; /* Small gap between badges */
+            }
+
+            .section-content {
+                overflow: hidden;
+                transition: max-height 0.3s ease, opacity 0.2s ease;
+            }
+    
+            .section-content.collapsed {
+                max-height: 0;
+                opacity: 0;
+            }
+    
+            .section-content.expanded {
+                max-height: 500px;
+                opacity: 1;
+            }
+    
+            .compact-options .option-row {
+                padding: 4px 0;
+                min-height: 32px;
+            }
+
+            .compact-options .option-row + .help-text {
+                margin-top: -20px;
+                margin-bottom: 4px;
+            }
+
+            .compact-options ha-textfield + .help-text {
+                margin-top: 2px;   
+                margin-bottom: 8px;
+            }
+
+            .compact-options .help-text + ha-textfield {
+                margin-top: 10px;
+            }
+    
+            /* CARDS SECTION */
             .card-list {
                 margin-top: 8px;
                 margin-bottom: 16px;
             }
-
+    
             .card-row {
                 display: flex;
                 align-items: center;
@@ -2679,7 +3492,12 @@ class SimpleSwipeCardEditor extends LitElement {
                 margin-bottom: 8px;
                 background: var(--secondary-background-color);
             }
-
+    
+            .card-row.hidden-card {
+                opacity: 0.5;
+                border-style: dashed;
+            }
+    
             .card-info {
                 flex-grow: 1;
                 display: flex;
@@ -2687,13 +3505,13 @@ class SimpleSwipeCardEditor extends LitElement {
                 margin-right: 8px;
                 overflow: hidden;
             }
-
+    
             .card-index {
                 font-weight: bold;
                 margin-right: 10px;
                 color: var(--secondary-text-color);
             }
-
+    
             .card-type {
                 font-size: 14px;
                 color: var(--primary-text-color);
@@ -2701,7 +3519,7 @@ class SimpleSwipeCardEditor extends LitElement {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-            
+    
             .picture-elements-badge {
                 display: inline-block;
                 font-size: 10px;
@@ -2713,7 +3531,19 @@ class SimpleSwipeCardEditor extends LitElement {
                 margin-left: 8px;
                 text-transform: uppercase;
             }
-
+    
+            .visibility-badge {
+                display: inline-block;
+                font-size: 10px;
+                font-weight: 500;
+                background-color: var(--warning-color);
+                color: var(--text-primary-color);
+                border-radius: 12px;
+                padding: 2px 6px;
+                margin-left: 8px;
+                text-transform: uppercase;
+            }
+    
             .card-name {
                 font-size: 12px;
                 color: var(--secondary-text-color);
@@ -2722,22 +3552,28 @@ class SimpleSwipeCardEditor extends LitElement {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-
+    
             .card-actions {
                 display: flex;
                 align-items: center;
                 flex-shrink: 0;
             }
-
+    
             .card-actions ha-icon-button {
                 --mdc-icon-button-size: 36px;
                 color: var(--secondary-text-color);
             }
-
+    
             .card-actions ha-icon-button:hover {
                 color: var(--primary-text-color);
             }
-
+    
+            .hidden-icon {
+                color: var(--error-color);
+                margin-right: 8px;
+                font-size: 18px;
+            }
+    
             .no-cards {
                 text-align: center;
                 color: var(--secondary-text-color);
@@ -2746,49 +3582,8 @@ class SimpleSwipeCardEditor extends LitElement {
                 border-radius: var(--ha-card-border-radius, 4px);
                 margin-bottom: 16px;
             }
-
-            #card-picker-container {
-                display: block;
-                margin-top: 16px;
-                margin-bottom: 20px;
-                padding-top: 16px;
-                border-top: none; /* Keep top border removed */
-            }
-
-            .version-display {
-                margin-top: 24px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-top: 1px solid var(--divider-color);
-                padding-top: 16px;
-            }
-
-            .version-text {
-                color: var(--secondary-text-color);
-                font-size: 14px;
-                font-weight: 500;
-            }
-
-            .version-badge {
-                background-color: var(--primary-color);
-                color: var(--text-primary-color);
-                border-radius: 16px;
-                padding: 4px 12px;
-                font-size: 14px;
-                font-weight: 500;
-                margin-left: auto;
-            }
-
-            ha-textfield {
-                width: 100%;
-            }
-            
-            ha-select {
-                width: 100%;
-            }
-
-            /* Nested cards styling */
+    
+            /* NESTED CARDS */
             .nested-cards-container {
                 margin-left: 24px;
                 margin-top: 4px;
@@ -2796,7 +3591,7 @@ class SimpleSwipeCardEditor extends LitElement {
                 border-left: 2px solid var(--divider-color);
                 padding-left: 12px;
             }
-
+    
             .nested-card-row {
                 display: flex;
                 align-items: center;
@@ -2807,11 +3602,11 @@ class SimpleSwipeCardEditor extends LitElement {
                 background: var(--secondary-background-color);
                 opacity: 0.85;
             }
-
+    
             .nested-card-row:hover {
                 opacity: 1;
             }
-
+    
             .nested-card-info {
                 flex-grow: 1;
                 display: flex;
@@ -2819,14 +3614,14 @@ class SimpleSwipeCardEditor extends LitElement {
                 margin-right: 8px;
                 overflow: hidden;
             }
-
+    
             .nested-card-index {
                 font-weight: normal;
                 margin-right: 10px;
                 color: var(--secondary-text-color);
                 font-size: 0.9em;
             }
-
+    
             .nested-card-type {
                 font-size: 13px;
                 color: var(--primary-text-color);
@@ -2834,7 +3629,7 @@ class SimpleSwipeCardEditor extends LitElement {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-
+    
             .nested-card-name {
                 font-size: 11px;
                 color: var(--secondary-text-color);
@@ -2843,28 +3638,69 @@ class SimpleSwipeCardEditor extends LitElement {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-
+    
             .nested-card-actions {
                 display: flex;
                 align-items: center;
                 flex-shrink: 0;
             }
-
+    
             .nested-card-actions ha-icon-button {
                 --mdc-icon-button-size: 32px;
                 color: var(--secondary-text-color);
             }
-
+    
             .nested-card-actions ha-icon-button:hover {
                 color: var(--primary-text-color);
             }
-            
-            /* Direction icon styling */
+    
+            /* FORM CONTROLS */
+            ha-textfield {
+                width: 100%;
+            }
+    
+            ha-select {
+                width: 100%;
+            }
+    
             .direction-icon {
                 width: 32px;
                 height: 32px;
                 margin-left: 8px;
                 color: var(--primary-color);
+            }
+    
+            /* FOOTER */
+            #card-picker-container {
+                display: block;
+                margin-top: 16px;
+                margin-bottom: 20px;
+                padding-top: 16px;
+            }
+    
+            .version-display {
+                margin-top: 24px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-top: 1px solid var(--divider-color);
+                padding-top: 16px;
+            }
+    
+            .version-text {
+                color: var(--secondary-text-color);
+                font-size: 14px;
+                font-weight: 500;
+            }
+    
+            .version-badge {
+                background-color: var(--primary-color);
+                color: var(--text-primary-color);
+                border-radius: 16px;
+                padding: 4px 12px;
+                font-size: 14px;
+                font-weight: 500;
+                margin-left: auto;
             }
         `;
     }
@@ -2902,11 +3738,28 @@ class SimpleSwipeCardEditor extends LitElement {
         if (this._config.auto_swipe_interval === undefined) {
             this._config.auto_swipe_interval = 2000;
         } else {
-            // Ensure auto_swipe_interval is a positive number
             this._config.auto_swipe_interval = parseInt(this._config.auto_swipe_interval);
             if (isNaN(this._config.auto_swipe_interval) || this._config.auto_swipe_interval < 500) {
                 this._config.auto_swipe_interval = 2000;
             }
+        }
+        
+        // Set defaults for reset-after options
+        if (this._config.enable_reset_after === undefined) this._config.enable_reset_after = false;
+        if (this._config.reset_after_timeout === undefined) {
+            this._config.reset_after_timeout = 30000; // 30 seconds default
+        } else {
+            // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
+            this._config.reset_after_timeout = parseInt(this._config.reset_after_timeout);
+            if (isNaN(this._config.reset_after_timeout) || this._config.reset_after_timeout < 5000) {
+                this._config.reset_after_timeout = 30000;
+            }
+        }
+        if (this._config.reset_target_card === undefined) {
+            this._config.reset_target_card = 1; // Default to first card (1-based)
+        } else {
+            // Ensure it's a valid 1-based number
+            this._config.reset_target_card = Math.max(1, parseInt(this._config.reset_target_card));
         }
         
         delete this._config.title;
@@ -2939,6 +3792,8 @@ class SimpleSwipeCardEditor extends LitElement {
                     value = 15;
                 } else if (finalOption === 'auto_swipe_interval') {
                     value = 2000;
+                } else if (finalOption === 'reset_after_timeout') {
+                    value = 30000;
                 } else {
                     value = 0;
                 }
@@ -3691,7 +4546,7 @@ class SimpleSwipeCardEditor extends LitElement {
     }
 
     /**
-     * Renders the editor UI
+     * Renders the editor UI with visibility support and compact collapsible sections
      * @returns {TemplateResult} The template to render
      */
     render() {
@@ -3703,10 +4558,37 @@ class SimpleSwipeCardEditor extends LitElement {
         const cards = this._config.cards || [];
         const showPagination = this._config.show_pagination !== false;
         const cardSpacing = this._config.card_spacing ?? 15;
-        const enableLoopback = this._config.enable_loopback === true;
         const swipeDirection = this._config.swipe_direction || 'horizontal';
+        
+        // Advanced options
+        const enableLoopback = this._config.enable_loopback === true;
         const enableAutoSwipe = this._config.enable_auto_swipe === true;
         const autoSwipeInterval = this._config.auto_swipe_interval ?? 2000;
+        const enableResetAfter = this._config.enable_reset_after === true;
+        const resetAfterTimeout = this._config.reset_after_timeout ?? 30000;
+        const resetTargetCard = this._config.reset_target_card ?? 1;
+        const maxCardIndex = Math.max(0, cards.length - 1);
+
+        // Count active and blocked advanced features
+        let activeFeatures = 0;
+        let blockedFeatures = 0;
+
+        if (enableLoopback) activeFeatures++;
+        if (enableAutoSwipe) activeFeatures++;
+        if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
+        if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
+
+        // Create separate badges for active and blocked features
+        let activeBadge = '';
+        let blockedBadge = '';
+
+        if (activeFeatures > 0) {
+            activeBadge = `${activeFeatures} active`;
+        }
+
+        if (blockedFeatures > 0) {
+            blockedBadge = `${blockedFeatures} blocked`;
+        }
 
         return html`
             <div class="card-config">
@@ -3714,13 +4596,12 @@ class SimpleSwipeCardEditor extends LitElement {
                 <div class="info-panel">
                     <div class="info-icon">i</div>
                     <div class="info-text">
-                        To add a card, search for the card type in the picker below and click on it.
-                        It will be added with every click.
-                        After adding cards, you can go back to the top of this editor to edit each card and reorder them using the up/down arrows.
+                        Add cards using the picker below. Edit and reorder them in the Cards section. 
+                        Use Advanced Options for auto-swipe, reset timers, and loopback features.
                     </div>
                 </div>
 
-                <!-- Display Options -->
+                <!-- Basic Display Options (Always Visible) -->
                 <div class="section">
                     <div class="section-header">Display Options</div>
 
@@ -3735,7 +4616,6 @@ class SimpleSwipeCardEditor extends LitElement {
                         @change=${this._valueChanged}
                         autoValidate pattern="[0-9]+" required
                     ></ha-textfield>
-
                     <div class="help-text">Visual gap between cards when swiping (in pixels)</div>
                     
                     <div class="option-row">
@@ -3758,10 +4638,9 @@ class SimpleSwipeCardEditor extends LitElement {
                             </ha-select>
                         </div>
                     </div>
-                    
                     <div class="help-text">The direction to swipe between cards</div>
 
-                    <div class="option-row">
+                    <div class="option-row pagination-option">
                         <div class="option-label">Show pagination dots</div>
                         <div class="option-control">
                             <ha-switch
@@ -3771,49 +4650,121 @@ class SimpleSwipeCardEditor extends LitElement {
                             ></ha-switch>
                         </div>
                     </div>
-                    
-                    <div class="option-row">
-                        <div class="option-label">Enable loopback mode</div>
-                        <div class="option-control">
-                            <ha-switch
-                                .checked=${enableLoopback}
-                                data-option="enable_loopback"
-                                @change=${this._valueChanged}
-                            ></ha-switch>
-                        </div>
-                    </div>
-
-                    <div class="help-text">When enabled, swiping past the last card will circle back to the first card, and vice versa.</div>
-                    
-                    <div class="option-row">
-                        <div class="option-label">Enable auto-swipe</div>
-                        <div class="option-control">
-                            <ha-switch
-                                .checked=${enableAutoSwipe}
-                                data-option="enable_auto_swipe"
-                                @change=${this._valueChanged}
-                            ></ha-switch>
-                        </div>
-                    </div>
-                    
-                    <div class="help-text">When enabled, the card will automatically swipe between slides at a set interval.</div>
-                    
-                    <ha-textfield
-                        label="Auto-swipe interval (ms)"
-                        .value=${autoSwipeInterval.toString()}
-                        data-option="auto_swipe_interval"
-                        type="number"
-                        min="500"
-                        suffix="ms"
-                        @change=${this._valueChanged}
-                        ?disabled=${!enableAutoSwipe}
-                        autoValidate pattern="[0-9]+" required
-                    ></ha-textfield>
-
-                    <div class="help-text">Time between automatic swipes in milliseconds (minimum 500ms).</div>
                 </div>
 
-                <!-- Cards Management -->
+                <!-- Advanced Options (Collapsible) -->
+                <div class="collapsible-section">
+                    <div class="section-toggle ${this._collapsibleState.advanced ? 'expanded' : ''}" @click=${() => this._toggleSection('advanced')}>
+                        <ha-icon 
+                            class="section-toggle-icon ${this._collapsibleState.advanced ? 'expanded' : ''}"
+                            icon="mdi:chevron-right"
+                        ></ha-icon>
+                        <div class="section-toggle-title">Advanced Options</div>
+                        ${activeBadge ? html`<div class="section-toggle-badge">${activeBadge}</div>` : ''}
+                        ${blockedBadge ? html`<div class="section-toggle-badge blocked-only">${blockedBadge}</div>` : ''}
+                    </div>
+                    
+                    <div class="section-content compact-options ${this._collapsibleState.advanced ? 'expanded' : 'collapsed'}">
+                        <div class="option-row">
+                            <div class="option-label">Enable loopback mode</div>
+                            <div class="option-control">
+                                <ha-switch
+                                    .checked=${enableLoopback}
+                                    data-option="enable_loopback"
+                                    @change=${this._valueChanged}
+                                ></ha-switch>
+                            </div>
+                        </div>
+                        <div class="help-text">Swipe past the last card to circle back to the first card, and vice versa.</div>
+                        
+                        <div class="option-row">
+                            <div class="option-label">Enable auto-swipe</div>
+                            <div class="option-control">
+                                <ha-switch
+                                    .checked=${enableAutoSwipe}
+                                    data-option="enable_auto_swipe"
+                                    @change=${this._valueChanged}
+                                ></ha-switch>
+                            </div>
+                        </div>
+                        <div class="help-text">Automatically swipe between slides at a set interval.</div>
+                        
+                        ${enableAutoSwipe ? html`
+                            <ha-textfield
+                                label="Auto-swipe interval (ms)"
+                                .value=${autoSwipeInterval.toString()}
+                                data-option="auto_swipe_interval"
+                                type="number"
+                                min="500"
+                                suffix="ms"
+                                @change=${this._valueChanged}
+                                autoValidate pattern="[0-9]+" required
+                            ></ha-textfield>
+                            <div class="help-text">Time between automatic swipes (minimum 500ms).</div>
+                        ` : ''}
+                        
+                        <div class="option-row">
+                            <div class="option-label">Enable reset after timeout</div>
+                            <div class="option-control">
+                                <ha-switch
+                                    .checked=${enableResetAfter}
+                                    data-option="enable_reset_after"
+                                    @change=${this._valueChanged}
+                                    ?disabled=${enableAutoSwipe}
+                                ></ha-switch>
+                            </div>
+                        </div>
+                        <div class="help-text">
+                            ${enableAutoSwipe ? 
+                                'Reset after timeout is disabled when auto-swipe is enabled.' : 
+                                'Return to target card after inactivity. Timer starts after manual interactions.'}
+                        </div>
+                        
+                        ${enableResetAfter && !enableAutoSwipe ? html`
+                            <ha-textfield
+                                label="Reset timeout (seconds)"
+                                .value=${Math.round(resetAfterTimeout / 1000).toString()}
+                                type="number"
+                                min="5"
+                                max="3600"
+                                suffix="sec"
+                                @change=${(ev) => {
+                                    const seconds = parseInt(ev.target.value);
+                                    if (!isNaN(seconds) && seconds >= 5) {
+                                        const milliseconds = seconds * 1000;
+                                        this._config = { ...this._config, reset_after_timeout: milliseconds };
+                                        this._fireConfigChanged();
+                                    }
+                                }}
+                                autoValidate pattern="[0-9]+" required
+                            ></ha-textfield>
+                            <div class="help-text">Time of inactivity before resetting (5 seconds to 1 hour).</div>
+                            
+                            <ha-textfield
+                                label="Target card (1-based)"
+                                .value=${resetTargetCard.toString()}
+                                type="number"
+                                min="1"
+                                max=${(maxCardIndex + 1).toString()}
+                                @change=${(ev) => {
+                                    const oneBasedIndex = parseInt(ev.target.value);
+                                    if (!isNaN(oneBasedIndex) && oneBasedIndex >= 1) {
+                                        this._config = { ...this._config, reset_target_card: oneBasedIndex };
+                                        this._fireConfigChanged();
+                                    }
+                                }}
+                                ?disabled=${cards.length === 0}
+                                autoValidate pattern="[0-9]+" required
+                            ></ha-textfield>
+                            <div class="help-text">
+                                Which card to reset to (1 = first card, 2 = second card, etc.). 
+                                ${cards.length === 0 ? 'Add cards first to set a target.' : `Current range: 1-${cards.length}`}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Cards Management (Always Visible) -->
                 <div class="section cards-section">
                     <div class="section-header">Cards</div>
 
@@ -3824,16 +4775,20 @@ class SimpleSwipeCardEditor extends LitElement {
                                 const descriptor = this._getCardDescriptor(card);
                                 const hasNestedCards = this._hasNestedCards(card);
                                 const nestedCards = hasNestedCards ? this._getNestedCards(card) : [];
+                                const hasVisibility = this._hasVisibilityConditions(card);
+                                const isCurrentlyVisible = this.hass ? evaluateVisibilityConditions(card.visibility, this.hass) : true;
 
                                 return html`
-                                <div class="card-row" data-index=${index}>
+                                <div class="card-row ${!isCurrentlyVisible ? 'hidden-card' : ''}" data-index=${index}>
                                     <div class="card-info">
                                         <span class="card-index">${index + 1}</span>
                                         <span class="card-type">${descriptor.typeName}</span>
                                         ${descriptor.isPictureElements ? html`<span class="picture-elements-badge">Elements</span>` : ''}
+                                        ${hasVisibility && isCurrentlyVisible ? html`<span class="visibility-badge">Conditional</span>` : ''}
                                         ${descriptor.name ? html`<span class="card-name">(${descriptor.name})</span>` : ''}
                                     </div>
                                     <div class="card-actions">
+                                        ${hasVisibility && !isCurrentlyVisible ? html`<ha-icon class="hidden-icon" icon="mdi:eye-off"></ha-icon>` : ''}
                                         <ha-icon-button
                                             label="Move Up"
                                             ?disabled=${index === 0}
@@ -3941,7 +4896,7 @@ const registerCard = () => {
             type: "simple-swipe-card",
             name: "Simple Swipe Card",
             preview: true,
-            description: "A swipeable container for multiple cards with touch and mouse gesture support."
+            description: "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout."
         });
     }
 };
