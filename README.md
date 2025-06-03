@@ -25,6 +25,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
     - Cards can cycle automatically at a user-defined interval
     - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
     - Integrates with Loopback Mode for continuous cycling or uses a "ping-pong" effect if loopback is disabled
+- Reset After Timeout: Automatically return to a target card after inactivity
 
 ## Installation
 
@@ -59,15 +60,20 @@ Or click this button to open the repository page in HACS:
 ## Visual Editor
 
 The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
-- Reorder cards for swiping order
-- Visual on/off toggle for pagination dots
-- Simple number input for card spacing
-- Selection for swipe direction (horizontal/vertical)
-- Toggle for loopback mode
-- Toggle for enabling auto-swipe
-- Number input for auto-swipe interval (in milliseconds)
+
+- Display Options:
+    - Simple number input for card spacing
+    - Selection for swipe direction (horizontal/vertical)
+    - Visual on/off toggle for pagination dots
+- Advanced Options section:
+    - Toggle for loopback mode
+    - Toggle for enabling auto-swipe
+    - Number input for auto-swipe interval (in milliseconds)
+    - Reset after timeout configuration options
+- Cards section:
+  - Reorder cards for swiping order
+  - Visibility condition indicators for conditional cards    
 - Real-time preview of changes
-  
 
 #### Search for 'Simple Swipe Card'
 <img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_search.png" width="250">
@@ -96,6 +102,9 @@ This card can be configured using the visual editor or YAML.
 | swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical' |
 | enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides |
 | auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
+| enable_reset_after | boolean | false | Enable automatic return to target card after inactivity |
+| reset_after_timeout | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
+| reset_target_card | number | 1 | Index of card to return to (1 = first card) |
 
 ### Example Configuration
 ```yaml
@@ -113,9 +122,19 @@ show_pagination: true
 card_spacing: 15
 enable_loopback: true
 swipe_direction: horizontal
-enable_auto_swipe: true
+enable_auto_swipe: false
 auto_swipe_interval: 3000
+enable_reset_after: true
+reset_after_timeout: 45000
+reset_target_card: 1
 ```
+
+## Visibility Conditions
+
+Individual cards within the Simple Swipe Card can be conditionally shown or hidden using visibility conditions. Multiple conditions use AND logic (all must be true).
+
+**Important:** Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
+
 
 ## Customizing with Theme Variables
 
@@ -220,3 +239,8 @@ Check out my other custom cards for Home Assistant:
 
 * [Todo Swipe Card](https://github.com/nutteloost/todo-swipe-card) - A specialized swipe card for todo lists in Home Assistant with custom styling
 * [Actions Card](https://github.com/nutteloost/actions-card) - Wraps another Home Assistant card to add tap, hold, and double-tap actions
+
+
+Enjoying my cards? Consider donating a beer (or two)! It will keep me going. 
+
+[![Buy me a beer](https://img.shields.io/badge/Donate-Buy%20me%20a%20beer-yellow?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/nutteloost)
