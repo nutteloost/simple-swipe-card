@@ -133,8 +133,7 @@ reset_target_card: 1
 
 Individual cards within the Simple Swipe Card can be conditionally shown or hidden using visibility conditions. Multiple conditions use AND logic (all must be true).
 
-**Important:** Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
-
+> ⚠ **Important**: Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
 
 ## Customizing with Theme Variables
 
