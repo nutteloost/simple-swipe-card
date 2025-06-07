@@ -2377,7 +2377,7 @@ class SimpleSwipeCard extends HTMLElement {
             'ha-control-select', 'ha-control-slider', 'ha-control-button-group', 
             'ha-text-input', 'mwc-button', 'paper-button', 'ha-icon-button', 
             'paper-icon-button', 'ha-select', 'paper-dropdown-menu', 'vaadin-combo-box',
-            'ha-card', 'hui-entities-card', 'hui-entity-button', 'more-info-content'
+            'ha-card', 'hui-entity-button', 'more-info-content'
         ];
         
         const tagName = element.localName?.toLowerCase();
