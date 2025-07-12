@@ -6,21 +6,105 @@
  * Now includes support for child card visibility conditions and reset after timeout.
  * 
  * @author nutteloost
- * @version 1.7.0
+ * @version 1.7.2
  * @license MIT
  * @see {@link https://github.com/nutteloost/simple-swipe-card}
  */
 
-import {
-    LitElement,
-    html,
-    css
-} from "https://unpkg.com/lit-element@^4?module";
-import {
-    fireEvent
-} from "https://unpkg.com/custom-card-helpers@^1?module";
+// Offline-compatible imports with fallback to Home Assistant's built-in dependencies
+let LitElement, html, css, fireEvent;
 
-const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : undefined;
+// Try to import from HA's built-in modules first (for offline compatibility)
+try {
+    // Home Assistant has LitElement available globally in modern versions
+    if (window.customElements && window.customElements.get('ha-card')) {
+        // Use HA's built-in lit-element
+        const litModule = customElements.get('ha-card').__proto__.constructor.__proto__.constructor;
+        LitElement = litModule;
+        html = (window.lit?.html || window.LitElement?.html);
+        css = (window.lit?.css || window.LitElement?.css);
+    }
+} catch (e) {
+    console.debug('SimpleSwipeCard: Could not use built-in LitElement, falling back to imports');
+}
+
+// Fallback to dynamic imports if built-in modules not available
+if (!LitElement || !html || !css) {
+    const loadDependencies = async () => {
+        try {
+            // Try to import from unpkg as fallback
+            const litModule = await import("https://unpkg.com/lit-element@^4?module");
+            LitElement = litModule.LitElement;
+            html = litModule.html;
+            css = litModule.css;
+        } catch (error) {
+            console.error('SimpleSwipeCard: Failed to load LitElement dependencies:', error);
+            // Final fallback - create basic HTMLElement if all else fails
+            LitElement = HTMLElement;
+            html = (strings, ...values) => {
+                return strings.reduce((result, string, i) => {
+                    return result + string + (values[i] || '');
+                }, '');
+            };
+            css = (strings) => strings[0];
+        }
+    };
+    
+    await loadDependencies();
+}
+
+// Handle fireEvent with fallback
+try {
+    if (window.customCards && window.fireEvent) {
+        fireEvent = window.fireEvent;
+    } else {
+        // Import from external source as fallback
+        const helpersModule = await import("https://unpkg.com/custom-card-helpers@^1?module");
+        fireEvent = helpersModule.fireEvent;
+    }
+} catch (error) {
+    console.debug('SimpleSwipeCard: Using fallback fireEvent implementation');
+    // Fallback fireEvent implementation
+    fireEvent = (node, type, detail = {}) => {
+        const event = new CustomEvent(type, {
+            detail,
+            bubbles: true,
+            composed: true
+        });
+        node.dispatchEvent(event);
+    };
+}
+
+const HELPERS = window.loadCardHelpers ? window.loadCardHelpers() : Promise.resolve({
+    createCardElement: async (config) => {
+        // Fallback card creation for offline mode
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <ha-card>
+                <div style="padding: 16px; text-align: center;">
+                    <ha-icon icon="mdi:alert-circle" style="color: var(--warning-color); margin-bottom: 8px;"></ha-icon>
+                    <div>Card type "${config.type}" not available offline</div>
+                    <div style="font-size: 12px; color: var(--secondary-text-color); margin-top: 8px;">
+                        This card requires an internet connection to load properly.
+                    </div>
+                </ha-card>
+            </div>
+        `;
+        return element.firstElementChild;
+    },
+    createErrorCardElement: (config, error) => {
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <ha-card>
+                <div style="padding: 16px; text-align: center; color: var(--error-color);">
+                    <ha-icon icon="mdi:alert" style="margin-bottom: 8px;"></ha-icon>
+                    <div>Error: ${error}</div>
+                </div>
+            </ha-card>
+        `;
+        return element.firstElementChild;
+    }
+});
 
 // Version management
 const CARD_VERSION = "1.7.0";
@@ -182,10 +266,13 @@ function evaluateSingleCondition(condition, hass) {
  * Main Simple Swipe Card class
  * @extends HTMLElement
  */
-class SimpleSwipeCard extends HTMLElement {
+class SimpleSwipeCard extends (LitElement || HTMLElement) {
     constructor() {
         super();
         logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
+        
+        // Ensure dependencies are loaded
+        this._dependenciesReady = this._ensureDependencies();
     
         this.attachShadow({
             mode: 'open'
@@ -261,6 +348,25 @@ class SimpleSwipeCard extends HTMLElement {
         
         // Generate unique instance ID
         this._instanceId = Math.random().toString(36).substring(2, 15);
+    }
+
+    /**
+     * Ensures all dependencies are properly loaded
+     * @private
+     */
+    async _ensureDependencies() {
+        // Wait a bit for modules to be available if they're still loading
+        let retries = 0;
+        while ((!LitElement || !html || !css) && retries < 10) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+        }
+        
+        if (!LitElement || !html || !css) {
+            console.warn('SimpleSwipeCard: Some dependencies may not be available in offline mode');
+        }
+        
+        return true;
     }
 
     /**
@@ -744,7 +850,11 @@ class SimpleSwipeCard extends HTMLElement {
 
         if (!this.initialized && this._config?.cards) {
             logDebug("INIT", "connectedCallback: Initializing build.");
-            this._build();
+            this._dependenciesReady.then(() => {
+                if (this.isConnected) {
+                    this._build();
+                }
+            });
         } else if (this.initialized && this.cardContainer) {
             logDebug("INIT", "connectedCallback: Re-initializing observers and gestures.");
             if (!this.resizeObserver) this._setupResizeObserver();
