@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Community Discussion
+    url: https://community.home-assistant.io/t/simple-swipe-card-a-custom-card-for-easy-card-navigation/888415
+    about: Ask questions and discuss the card with other users in the Home Assistant Community Forum
+  - name: 📖 Documentation
+    url: https://github.com/nutteloost/simple-swipe-card#readme
+    about: Read the full documentation and examples

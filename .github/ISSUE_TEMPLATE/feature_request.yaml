@@ -1,0 +1,84 @@
+name: ✨ Feature Request
+description: Suggest a new feature or improvement for the Simple Swipe Card
+title: "[FEATURE]: A brief, descriptive title for your feature request"
+labels: ["under review"]
+assignees:
+  - nutteloost
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Your input helps improve the Simple Swipe Card.
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: "What problem does this solve?"
+      description: Describe the limitation or problem this feature would address.
+      placeholder: "I'm frustrated when..." or "It's currently difficult to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: "Describe your proposed solution"
+      description: "How would this feature work? What would it look like?"
+      placeholder: "I would like to see an option to..." or "The card should allow users to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: "Use case and benefits"
+      description: "How would you use this feature? Why is it valuable?"
+      placeholder: "This would help me..." or "In my dashboard, I need to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-yaml
+    attributes:
+      label: "Example Configuration (Optional)"
+      description: "How might the YAML configuration look for this feature?"
+      placeholder: |
+        type: custom:simple-swipe-card
+        cards:
+          - type: entity
+            entity: light.living_room
+          - type: weather-forecast
+            entity: weather.home
+        new_feature_setting: true
+        # Example of how the config might work
+      render: yaml
+    validations:
+      required: false
+
+  - type: input
+    id: card-version
+    attributes:
+      label: "Simple Swipe Card Version"
+      description: "What version are you using? (e.g., v1.8.0 or latest)"
+      placeholder: "e.g., v1.8.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: "Alternatives or workarounds"
+      description: "Have you tried any other solutions or workarounds?"
+      placeholder: "I've tried X, but it doesn't work because..." (Optional)
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Pre-Submission Checklist"
+      options:
+        - label: "I have searched existing [issues](https://github.com/nutteloost/simple-swipe-card/issues) to ensure this feature hasn't been requested."
+          required: true
+        - label: "I have provided a clear explanation of the feature and its benefits."
+          required: true

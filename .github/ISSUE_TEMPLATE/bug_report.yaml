@@ -1,0 +1,125 @@
+name: 🐛 Bug Report
+description: Report a reproducible issue with the Simple Swipe Card
+title: "[BUG]: A brief, descriptive title of the bug"
+labels: ["bug", "needs-triage"]
+assignees:
+  - nutteloost
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please provide as much detail as possible to help us identify and fix the issue faster.
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: A clear description of what actually happens.
+      placeholder: "When I configure X and do Y, Z happens unexpectedly."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear description of what you expected to happen.
+      placeholder: "I expected the card to display/behave differently."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the bug.
+      placeholder: |
+        1. Go to '...'
+        2. Configure the card with:
+           ```yaml
+           type: custom:simple-swipe-card
+           cards:
+             - type: entity
+               entity: light.living_room
+           # Add minimal config here
+           ```
+        3. Observe the error/bug.
+    validations:
+      required: true
+
+  - type: input
+    id: card-version
+    attributes:
+      label: Simple Swipe Card Version
+      description: What version are you using? (e.g., v1.8.0)
+      placeholder: "e.g., v1.8.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant Version
+      description: What version of Home Assistant? (e.g., 2023.8.1)
+      placeholder: "e.g., 2023.8.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Feature
+      description: Which feature is causing the issue?
+      options:
+        - General / Other
+        - Swipe Navigation
+        - Pagination Dots
+        - Auto-swipe functionality
+        - Reset after timeout
+        - Visual Editor
+        - Card Configuration
+        - Loopback mode
+        - Visibility conditions
+        - CSS Styling/Variables
+        - Card-mod integration
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: yaml-configuration
+    attributes:
+      label: YAML Configuration
+      description: Paste the minimal config needed to reproduce the bug.
+      placeholder: |
+        type: custom:simple-swipe-card
+        cards:
+          - type: entity
+            entity: light.living_room
+          - type: weather-forecast
+            entity: weather.home
+        # Add your config here
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots-logs
+    attributes:
+      label: Screenshots or Console Errors
+      description: Add screenshots or browser console errors (F12 → Console tab).
+      placeholder: Drag and drop images or paste console errors here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-Submission Checklist
+      options:
+        - label: I have searched existing [issues](https://github.com/nutteloost/simple-swipe-card/issues) to ensure this bug hasn't been reported.
+          required: true
+        - label: I have provided steps to reproduce the bug.
+          required: true
+        - label: I have included the YAML configuration to reproduce the issue.
+          required: true
