@@ -15,7 +15,7 @@ body:
     attributes:
       label: "What problem does this solve?"
       description: Describe the limitation or problem this feature would address.
-      placeholder: "I'm frustrated when..." or "It's currently difficult to..."
+      placeholder: e.g. "I'm frustrated when..." or "It's currently difficult to..."
     validations:
       required: true
 
@@ -24,7 +24,7 @@ body:
     attributes:
       label: "Describe your proposed solution"
       description: "How would this feature work? What would it look like?"
-      placeholder: "I would like to see an option to..." or "The card should allow users to..."
+      placeholder: e.g. "I would like to see an option to..." or "The card should allow users to..."
     validations:
       required: true
 
@@ -33,7 +33,7 @@ body:
     attributes:
       label: "Use case and benefits"
       description: "How would you use this feature? Why is it valuable?"
-      placeholder: "This would help me..." or "In my dashboard, I need to..."
+      placeholder: e.g. "This would help me..." or "In my dashboard, I need to..."
     validations:
       required: true
 
@@ -69,7 +69,7 @@ body:
     attributes:
       label: "Alternatives or workarounds"
       description: "Have you tried any other solutions or workarounds?"
-      placeholder: "I've tried X, but it doesn't work because..." (Optional)
+      placeholder: "I've tried X, but it doesn't work because..."
     validations:
       required: false
 
