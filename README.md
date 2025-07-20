@@ -135,7 +135,7 @@ state_entity: input_select.dashboard_cards
 
 ## State Synchronization
 
-Simple Swipe Card can synchronize its current position with Home Assistant entities, enabling external control and automation integration through two-way binding.
+Simple Swipe Card can synchronize its current position with Home Assistant entities (helpers), enabling external control and automation integration through two-way binding. This powerful feature allows for dynamic, automated dashboard interactions based on events, time, or other conditions.
 
 ### Supported Entities
 
@@ -153,6 +153,32 @@ Simple Swipe Card can synchronize its current position with Home Assistant entit
 - **More options than cards**: Extra options are ignored and cannot be selected.
 - **Fewer options than cards**: Only cards corresponding to available options can be controlled externally. Cards without corresponding options can still be reached through manual swiping but won't update the entity.
 - **Visibility conditions**: State synchronization works with visible cards only. If cards are hidden due to visibility conditions, the mapping adjusts automatically to match only the currently visible cards.
+
+### Example Use Case
+
+**Security Camera Alert**: When motion is detected at your front door, the Simple Swipe Card can automatically switch to display the camera feed, providing immediate visual confirmation of activity without requiring manual navigation. This ensures critical security events receive instant attention when they matter most.
+
+<details>
+
+<summary><strong>Example automation:</strong></summary>
+
+```yaml
+automation:
+  - alias: "Switch Simple Swipe Card slide to Camera on Motion"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.front_door_motion
+        to: "on"
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.dashboard_card_selector
+        data:
+          value: 3  # Assuming camera card is the 3rd card
+```
+</details>
+
+
 
 ## Visibility Conditions
 
