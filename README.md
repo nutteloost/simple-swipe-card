@@ -26,6 +26,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
     - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
     - Integrates with Loopback Mode for continuous cycling or uses a "ping-pong" effect if loopback is disabled
 - Reset After Timeout: Automatically return to a target card after inactivity
+- State Synchronization: Two-way sync with Home Assistant input_select and input_number entities
 
 ## Installation
 
@@ -70,6 +71,7 @@ The Simple Swipe Card includes a visual editor that appears when you add or edit
     - Toggle for enabling auto-swipe
     - Number input for auto-swipe interval (in milliseconds)
     - Reset after timeout configuration options
+    - State entity selection for state synchronization
 - Cards section:
   - Reorder cards for swiping order
   - Visibility condition indicators for conditional cards    
@@ -105,6 +107,7 @@ This card can be configured using the visual editor or YAML.
 | enable_reset_after | boolean | false | Enable automatic return to target card after inactivity |
 | reset_after_timeout | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
 | reset_target_card | number | 1 | Index of card to return to (1 = first card) |
+| state_entity | string | null | Entity ID for state synchronization. Supports input_select and input_number entities |
 
 ### Example Configuration
 ```yaml
@@ -127,7 +130,29 @@ auto_swipe_interval: 3000
 enable_reset_after: true
 reset_after_timeout: 45000
 reset_target_card: 1
+state_entity: input_select.dashboard_cards
 ```
+
+## State Synchronization
+
+Simple Swipe Card can synchronize its current position with Home Assistant entities, enabling external control and automation integration through two-way binding.
+
+### Supported Entities
+
+**Input Select (`input_select`)**
+- Options are mapped by position to visible cards (option 1 = card 1, option 2 = card 2, etc.)
+- Changing the input_select value navigates to the corresponding card
+- Swiping to a card automatically updates the input_select value
+
+**Input Number (`input_number`)**
+- Uses 1-based indexing where 1 = first card, 2 = second card, etc.
+- Changing the input_number value navigates to the corresponding card
+- Swiping to a card automatically updates the input_number value
+
+### Option/Card Count Handling
+- **More options than cards**: Extra options are ignored and cannot be selected.
+- **Fewer options than cards**: Only cards corresponding to available options can be controlled externally. Cards without corresponding options can still be reached through manual swiping but won't update the entity.
+- **Visibility conditions**: State synchronization works with visible cards only. If cards are hidden due to visibility conditions, the mapping adjusts automatically to match only the currently visible cards.
 
 ## Visibility Conditions
 
