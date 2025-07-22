@@ -215,6 +215,91 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
   }
 
   /**
+   * Handles visibility changes from conditional cards
+   * @private
+   */
+  _handleConditionalVisibilityChange() {
+    logDebug("VISIBILITY", "Handling conditional card visibility change");
+
+    // Debounce multiple rapid changes
+    if (this._conditionalVisibilityTimeout) {
+      clearTimeout(this._conditionalVisibilityTimeout);
+    }
+
+    this._conditionalVisibilityTimeout = setTimeout(() => {
+      this._updateVisibleCardIndicesWithConditional();
+      this._conditionalVisibilityTimeout = null;
+    }, 50);
+  }
+
+  /**
+   * Updates visible card indices considering both Simple Swipe Card visibility conditions
+   * and conditional card visibility states
+   * @private
+   */
+  _updateVisibleCardIndicesWithConditional() {
+    if (!this._config?.cards || !this._hass) {
+      const wasEmpty = this.visibleCardIndices.length === 0;
+      this.visibleCardIndices = [];
+      if (!wasEmpty) {
+        logDebug(
+          "VISIBILITY",
+          "No cards or hass available, cleared visible indices",
+        );
+      }
+      return;
+    }
+
+    const previousVisibleIndices = [...this.visibleCardIndices];
+    this.visibleCardIndices = [];
+
+    this._config.cards.forEach((cardConfig, index) => {
+      // Check Simple Swipe Card visibility conditions
+      const swipeCardVisible = evaluateVisibilityConditions(
+        cardConfig.visibility,
+        this._hass,
+      );
+
+      // Check conditional card visibility if applicable
+      let conditionalVisible = true;
+      if (cardConfig.type === "conditional" && this.cards) {
+        const cardData = this.cards.find(
+          (card) => card && card.originalIndex === index,
+        );
+        if (cardData) {
+          conditionalVisible = cardData.conditionallyVisible;
+        }
+      }
+
+      // Card is visible if both conditions are met
+      if (swipeCardVisible && conditionalVisible) {
+        this.visibleCardIndices.push(index);
+      }
+    });
+
+    // Only log and rebuild when visibility actually changes
+    const hasChanged =
+      JSON.stringify(previousVisibleIndices) !==
+      JSON.stringify(this.visibleCardIndices);
+
+    if (hasChanged) {
+      logDebug(
+        "VISIBILITY",
+        `Visible cards changed: ${this.visibleCardIndices.length}/${this._config.cards.length} visible`,
+        this.visibleCardIndices,
+      );
+
+      // Adjust current index and rebuild if necessary
+      this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+
+      // Rebuild if connected and initialized
+      if (this.initialized && this.isConnected) {
+        this.cardBuilder.build();
+      }
+    }
+  }
+
+  /**
    * Updates the list of visible card indices based on visibility conditions
    * @private
    */
@@ -235,11 +320,23 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this.visibleCardIndices = [];
 
     this._config.cards.forEach((cardConfig, index) => {
-      const isVisible = evaluateVisibilityConditions(
+      // Check Simple Swipe Card visibility conditions
+      const swipeCardVisible = evaluateVisibilityConditions(
         cardConfig.visibility,
         this._hass,
       );
-      if (isVisible) {
+
+      // For conditional cards, we need to evaluate their conditions ourselves
+      // since they might not have fired their visibility event yet
+      let conditionalVisible = true;
+      if (cardConfig.type === "conditional" && cardConfig.conditions) {
+        conditionalVisible = this._evaluateConditionalCardConditions(
+          cardConfig.conditions,
+        );
+      }
+
+      // Card is visible if both conditions are met
+      if (swipeCardVisible && conditionalVisible) {
         this.visibleCardIndices.push(index);
       }
     });
@@ -257,6 +354,126 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
 
       // If the currently visible cards changed, we need to adjust the current index
       this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+    }
+  }
+
+  /**
+   * Evaluates conditional card conditions using the same logic as Home Assistant
+   * @param {Array} conditions - Array of condition objects
+   * @returns {boolean} True if all conditions are met
+   * @private
+   */
+  _evaluateConditionalCardConditions(conditions) {
+    if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+      return true; // No conditions means always visible
+    }
+
+    if (!this._hass) {
+      return true; // Default to visible if we can't evaluate
+    }
+
+    // All conditions must be true (AND logic)
+    return conditions.every((condition) => {
+      try {
+        return this._evaluateSingleCondition(condition);
+      } catch (error) {
+        logDebug(
+          "VISIBILITY",
+          "Error evaluating conditional card condition:",
+          condition,
+          error,
+        );
+        return true; // Default to visible on error
+      }
+    });
+  }
+
+  /**
+   * Evaluates a single conditional card condition
+   * @param {Object} condition - The condition to evaluate
+   * @returns {boolean} True if the condition is met
+   * @private
+   */
+  _evaluateSingleCondition(condition) {
+    if (!condition || typeof condition !== "object") {
+      return true;
+    }
+
+    const { condition: conditionType, entity, state, state_not } = condition;
+
+    switch (conditionType) {
+      case "state": {
+        if (!entity || !this._hass.states[entity]) {
+          logDebug(
+            "VISIBILITY",
+            `Entity ${entity} not found for conditional card state condition`,
+          );
+          return false;
+        }
+
+        const entityState = this._hass.states[entity].state;
+
+        if (state !== undefined) {
+          const expectedState = String(state);
+          const actualState = String(entityState);
+          const result = actualState === expectedState;
+          logDebug(
+            "VISIBILITY",
+            `Conditional card state condition: ${entity} = ${actualState}, expected: ${expectedState}, result: ${result}`,
+          );
+          return result;
+        }
+
+        if (state_not !== undefined) {
+          const notExpectedState = String(state_not);
+          const actualState = String(entityState);
+          const result = actualState !== notExpectedState;
+          logDebug(
+            "VISIBILITY",
+            `Conditional card state not condition: ${entity} = ${actualState}, not expected: ${notExpectedState}, result: ${result}`,
+          );
+          return result;
+        }
+
+        return true;
+      }
+
+      case "numeric_state": {
+        if (!entity || !this._hass.states[entity]) {
+          logDebug(
+            "VISIBILITY",
+            `Entity ${entity} not found for conditional card numeric_state condition`,
+          );
+          return false;
+        }
+
+        const numericValue = parseFloat(this._hass.states[entity].state);
+        if (isNaN(numericValue)) {
+          return false;
+        }
+
+        let result = true;
+        if (condition.above !== undefined) {
+          result = result && numericValue > parseFloat(condition.above);
+        }
+        if (condition.below !== undefined) {
+          result = result && numericValue < parseFloat(condition.below);
+        }
+
+        logDebug(
+          "VISIBILITY",
+          `Conditional card numeric state condition: ${entity} = ${numericValue}, result: ${result}`,
+        );
+        return result;
+      }
+
+      // Add more condition types as needed (screen, user, etc.)
+      default:
+        logDebug(
+          "VISIBILITY",
+          `Unknown conditional card condition type: ${conditionType}`,
+        );
+        return true; // Unknown conditions default to visible
     }
   }
 
@@ -544,6 +761,12 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       if (this._visibilityRebuildTimeout) {
         clearTimeout(this._visibilityRebuildTimeout);
         this._visibilityRebuildTimeout = null;
+      }
+
+      // Clean up conditional visibility timeout
+      if (this._conditionalVisibilityTimeout) {
+        clearTimeout(this._conditionalVisibilityTimeout);
+        this._conditionalVisibilityTimeout = null;
       }
 
       // Clean up card-mod observer

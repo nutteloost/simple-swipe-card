@@ -43,10 +43,10 @@ export class SwipeGestures {
   }
 
   /**
-   * Enhanced method to remove swipe gesture listeners
+   * Remove all swipe gesture event listeners
    */
   removeGestures() {
-    logDebug("SWIPE", "Attempting to remove swipe listeners.");
+    logDebug("SWIPE", "Removing swipe gesture listeners");
     if (this.card.cardContainer) {
       // Remove swipe gesture listeners
       this.card.cardContainer.removeEventListener(
@@ -75,21 +75,21 @@ export class SwipeGestures {
         { passive: false },
       );
 
-      // Remove click prevention listeners with matching options
+      // Remove click prevention listeners - fixed options to match addGestures
       this.card.cardContainer.removeEventListener(
         "click",
         this._boundPreventClick,
-        { capture: true, passive: false },
+        { capture: true },
       );
       this.card.cardContainer.removeEventListener(
         "pointerdown",
         this._boundPreventPointerEvents,
-        { capture: true, passive: false },
+        { capture: true },
       );
       this.card.cardContainer.removeEventListener(
         "pointerup",
         this._boundPreventPointerEvents,
-        { capture: true, passive: false },
+        { capture: true },
       );
 
       logDebug("SWIPE", "Removed swipe listeners from cardContainer.");
@@ -162,20 +162,20 @@ export class SwipeGestures {
       { passive: false },
     );
 
-    // Add click prevention listeners with explicit { passive: false }
+    // Add click prevention listeners - fixed options to match v1.7.2
     this.card.cardContainer.addEventListener("click", this._boundPreventClick, {
       capture: true,
-      passive: false,
+      // Remove passive: false to match working version
     });
     this.card.cardContainer.addEventListener(
       "pointerdown",
       this._boundPreventPointerEvents,
-      { capture: true, passive: false },
+      { capture: true },
     );
     this.card.cardContainer.addEventListener(
       "pointerup",
       this._boundPreventPointerEvents,
-      { capture: true, passive: false },
+      { capture: true },
     );
   }
 
@@ -394,7 +394,7 @@ export class SwipeGestures {
   }
 
   /**
-   * Enhanced swipe end handler - click prevention removed
+   * Enhanced swipe end handler with restored click prevention
    * @param {Event} e - Touch or mouse event
    * @private
    */
@@ -410,6 +410,37 @@ export class SwipeGestures {
       logDebug("SWIPE", "Removing mousemove/mouseup listeners from window");
       window.removeEventListener("mousemove", this._boundMouseMove);
       window.removeEventListener("mouseup", this._boundMouseUp);
+    }
+
+    // RESTORED CLICK PREVENTION LOGIC (from v1.7.2)
+    const hasSignificantMovement =
+      this._hasMovedDuringGesture &&
+      this._totalMovement > this._gestureThreshold;
+    const gestureTime = Date.now() - this._gestureStartTime;
+    const isQuickGesture = gestureTime < 200;
+
+    // Calculate velocity (use consistent logic)
+    const isHorizontal = this.card._swipeDirection === "horizontal";
+    const totalMove = isHorizontal
+      ? this._currentX - this._startX
+      : this._currentY - this._startY;
+    const timeDiff = Date.now() - this._lastMoveTime;
+    const velocity = timeDiff > 10 ? Math.abs(totalMove) / timeDiff : 0;
+    const hasHighVelocity = velocity > this._swipeVelocityThreshold;
+
+    const shouldPreventClicks =
+      hasSignificantMovement || (isQuickGesture && hasHighVelocity);
+
+    if (shouldPreventClicks) {
+      // Temporal click blocking (main mechanism for all events)
+      // No preventDefault() calls since both touch and mouse end events are passive
+      this._blockClicksTemporarily(hasHighVelocity ? 400 : 300);
+      logDebug("SWIPE", "Prevented clicks after swipe gesture", {
+        movement: this._totalMovement,
+        velocity: velocity,
+        gestureTime: gestureTime,
+        eventType: e.type,
+      });
     }
 
     // Reset gesture state
@@ -438,28 +469,25 @@ export class SwipeGestures {
         return;
       }
 
-      // Calculate velocity and movement for swipe logic
-      const isHorizontal = this.card._swipeDirection === "horizontal";
-      const totalMove = isHorizontal
-        ? this._currentX - this._startX
-        : this._currentY - this._startY;
-      const timeDiff = Date.now() - this._lastMoveTime;
-      const velocity = timeDiff > 10 ? Math.abs(totalMove) / timeDiff : 0;
+      // Calculate velocity and movement for swipe logic (reuse variables for consistency)
+      const timeDiffForSwipe = Date.now() - this._lastMoveTime;
+      const velocityForSwipe =
+        timeDiffForSwipe > 10 ? Math.abs(totalMove) / timeDiffForSwipe : 0;
 
       // Use the appropriate dimension for threshold calculation
       const slideSize = isHorizontal
         ? this.card.slideWidth
         : this.card.slideHeight;
-      const threshold = slideSize * 0.2;
 
+      const threshold = slideSize * 0.2; // Use 0.2 to match v1.7.2
       let nextIndex = this.card.currentIndex;
       const loopbackEnabled = this.card._config.enable_loopback === true;
       const totalVisibleCards = this.card.visibleCardIndices.length;
 
-      // Use consistent velocity threshold
+      // Use consistent velocity threshold (matching v1.7.2 logic)
       if (
         Math.abs(totalMove) > threshold ||
-        Math.abs(velocity) > this._swipeVelocityThreshold
+        Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
       ) {
         if (totalMove > 0) {
           // Swiping right/down - go to previous visible card
@@ -500,7 +528,7 @@ export class SwipeGestures {
           "SWIPE",
           "Swipe did not cross threshold or velocity, snapping back.",
         );
-        this.card.updateSlider(true);
+        this.card.updateSlider();
       }
     });
   }

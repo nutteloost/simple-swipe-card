@@ -261,6 +261,30 @@ export class CardBuilder {
   }
 
   /**
+   * Handles visibility changes from conditional cards
+   * @param {number} originalIndex - Original index of the conditional card
+   * @param {boolean} visible - Whether the card is now visible
+   * @private
+   */
+  _handleConditionalCardVisibilityChange(originalIndex, visible) {
+    logDebug(
+      "VISIBILITY",
+      `Conditional card ${originalIndex} visibility changed to: ${visible}`,
+    );
+
+    // Find the card data
+    const cardData = this.card.cards.find(
+      (card) => card.originalIndex === originalIndex,
+    );
+    if (cardData) {
+      cardData.conditionallyVisible = visible;
+    }
+
+    // Update the card's visibility and rebuild if necessary
+    this.card._handleConditionalVisibilityChange();
+  }
+
+  /**
    * Finishes the build process by setting up layout and observers
    */
   finishBuildLayout() {
