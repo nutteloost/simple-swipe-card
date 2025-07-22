@@ -26,7 +26,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
     - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
     - Integrates with Loopback Mode for continuous cycling or uses a "ping-pong" effect if loopback is disabled
 - Reset After Timeout: Automatically return to a target card after inactivity
-- State Synchronization: Two-way sync with Home Assistant input_select and input_number entities
+- State Synchronization: Two-way sync with Home Assistant `input_select` and `input_number` entities
 
 ## Installation
 
