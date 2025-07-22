@@ -7,7 +7,6 @@ import { getHelpers } from "./Dependencies.js";
 import {
   createSlide,
   createPreviewContainer,
-  createEmptyContainer,
   applyBorderRadiusToSlides,
 } from "../ui/DomHelpers.js";
 import { getStyles } from "../ui/Styles.js";
@@ -86,7 +85,7 @@ export class CardBuilder {
     // Update visible card indices
     this.card._updateVisibleCardIndices();
 
-    // Handle empty state (PREVIEW)
+    // Handle empty state (PREVIEW) - only for completely empty config
     if (this.card._config.cards.length === 0) {
       logDebug("INIT", "Building preview state.");
       const previewContainer = createPreviewContainer(
@@ -105,19 +104,23 @@ export class CardBuilder {
       return;
     }
 
-    // Handle case where no cards are visible
+    // Handle case where no cards are visible - COMPLETELY HIDE THE CARD
     if (this.card.visibleCardIndices.length === 0) {
-      logDebug("INIT", "No visible cards, showing empty state.");
-      const emptyContainer = createEmptyContainer();
+      logDebug("INIT", "No visible cards, hiding entire card.");
 
+      // Make the entire card invisible
+      this.card.style.display = "none";
+
+      // Clear the shadow root content
       root.innerHTML = "";
-      root.appendChild(style);
-      root.appendChild(emptyContainer);
 
       this.card.initialized = true;
       this.card.building = false;
       return;
     }
+
+    // If we reach here, we have visible cards - ensure card is visible
+    this.card.style.display = "block";
 
     // Build cards - load ALL visible cards upfront (no lazy loading)
     logDebug(

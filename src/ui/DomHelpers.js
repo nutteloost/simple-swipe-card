@@ -115,25 +115,6 @@ export function createPreviewContainer(swipeDirection, editClickHandler) {
 }
 
 /**
- * Creates the empty state container for no visible cards
- * @returns {HTMLElement} The empty container element
- */
-export function createEmptyContainer() {
-  const emptyContainer = document.createElement("div");
-  emptyContainer.className = "preview-container";
-  emptyContainer.innerHTML = `
-        <div class="preview-icon-container">
-            <ha-icon icon="mdi:eye-off" style="color: var(--secondary-text-color); font-size: 48px; width: 48px; height: 48px;"></ha-icon>
-        </div>
-        <div class="preview-text-container">
-            <div class="preview-title">No Visible Cards</div>
-            <div class="preview-description">All cards in this swipe card are currently hidden due to their visibility conditions.</div>
-        </div>
-    `;
-  return emptyContainer;
-}
-
-/**
  * Creates a slide element
  * @returns {HTMLElement} The slide element
  */

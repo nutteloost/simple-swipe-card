@@ -45,7 +45,6 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this.building = false;
     this.resizeObserver = null;
     this._swipeDirection = "horizontal"; // Default swipe direction
-    this._autoSwipeInProgress = false;
 
     // Card-mod support
     this._cardModConfig = null;
@@ -320,31 +319,33 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this.visibleCardIndices = [];
 
     this._config.cards.forEach((cardConfig, index) => {
-      // Check Simple Swipe Card visibility conditions
+      // Check Simple Swipe Card's own visibility conditions
       const swipeCardVisible = evaluateVisibilityConditions(
         cardConfig.visibility,
         this._hass,
       );
 
-      // For conditional cards, we need to evaluate their conditions ourselves
-      // since they might not have fired their visibility event yet
-      let conditionalVisible = true;
+      // Check conditional card conditions if this is a conditional card
+      let conditionalCardVisible = true;
       if (cardConfig.type === "conditional" && cardConfig.conditions) {
-        conditionalVisible = this._evaluateConditionalCardConditions(
+        conditionalCardVisible = this._evaluateConditionalCardConditions(
           cardConfig.conditions,
         );
       }
 
-      // Card is visible if both conditions are met
-      if (swipeCardVisible && conditionalVisible) {
+      // Card is visible only if both conditions are met
+      const isVisible = swipeCardVisible && conditionalCardVisible;
+
+      if (isVisible) {
         this.visibleCardIndices.push(index);
       }
     });
 
-    // Only log when visibility actually changes
+    // Only log and rebuild when visibility actually changes
     const hasChanged =
       JSON.stringify(previousVisibleIndices) !==
       JSON.stringify(this.visibleCardIndices);
+
     if (hasChanged) {
       logDebug(
         "VISIBILITY",
@@ -354,6 +355,12 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
 
       // If the currently visible cards changed, we need to adjust the current index
       this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+
+      // Trigger rebuild if initialized and connected
+      if (this.initialized && this.isConnected) {
+        logDebug("VISIBILITY", "Triggering rebuild due to visibility changes");
+        this.cardBuilder.build();
+      }
     }
   }
 
@@ -399,9 +406,27 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       return true;
     }
 
-    const { condition: conditionType, entity, state, state_not } = condition;
+    const {
+      condition: conditionType,
+      entity,
+      state,
+      state_not,
+      above,
+      below,
+    } = condition;
 
-    switch (conditionType) {
+    // Handle shorthand format where condition type is implied
+    // If no explicit condition type but we have entity + state/state_not, treat as state condition
+    const actualConditionType =
+      conditionType ||
+      (entity && (state !== undefined || state_not !== undefined)
+        ? "state"
+        : null) ||
+      (entity && (above !== undefined || below !== undefined)
+        ? "numeric_state"
+        : null);
+
+    switch (actualConditionType) {
       case "state": {
         if (!entity || !this._hass.states[entity]) {
           logDebug(
@@ -453,11 +478,11 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
         }
 
         let result = true;
-        if (condition.above !== undefined) {
-          result = result && numericValue > parseFloat(condition.above);
+        if (above !== undefined) {
+          result = result && numericValue > parseFloat(above);
         }
-        if (condition.below !== undefined) {
-          result = result && numericValue < parseFloat(condition.below);
+        if (below !== undefined) {
+          result = result && numericValue < parseFloat(below);
         }
 
         logDebug(
@@ -467,13 +492,52 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
         return result;
       }
 
-      // Add more condition types as needed (screen, user, etc.)
+      case "screen": {
+        // Screen size conditions
+        const media = condition.media_query;
+        if (media && window.matchMedia) {
+          const mediaQuery = window.matchMedia(media);
+          const result = mediaQuery.matches;
+          logDebug(
+            "VISIBILITY",
+            `Screen condition: ${media}, result: ${result}`,
+          );
+          return result;
+        }
+        return true;
+      }
+
+      case "user": {
+        // User-based conditions
+        if (condition.users && Array.isArray(condition.users)) {
+          const currentUser = this._hass.user;
+          if (currentUser && currentUser.id) {
+            const result = condition.users.includes(currentUser.id);
+            logDebug(
+              "VISIBILITY",
+              `User condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`,
+            );
+            return result;
+          }
+        }
+        return true;
+      }
+
       default:
+        // If we can't determine the condition type, log it and default to not visible for safety
+        if (entity) {
+          logDebug(
+            "VISIBILITY",
+            `Unknown or invalid conditional card condition:`,
+            condition,
+          );
+          return false; // Changed from true to false for safety
+        }
         logDebug(
           "VISIBILITY",
-          `Unknown conditional card condition type: ${conditionType}`,
+          `Unknown condition type: ${actualConditionType}`,
         );
-        return true; // Unknown conditions default to visible
+        return true; // Unknown conditions without entity default to visible
     }
   }
 
@@ -662,30 +726,16 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     // Notify state synchronization of hass change
     this.stateSynchronization?.onHassChange(oldHass, hass);
 
-    // Update visibility when hass changes, but be careful about rebuilds
+    // Update visibility immediately when hass changes
     if (oldHass !== hass) {
-      const oldVisibleIndices = [...this.visibleCardIndices];
-
-      // Use debounced update for better performance
-      this._debouncedUpdateVisibility();
-
-      // Only rebuild immediately if we already know visibility changed significantly
-      const currentVisibleCount = this.visibleCardIndices.length;
-      if (Math.abs(currentVisibleCount - oldVisibleIndices.length) > 1) {
-        // Significant change, rebuild immediately
-        if (this._visibilityUpdateTimeout) {
-          clearTimeout(this._visibilityUpdateTimeout);
-          this._visibilityUpdateTimeout = null;
-        }
-        this._updateVisibleCardIndices();
-
-        const visibilityChanged =
-          JSON.stringify(oldVisibleIndices) !==
-          JSON.stringify(this.visibleCardIndices);
-        if (visibilityChanged && this.initialized && this.isConnected) {
-          this.cardBuilder.build();
-        }
+      // Clear any pending debounced updates
+      if (this._visibilityUpdateTimeout) {
+        clearTimeout(this._visibilityUpdateTimeout);
+        this._visibilityUpdateTimeout = null;
       }
+
+      // Update visibility immediately
+      this._updateVisibleCardIndices();
     }
 
     // Update hass for all child cards
@@ -749,6 +799,12 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
   disconnectedCallback() {
     logDebug("INIT", "disconnectedCallback");
 
+    // Remove the config-changed event listener
+    this.removeEventListener(
+      "config-changed",
+      this._handleConfigChanged.bind(this),
+    );
+
     // Safely remove observers and gestures
     try {
       this.resizeObserver?.cleanup();
@@ -757,16 +813,21 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       this.resetAfter?.stopTimer();
       this.stateSynchronization?.stop();
 
-      // Clean up visibility rebuild timeout
+      // Clean up all timeout references
       if (this._visibilityRebuildTimeout) {
         clearTimeout(this._visibilityRebuildTimeout);
         this._visibilityRebuildTimeout = null;
       }
 
-      // Clean up conditional visibility timeout
       if (this._conditionalVisibilityTimeout) {
         clearTimeout(this._conditionalVisibilityTimeout);
         this._conditionalVisibilityTimeout = null;
+      }
+
+      // Add missing visibility update timeout cleanup
+      if (this._visibilityUpdateTimeout) {
+        clearTimeout(this._visibilityUpdateTimeout);
+        this._visibilityUpdateTimeout = null;
       }
 
       // Clean up card-mod observer
