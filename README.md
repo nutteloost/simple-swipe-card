@@ -210,6 +210,7 @@ Simple Swipe Card can synchronize its current position with Home Assistant entit
 <p align="center">
 <img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select state synchronization example" title="input_select state  synchronization example">
 </p>
+
 ### Example Use Case
 
 **Security Camera Alert**: When motion is detected at your front door, the Simple Swipe Card can automatically switch to display the camera feed, providing immediate visual confirmation of activity without requiring manual navigation. This ensures critical security events receive instant attention when they matter most.
