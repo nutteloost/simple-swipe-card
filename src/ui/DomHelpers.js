@@ -220,6 +220,8 @@ export function applyCardModStyles(
         "--simple-swipe-card-pagination-padding",
         "--simple-swipe-card-pagination-bottom",
         "--simple-swipe-card-pagination-right",
+        "--simple-swipe-card-transition-speed",
+        "--simple-swipe-card-transition-easing",
       ];
 
       shadowElements.forEach((element) => {

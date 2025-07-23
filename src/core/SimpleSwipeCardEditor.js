@@ -14,6 +14,7 @@ import {
 } from "../utils/EventHelpers.js";
 import {
   renderInfoPanel,
+  renderViewModeOptions,
   renderDisplayOptions,
   renderAdvancedOptions,
   renderCardsSection,
@@ -1703,7 +1704,7 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       target.localName === "ha-textfield" &&
       target.type === "number"
     ) {
-      value = parseInt(target.value);
+      value = parseFloat(target.value); // Use parseFloat for cards_visible
       if (isNaN(value) || value < 0) {
         // Set default values based on option
         if (finalOption === "card_spacing") {
@@ -1712,6 +1713,8 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
           value = 2000;
         } else if (finalOption === "reset_after_timeout") {
           value = 30000;
+        } else if (finalOption === "cards_visible") {
+          value = 2.5;
         } else {
           value = 0;
         }
@@ -1720,7 +1723,59 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       value = target.value;
     }
 
-    // Guard against redundant updates to prevent loops
+    // Handle view mode switching with cleanup
+    if (finalOption === "view_mode" && this._config[finalOption] !== value) {
+      logDebug(
+        "EDITOR",
+        `View mode changing from ${this._config[finalOption]} to ${value}`,
+      );
+
+      // Create new config with cleaned options
+      const newConfig = { ...this._config, [finalOption]: value };
+
+      if (value === "carousel") {
+        // Switching TO carousel mode - remove single-mode-only options
+        delete newConfig.swipe_direction; // Carousel only supports horizontal
+        delete newConfig.enable_auto_swipe;
+        delete newConfig.auto_swipe_interval;
+        delete newConfig.enable_reset_after;
+        delete newConfig.reset_after_timeout;
+        delete newConfig.reset_target_card;
+        delete newConfig.state_entity;
+
+        // Set carousel defaults if not present
+        if (!newConfig.cards_visible) {
+          newConfig.cards_visible = 2.5;
+        }
+
+        logDebug(
+          "EDITOR",
+          "Cleaned config for carousel mode:",
+          Object.keys(newConfig),
+        );
+      } else if (value === "single") {
+        // Switching TO single mode - remove carousel-mode-only options
+        delete newConfig.cards_visible;
+
+        // Restore single mode defaults if needed
+        if (!newConfig.swipe_direction) {
+          newConfig.swipe_direction = "horizontal";
+        }
+
+        logDebug(
+          "EDITOR",
+          "Cleaned config for single mode:",
+          Object.keys(newConfig),
+        );
+      }
+
+      this._config = newConfig;
+      this._fireConfigChanged();
+      this.requestUpdate();
+      return;
+    }
+
+    // Guard against redundant updates to prevent loops (for other options)
     if (this._config[finalOption] !== value) {
       logDebug("EDITOR", `Value changed for ${finalOption}:`, value);
 
@@ -1859,6 +1914,7 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
     return html`
       <div class="card-config">
         ${renderInfoPanel()}
+        ${renderViewModeOptions(this._config, this._valueChanged.bind(this))}
         ${renderDisplayOptions(this._config, this._valueChanged.bind(this))}
         ${renderAdvancedOptions(
           this._config,
@@ -1932,18 +1988,25 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
 
     const cleanConfig = { type: config.type };
 
-    // Always include cards array if it exists
-    if (Array.isArray(config.cards)) {
-      cleanConfig.cards = config.cards;
+    // View Mode section (matches UI order)
+    // Include view mode if not default
+    if (config.view_mode && config.view_mode !== "single") {
+      cleanConfig.view_mode = config.view_mode;
     }
 
-    // Define the desired order matching the UI sections
+    // Include cards_visible if in carousel mode (always, even if default value)
+    if (config.view_mode === "carousel") {
+      cleanConfig.cards_visible = config.cards_visible || 2.5;
+    }
+
+    // Display Options section (matches UI order)
     const displayOptions = [
       "card_spacing",
       "swipe_direction",
       "show_pagination",
     ];
 
+    // Advanced Options section (matches UI order)
     const advancedOptions = [
       "enable_loopback",
       "enable_auto_swipe",
@@ -1989,6 +2052,11 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
         cleanConfig[key] = config[key];
       }
     });
+
+    // Cards section (comes after configuration options, matching UI)
+    if (Array.isArray(config.cards)) {
+      cleanConfig.cards = config.cards;
+    }
 
     // Add Home Assistant layout properties at the end (before card_mod)
     const layoutProperties = ["grid_options", "layout_options", "view_layout"];

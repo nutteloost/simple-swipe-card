@@ -104,6 +104,25 @@ export function getStyles() {
         overflow: hidden;
         background: transparent;
      }
+
+    .slide.carousel-mode {
+      flex: 0 0 auto; /* Don't grow/shrink, use calculated width */
+      width: var(--carousel-card-width); /* Will be set dynamically */
+      min-width: var(--carousel-card-width);
+    }
+
+    /* Carousel container adjustments */
+    .slider[data-view-mode="carousel"] {
+      /* Allow overflow to show partial cards */
+      overflow: visible;
+    }
+
+    .card-container[data-view-mode="carousel"] {
+      /* Ensure container can handle overflow */
+      overflow: hidden;
+      position: relative;
+    }
+
     .pagination {
         position: absolute;
         display: flex;
@@ -114,22 +133,28 @@ export function getStyles() {
         transition: opacity 0.2s ease-in-out;
         padding: var(--simple-swipe-card-pagination-padding, 4px 8px);
         border-radius: 12px;
+        /* Prevent container from sizing to content during animations */
+        box-sizing: border-box;
     }
-    
+
     /* Horizontal pagination (bottom) */
     .pagination.horizontal {
         bottom: var(--simple-swipe-card-pagination-bottom, 8px);
         left: 50%;
         transform: translateX(-50%);
         flex-direction: row;
+        align-items: center;
+        /* Remove any height properties - will be set by JavaScript */
     }
-    
+
     /* Vertical pagination (right) */
     .pagination.vertical {
         right: var(--simple-swipe-card-pagination-right, 8px);
         top: 50%;
         transform: translateY(-50%);
         flex-direction: column;
+        align-items: center;
+        /* Remove any width properties - will be set by JavaScript */
     }
     
      .pagination.hide {
@@ -163,6 +188,7 @@ export function getStyles() {
         height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
         opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);
     }
+
      ha-alert {
         display: block;
         margin: 0;
@@ -204,7 +230,7 @@ export const getEditorStyles = () => css`
 
   .info-panel {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding: 12px;
     margin: 8px 0 24px 0;
     background-color: var(--primary-background-color);
@@ -219,10 +245,11 @@ export const getEditorStyles = () => css`
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background-color: var(--info-color, #4a90e2);
+    background-color: var(--info-color, #2196f3);
     color: white;
     margin-right: 12px;
     flex-shrink: 0;
+    font-size: 14px;
   }
 
   .info-text {
@@ -415,7 +442,7 @@ export const getEditorStyles = () => css`
 
   .compact-options .option-row + .help-text {
     margin-top: -20px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   .compact-options ha-textfield + .help-text {
@@ -656,5 +683,94 @@ export const getEditorStyles = () => css`
   .entity-picker-help {
     margin-top: 0px !important;
     margin-bottom: 16px !important;
+  }
+
+  /* VIEW MODE SECTION */
+  .view-mode-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .view-mode-label {
+    font-size: 14px;
+    color: var(--primary-text-color);
+    font-weight: 500;
+  }
+
+  /* VIEW MODE SECTION */
+  .section-header-with-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-header-with-controls.carousel-mode {
+    margin-bottom: 16px; /* Keep margin for carousel mode (has input below) */
+  }
+
+  .section-header-with-controls.single-mode {
+    margin-bottom: 0; /* Remove margin for single mode */
+  }
+
+  .section-header-with-controls .section-header {
+    margin-bottom: 0;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 16px;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--primary-text-color);
+  }
+
+  .radio-option input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .radio-option:hover {
+    color: var(--primary-color);
+  }
+
+  /* INFO MESSAGE STYLING */
+  .option-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background-color: rgba(33, 150, 243, 0.4);
+    color: var(--text-primary-color, white);
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+
+  .option-info {
+    background-color: color-mix(
+      in srgb,
+      var(--info-color, #2196f3) 40%,
+      transparent
+    );
+  }
+
+  @supports not (background-color: color-mix(in srgb, blue 40%, transparent)) {
+    .option-info {
+      background-color: rgba(33, 150, 243, 0.4);
+    }
+  }
+
+  .info-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
   }
 `;

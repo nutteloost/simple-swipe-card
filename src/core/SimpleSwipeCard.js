@@ -22,6 +22,7 @@ import {
   getTransitionStyle,
   initializeGlobalDialogStack,
 } from "../utils/EventHelpers.js";
+import { CarouselView } from "../features/CarouselView.js";
 
 /**
  * Main Simple Swipe Card class
@@ -57,6 +58,7 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this.pagination = new Pagination(this);
     this.cardBuilder = new CardBuilder(this);
     this.stateSynchronization = new StateSynchronization(this);
+    this.carouselView = new CarouselView(this);
 
     this._visibilityUpdateTimeout = null;
     this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
@@ -91,91 +93,103 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
   }
 
   /**
-   * Sets the card configuration
-   * @param {Object} config - The card configuration
+   * Sets the configuration for the editor
+   * @param {Object} config - The configuration object
    */
   setConfig(config) {
-    logDebug("CONFIG", "setConfig received:", JSON.stringify(config));
+    if (!config) {
+      throw new Error("Invalid configuration");
+    }
+    logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
 
-    // Validate configuration
-    if (!config || typeof config !== "object") {
-      this._handleInvalidConfig("Configuration must be an object");
-      return;
+    this._config = JSON.parse(JSON.stringify(config));
+    if (!Array.isArray(this._config.cards)) this._config.cards = [];
+    if (this._config.show_pagination === undefined)
+      this._config.show_pagination = true;
+    if (this._config.card_spacing === undefined) {
+      this._config.card_spacing = 15;
+    } else {
+      const spacing = parseInt(this._config.card_spacing);
+      this._config.card_spacing = isNaN(spacing) || spacing < 0 ? 15 : spacing;
+    }
+    // Set default for enable_loopback
+    if (this._config.enable_loopback === undefined)
+      this._config.enable_loopback = false;
+
+    // Set default for swipe_direction
+    if (
+      this._config.swipe_direction === undefined ||
+      !["horizontal", "vertical"].includes(this._config.swipe_direction)
+    ) {
+      this._config.swipe_direction = "horizontal";
     }
 
-    if (!config.cards || !Array.isArray(config.cards)) {
-      logDebug(
-        "CONFIG",
-        "No cards array found in configuration, creating empty array",
+    // Set defaults for auto-swipe options
+    if (this._config.enable_auto_swipe === undefined)
+      this._config.enable_auto_swipe = false;
+    if (this._config.auto_swipe_interval === undefined) {
+      this._config.auto_swipe_interval = 2000;
+    } else {
+      this._config.auto_swipe_interval = parseInt(
+        this._config.auto_swipe_interval,
       );
-      this._config = { ...DEFAULT_CONFIG };
-      if (this.isConnected) this.cardBuilder.build();
-      return;
-    }
-
-    // Check if configuration has changed
-    const oldConfigString = JSON.stringify(this._config);
-    const newConfigString = JSON.stringify(config);
-
-    if (oldConfigString === newConfigString) {
-      logDebug("CONFIG", "setConfig: No change detected, skipping update.");
-      return;
-    }
-
-    // Apply new configuration
-    this._config = JSON.parse(newConfigString);
-
-    // Handle backward compatibility
-    if (this._config.parameters?.show_pagination !== undefined) {
-      this._config.show_pagination = this._config.parameters.show_pagination;
-      delete this._config.parameters;
-    }
-
-    // Set defaults
-    Object.keys(DEFAULT_CONFIG).forEach((key) => {
-      if (this._config[key] === undefined) {
-        this._config[key] = DEFAULT_CONFIG[key];
+      if (
+        isNaN(this._config.auto_swipe_interval) ||
+        this._config.auto_swipe_interval < 500
+      ) {
+        this._config.auto_swipe_interval = 2000;
       }
-    });
-
-    // Validate numeric values
-    this._config.card_spacing = parseInt(this._config.card_spacing);
-    if (isNaN(this._config.card_spacing) || this._config.card_spacing < 0) {
-      this._config.card_spacing = DEFAULT_CONFIG.card_spacing;
     }
 
-    this._config.auto_swipe_interval = parseInt(
-      this._config.auto_swipe_interval,
-    );
-    if (
-      isNaN(this._config.auto_swipe_interval) ||
-      this._config.auto_swipe_interval < 500
-    ) {
-      this._config.auto_swipe_interval = DEFAULT_CONFIG.auto_swipe_interval;
+    // Set defaults for reset-after options
+    if (this._config.enable_reset_after === undefined)
+      this._config.enable_reset_after = false;
+    if (this._config.reset_after_timeout === undefined) {
+      this._config.reset_after_timeout = 30000; // 30 seconds default
+    } else {
+      // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
+      this._config.reset_after_timeout = parseInt(
+        this._config.reset_after_timeout,
+      );
+      if (
+        isNaN(this._config.reset_after_timeout) ||
+        this._config.reset_after_timeout < 5000
+      ) {
+        this._config.reset_after_timeout = 30000;
+      }
+    }
+    if (this._config.reset_target_card === undefined) {
+      this._config.reset_target_card = 1; // Default to first card (1-based)
+    } else {
+      // Ensure it's a valid 1-based number
+      this._config.reset_target_card = Math.max(
+        1,
+        parseInt(this._config.reset_target_card),
+      );
     }
 
-    this._config.reset_after_timeout = parseInt(
-      this._config.reset_after_timeout,
-    );
-    if (
-      isNaN(this._config.reset_after_timeout) ||
-      this._config.reset_after_timeout < 5000
-    ) {
-      this._config.reset_after_timeout = DEFAULT_CONFIG.reset_after_timeout;
+    // Set defaults for view mode options
+    if (this._config.view_mode === undefined) {
+      this._config.view_mode = "single";
     }
 
-    // Validate swipe direction
-    if (!["horizontal", "vertical"].includes(this._config.swipe_direction)) {
-      this._config.swipe_direction = DEFAULT_CONFIG.swipe_direction;
+    // Validate view_mode
+    if (!["single", "carousel"].includes(this._config.view_mode)) {
+      this._config.view_mode = "single";
     }
 
-    // Validate state_entity if provided
-    if (
-      this._config.state_entity &&
-      typeof this._config.state_entity !== "string"
-    ) {
-      logDebug("CONFIG", "Invalid state_entity, must be string");
-      this._config.state_entity = null;
+    // Set default for cards_visible
+    if (this._config.cards_visible === undefined) {
+      this._config.cards_visible = 2.5;
+    } else {
+      // Validate cards_visible with better bounds
+      const cardsVisible = parseFloat(this._config.cards_visible);
+      if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+        this._config.cards_visible = 2.5;
+      } else {
+        // Round to 1 decimal place to avoid precision issues
+        this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+      }
     }
 
     // Store the card_mod configuration if present
@@ -189,28 +203,10 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     // Store the current swipe direction for internal use
     this._swipeDirection = this._config.swipe_direction;
 
-    delete this._config.title; // Remove title if present (legacy)
+    // Store view mode for internal use
+    this._viewMode = this._config.view_mode || "single";
 
-    // Evaluate visibility conditions and update visible indices
-    this._updateVisibleCardIndices();
-
-    // Determine if rebuild is needed
-    const needsRebuild =
-      !this.initialized ||
-      !this.isConnected ||
-      this.cards.length !== this.visibleCardIndices.length;
-
-    if (needsRebuild && this.isConnected) {
-      logDebug("CONFIG", "setConfig triggering rebuild");
-      this.cardBuilder.build();
-    } else if (this.initialized) {
-      logDebug("CONFIG", "setConfig triggering updates (no rebuild)");
-      this._updateChildCardConfigs();
-      this._updateLayoutOptions();
-      this.autoSwipe.manage();
-      this.resetAfter.manage();
-      this.stateSynchronization.manage();
-    }
+    delete this._config.title;
   }
 
   /**
@@ -954,17 +950,28 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       return;
     }
 
-    const loopbackEnabled = this._config.enable_loopback === true;
+    const viewMode = this._config.view_mode || "single";
 
-    if (loopbackEnabled && totalVisibleCards > 1) {
-      if (visibleIndex < 0) {
-        visibleIndex = totalVisibleCards - 1;
-      } else if (visibleIndex >= totalVisibleCards) {
-        visibleIndex = 0;
-      }
+    // Handle loopback logic
+    if (viewMode === "carousel" && this.carouselView) {
+      visibleIndex = this.carouselView.handleLoopback(visibleIndex);
     } else {
-      // Clamp to valid range based on visible cards
-      visibleIndex = Math.max(0, Math.min(visibleIndex, totalVisibleCards - 1));
+      // Original loopback logic for both single mode and carousel fallback
+      const loopbackEnabled = this._config.enable_loopback === true;
+
+      if (loopbackEnabled && totalVisibleCards > 1) {
+        if (visibleIndex < 0) {
+          visibleIndex = totalVisibleCards - 1;
+        } else if (visibleIndex >= totalVisibleCards) {
+          visibleIndex = 0;
+        }
+      } else {
+        // Clamp to valid range based on visible cards
+        visibleIndex = Math.max(
+          0,
+          Math.min(visibleIndex, totalVisibleCards - 1),
+        );
+      }
     }
 
     if (
@@ -979,7 +986,10 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       return;
     }
 
-    logDebug("SWIPE", `Going to visible slide ${visibleIndex}`);
+    logDebug(
+      "SWIPE",
+      `Going to visible slide ${visibleIndex} (${viewMode} mode)`,
+    );
     this.currentIndex = visibleIndex;
 
     // Notify state synchronization of navigation
@@ -1013,6 +1023,7 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     logDebug("SWIPE", `Updating slider to visible index ${this.currentIndex}`, {
       animate,
       totalVisible: totalVisibleCards,
+      viewMode: this._config.view_mode,
     });
 
     if (
@@ -1031,6 +1042,18 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     }
 
     const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+
+    // Handle carousel mode
+    const viewMode = this._config.view_mode || "single";
+    if (viewMode === "carousel" && this.carouselView) {
+      // Set gap for carousel spacing
+      this.sliderElement.style.gap = `${cardSpacing}px`;
+      this.carouselView.updateSliderPosition(this.currentIndex, animate);
+      this.pagination.update();
+      return;
+    }
+
+    // Original single mode logic
     const isHorizontal = this._swipeDirection === "horizontal";
 
     // Handle loopback mode for index wrapping

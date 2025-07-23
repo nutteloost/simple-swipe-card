@@ -328,8 +328,15 @@ export class CardBuilder {
     }
     this.card._layoutRetryCount = 0;
 
+    // Set basic dimensions
     this.card.slideWidth = containerWidth;
     this.card.slideHeight = containerHeight;
+
+    // Handle carousel mode layout
+    const viewMode = this.card._config.view_mode || "single";
+    if (viewMode === "carousel") {
+      this._setupCarouselLayout(containerWidth, containerHeight);
+    }
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
 
@@ -363,6 +370,8 @@ export class CardBuilder {
       this.card.currentIndex,
       "visible cards:",
       totalVisibleCards,
+      "view mode:",
+      viewMode,
     );
 
     // All cards are already loaded - no preloading needed
@@ -371,5 +380,44 @@ export class CardBuilder {
     this.card.autoSwipe?.manage();
     this.card.resetAfter?.manage();
     this.card.stateSynchronization?.manage();
+  }
+
+  /**
+   * Sets up carousel mode layout and sizing
+   * @param {number} containerWidth - Container width
+   * @param {number} _containerHeight - Container height (unused - reserved for future vertical carousel support)
+   * @private
+   */
+  _setupCarouselLayout(containerWidth, _containerHeight) {
+    const cardsVisible = this.card._config.cards_visible || 2.5;
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    // Calculate individual card width
+    // Total spacing = (cards_visible - 1) * cardSpacing (spacing between visible cards)
+    const totalSpacing = (cardsVisible - 1) * cardSpacing;
+    const cardWidth = (containerWidth - totalSpacing) / cardsVisible;
+
+    logDebug("INIT", "Carousel layout setup:", {
+      containerWidth,
+      cardsVisible,
+      cardSpacing,
+      totalSpacing,
+      cardWidth: cardWidth.toFixed(2),
+    });
+
+    // Set CSS custom property for card width
+    this.card.style.setProperty("--carousel-card-width", `${cardWidth}px`);
+
+    // Add carousel data attribute to slider and container
+    this.card.sliderElement.setAttribute("data-view-mode", "carousel");
+    this.card.cardContainer.setAttribute("data-view-mode", "carousel");
+
+    // Apply carousel class to all card slides
+    this.card.cards.forEach((cardData) => {
+      if (cardData && cardData.slide) {
+        cardData.slide.classList.add("carousel-mode");
+      }
+    });
   }
 }

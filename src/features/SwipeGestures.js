@@ -479,7 +479,22 @@ export class SwipeGestures {
         ? this.card.slideWidth
         : this.card.slideHeight;
 
-      const threshold = slideSize * 0.2; // Use 0.2 to match v1.7.2
+      // For carousel mode, use single card width instead of full slide width
+      const viewMode = this.card._config.view_mode || "single";
+      let threshold;
+
+      if (viewMode === "carousel") {
+        // In carousel mode, use card width for threshold
+        const cardsVisible = this.card._config.cards_visible || 2.5;
+        const cardSpacing =
+          Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+        const totalSpacing = (cardsVisible - 1) * cardSpacing;
+        const cardWidth = (this.card.slideWidth - totalSpacing) / cardsVisible;
+        threshold = cardWidth * 0.2; // 20% of card width
+      } else {
+        threshold = slideSize * 0.2; // Use original logic for single mode
+      }
+
       let nextIndex = this.card.currentIndex;
       const loopbackEnabled = this.card._config.enable_loopback === true;
       const totalVisibleCards = this.card.visibleCardIndices.length;

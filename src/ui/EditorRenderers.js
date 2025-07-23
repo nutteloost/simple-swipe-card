@@ -13,12 +13,92 @@ import { evaluateVisibilityConditions } from "../features/VisibilityConditions.j
 export function renderInfoPanel() {
   return html`
     <div class="info-panel">
-      <div class="info-icon">i</div>
+      <div class="info-icon">
+        <ha-icon icon="mdi:information"></ha-icon>
+      </div>
       <div class="info-text">
         Add cards using the picker below. Edit and reorder them in the Cards
         section. Use Advanced Options for auto-swipe, reset timers, and loopback
         features.
       </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders the view mode selection section
+ * @param {Object} config - Current configuration
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The view mode template
+ */
+export function renderViewModeOptions(config, valueChanged) {
+  const viewMode = config.view_mode || "single";
+  const cardsVisible = config.cards_visible ?? 2.5;
+
+  return html`
+    <div class="section">
+      <div
+        class="section-header-with-controls ${viewMode === "single"
+          ? "single-mode"
+          : "carousel-mode"}"
+      >
+        <div class="section-header">View Mode</div>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input
+              type="radio"
+              name="view-mode"
+              value="single"
+              .checked=${viewMode === "single"}
+              data-option="view_mode"
+              @change=${valueChanged}
+            />
+            <span>Single</span>
+          </label>
+          <label class="radio-option">
+            <input
+              type="radio"
+              name="view-mode"
+              value="carousel"
+              .checked=${viewMode === "carousel"}
+              data-option="view_mode"
+              @change=${valueChanged}
+            />
+            <span>Carousel</span>
+          </label>
+        </div>
+      </div>
+
+      ${viewMode === "carousel"
+        ? html`
+            <ha-textfield
+              label="Cards Visible"
+              .value=${cardsVisible.toFixed(1).replace(/\.0$/, "")}
+              data-option="cards_visible"
+              type="number"
+              min="1.1"
+              max="8.0"
+              step="0.1"
+              lang="en-US"
+              @change=${valueChanged}
+              @input=${(e) => {
+                // Real-time validation feedback
+                const value = parseFloat(e.target.value);
+                if (value < 1.1 || value > 8.0 || isNaN(value)) {
+                  e.target.style.borderColor = "var(--error-color, #f44336)";
+                } else {
+                  e.target.style.borderColor = "";
+                }
+              }}
+              autoValidate
+              required
+            ></ha-textfield>
+            <div class="help-text">
+              Number of cards visible at once (1.1 - 8.0). Values like 2.5 show
+              2 full cards + partial third card.
+            </div>
+          `
+        : ""}
     </div>
   `;
 }
@@ -33,6 +113,7 @@ export function renderDisplayOptions(config, valueChanged) {
   const showPagination = config.show_pagination !== false;
   const cardSpacing = config.card_spacing ?? 15;
   const swipeDirection = config.swipe_direction || "horizontal";
+  const viewMode = config.view_mode || "single";
 
   return html`
     <div class="section">
@@ -55,35 +136,45 @@ export function renderDisplayOptions(config, valueChanged) {
         Visual gap between cards when swiping (in pixels)
       </div>
 
-      <div class="option-row">
-        <div class="option-label">Swipe direction</div>
-        <div class="option-control">
-          <ha-select
-            .value=${swipeDirection}
-            data-option="swipe_direction"
-            @change=${valueChanged}
-            @closed=${(ev) => ev.stopPropagation()}
-          >
-            <ha-list-item .value=${"horizontal"}>
-              Horizontal
-              <ha-icon
-                slot="graphic"
-                class="direction-icon"
-                icon="mdi:gesture-swipe-horizontal"
-              ></ha-icon>
-            </ha-list-item>
-            <ha-list-item .value=${"vertical"}>
-              Vertical
-              <ha-icon
-                slot="graphic"
-                class="direction-icon"
-                icon="mdi:gesture-swipe-vertical"
-              ></ha-icon>
-            </ha-list-item>
-          </ha-select>
-        </div>
-      </div>
-      <div class="help-text">The direction to swipe between cards</div>
+      ${viewMode === "single"
+        ? html`
+            <div class="option-row">
+              <div class="option-label">Swipe direction</div>
+              <div class="option-control">
+                <ha-select
+                  .value=${swipeDirection}
+                  data-option="swipe_direction"
+                  @change=${valueChanged}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                  <ha-list-item .value=${"horizontal"}>
+                    Horizontal
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:gesture-swipe-horizontal"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"vertical"}>
+                    Vertical
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:gesture-swipe-vertical"
+                    ></ha-icon>
+                  </ha-list-item>
+                </ha-select>
+              </div>
+            </div>
+            <div class="help-text">The direction to swipe between cards</div>
+          `
+        : html`
+            <!-- Carousel mode: Only horizontal direction supported -->
+            <div class="option-info">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>Carousel mode supports horizontal swiping only</span>
+            </div>
+          `}
 
       <div class="option-row pagination-option">
         <div class="option-label">Show pagination dots</div>
@@ -128,16 +219,21 @@ export function renderAdvancedOptions(
   const resetAfterTimeout = config.reset_after_timeout ?? 30000;
   const resetTargetCard = config.reset_target_card ?? 1;
   const stateEntity = config.state_entity || "";
+  const viewMode = config.view_mode || "single";
 
   // Count active and blocked advanced features
   let activeFeatures = 0;
   let blockedFeatures = 0;
 
   if (enableLoopback) activeFeatures++;
-  if (enableAutoSwipe) activeFeatures++;
-  if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
-  if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
-  if (stateEntity) activeFeatures++; // Count state sync as active feature
+
+  // Only count these features if in single mode
+  if (viewMode === "single") {
+    if (enableAutoSwipe) activeFeatures++;
+    if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
+    if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
+    if (stateEntity) activeFeatures++; // Count state sync as active feature
+  }
 
   // Create separate badges for active and blocked features
   let activeBadge = "";
@@ -180,22 +276,36 @@ export function renderAdvancedOptions(
           : "collapsed"}"
       >
         ${renderLoopbackOption(enableLoopback, valueChanged)}
-        ${renderAutoSwipeOptions(
-          enableAutoSwipe,
-          autoSwipeInterval,
-          valueChanged,
-        )}
-        ${renderResetAfterOptions(
-          enableResetAfter,
-          enableAutoSwipe,
-          resetAfterTimeout,
-          resetTargetCard,
-          cards,
-          valueChanged,
-          handleTimeoutChange,
-          handleTargetChange,
-        )}
-        ${renderStateSynchronizationOptions(stateEntity, hass, valueChanged)}
+        ${viewMode === "single"
+          ? html`
+              ${renderAutoSwipeOptions(
+                enableAutoSwipe,
+                autoSwipeInterval,
+                valueChanged,
+              )}
+              ${renderResetAfterOptions(
+                enableResetAfter,
+                enableAutoSwipe,
+                resetAfterTimeout,
+                resetTargetCard,
+                cards,
+                valueChanged,
+                handleTimeoutChange,
+                handleTargetChange,
+              )}
+              ${renderStateSynchronizationOptions(
+                stateEntity,
+                hass,
+                valueChanged,
+              )}
+            `
+          : html`
+              <!-- Carousel mode: Limited options available -->
+              <div class="option-info">
+                <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+                <span>Additional features available in Single card mode</span>
+              </div>
+            `}
       </div>
     </div>
   `;
