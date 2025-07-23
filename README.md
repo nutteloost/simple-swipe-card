@@ -28,6 +28,35 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Reset After Timeout: Automatically return to a target card after inactivity
 - State Synchronization: Two-way sync with Home Assistant `input_select` and `input_number` entities
 
+## View Modes
+Simple Swipe Card offers two distinct view modes to suit different use cases:
+
+### Single Mode (Default)
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_single_example.gif" width=600px alt="Single view mode">
+
+Displays one card at a time with full support for all features. This is the traditional card view where users swipe to navigate between individual cards.
+
+**Available features:**
+- Horizontal and vertical swiping
+- All advanced features (auto-swipe, reset after timeout, state synchronization)
+- Full loopback support
+
+### Carousel Mode
+
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_carousel_example.gif" width=600px alt="Carousel view mode">
+
+Displays multiple cards simultaneously with partial visibility of adjacent cards, similar to a carousel. Users can see preview portions of neighboring cards while focusing on the current card.
+
+**Available features:**
+
+- Horizontal swiping only
+- Loopback support
+- Configurable number of visible cards (1.1 to 8.0)
+
+> [!NOTE]  
+> Auto-swipe, reset after timeout, and state synchronization features are not yet available in carousel mode.
+
+
 ## Installation
 
 ### HACS (Recommended)
@@ -63,6 +92,7 @@ Or click this button to open the repository page in HACS:
 The Simple Swipe Card includes a visual editor that appears when you add or edit the card through the Home Assistant UI. Features include:
 
 - Display Options:
+    - Single or Carousel view mode
     - Simple number input for card spacing
     - Selection for swipe direction (horizontal/vertical)
     - Visual on/off toggle for pagination dots
@@ -98,11 +128,12 @@ This card can be configured using the visual editor or YAML.
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | cards | list | Required | List of cards to display |
+| view_mode | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
 | show_pagination | boolean | true | Show/hide pagination dots |
 | card_spacing | number | 15 | Space between cards in pixels |
 | enable_loopback | boolean | false | When enabled, swiping past the last card will circle back to the first card, and vice versa |
-| swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical' |
-| enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides |
+| swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
+| enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides. Only available in single mode |
 | auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
 | enable_reset_after | boolean | false | Enable automatic return to target card after inactivity |
 | reset_after_timeout | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
@@ -110,6 +141,8 @@ This card can be configured using the visual editor or YAML.
 | state_entity | string | null | Entity ID for state synchronization. Supports input_select and input_number entities |
 
 ### Example Configuration
+
+**Single Mode (Default):**
 ```yaml
 type: custom:simple-swipe-card
 cards:
@@ -133,6 +166,27 @@ reset_target_card: 1
 state_entity: input_select.dashboard_cards
 ```
 
+**Carousel Mode:**
+```yaml
+type: custom:simple-swipe-card
+view_mode: carousel
+cards_visible: 2.5
+cards:
+  - type: weather-forecast
+    entity: weather.home
+  - type: entities
+    entities:
+      - sensor.temperature
+      - sensor.humidity
+  - type: media-control
+    entity: media_player.living_room
+  - type: sensor
+    entity: sensor.outdoor_temperature
+show_pagination: true
+card_spacing: 20
+enable_loopback: true
+```
+
 ## State Synchronization
 
 Simple Swipe Card can synchronize its current position with Home Assistant entities (helpers), enabling external control and automation integration through two-way binding. This powerful feature allows for dynamic, automated dashboard interactions based on events, time, or other conditions.
@@ -153,6 +207,8 @@ Simple Swipe Card can synchronize its current position with Home Assistant entit
 - **More options than cards**: Extra options are ignored and cannot be selected.
 - **Fewer options than cards**: Only cards corresponding to available options can be controlled externally. Cards without corresponding options can still be reached through manual swiping but won't update the entity.
 - **Visibility conditions**: State synchronization works with visible cards only. If cards are hidden due to visibility conditions, the mapping adjusts automatically to match only the currently visible cards.
+
+<img style="display: block; margin: auto;" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select synchronization example">
 
 ### Example Use Case
 
@@ -184,7 +240,9 @@ automation:
 
 Individual cards within the Simple Swipe Card can be conditionally shown or hidden using visibility conditions. Multiple conditions use AND logic (all must be true).
 
-> ⚠ **Important**: Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
+> [!IMPORTANT]  
+> Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
+
 
 ## Customizing with Theme Variables
 
@@ -234,6 +292,13 @@ card_mod:
     }
 ```
 
+> [!IMPORTANT]  
+> When both theme variables and card-mod styling are present, the following hierarchy applies:
+> 
+> 1. Card-mod styles (highest priority)
+> 2. Theme variables
+> 3. Default card styling (lowest priority)
+
 ### Available CSS Variables
 
 All CSS variables listed below can be used in both Home Assistant themes and card-mod styling configurations. These variables provide comprehensive control over the visual appearance and behavior of the Simple Swipe Card.
@@ -273,15 +338,6 @@ simple-swipe-card-transition-easing: 'linear'                       # Constant s
 simple-swipe-card-transition-easing: 'ease-in'                      # Slow start, fast end
 ```
 
-### Styling Hierarchy
-
-When both theme variables and card-mod styling are present, the following hierarchy applies:
-
-1. Card-mod styles (highest priority)
-2. Theme variables
-3. Default card styling (lowest priority)
-
-This hierarchy allows you to establish baseline styling through themes while maintaining the flexibility to customize individual card instances as needed.
 
 ## My Other Custom Cards
 
