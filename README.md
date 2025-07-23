@@ -9,7 +9,7 @@
 
 A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
 
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card-example.gif" width="400" alt="Example" title="Example">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card-example.gif" width="400" alt="Example" title="Example" style="border-radius:20px" >
 
 Simple Swipe Card is a customizable container for Home Assistant that lets you place multiple cards in a single space and navigate between them with intuitive swipe gestures. The card optimizes dashboard space by grouping related information while providing a mobile-friendly interface with smooth touch and mouse navigation. It features pagination indicators, adjustable card spacing, and full visual editor support. Ideal for creating room-specific views, device dashboards, or organizing related information without cluttering your dashboard, Simple Swipe Card enhances both functionality and user experience with minimal configuration.
 
@@ -32,7 +32,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 Simple Swipe Card offers two distinct view modes to suit different use cases:
 
 ### Single Mode (Default)
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_single_example.gif" width=600px alt="Single view mode" title="Single view mode">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_single_example.gif" width=600px alt="Single view mode" title="Single view mode" style="border-radius:20px">
 
 Displays one card at a time with full support for all features. This is the traditional card view where users swipe to navigate between individual cards.
 
@@ -43,7 +43,7 @@ Displays one card at a time with full support for all features. This is the trad
 
 ### Carousel Mode
 
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_carousel_example.gif" width=600px alt="Carousel view mode" title="Carousel view mode">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/refs/heads/main/images/simple-swipe-card_carousel_example.gif" width=600px alt="Carousel view mode" title="Carousel view mode" style="border-radius:20px" >
 
 Displays multiple cards simultaneously with partial visibility of adjacent cards, similar to a carousel. Users can see preview portions of neighboring cards while focusing on the current card.
 
@@ -108,13 +108,13 @@ The Simple Swipe Card includes a visual editor that appears when you add or edit
 - Real-time preview of changes
 
 #### Search for 'Simple Swipe Card'
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_search.png" width="250" alt="Search card" title="Search card">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_search.png" width="250" alt="Search card" title="Search card" style="border-radius:20px">
 
 #### Search for the cards you want to wrap in the card picker and add them
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/card-picker.png" width="350" alt="Card picker" title="Card picker">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/card-picker.png" width="350" alt="Card picker" title="Card picker" style="border-radius:20px">
 
 #### Edit the card
-<img style="border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_card_editor.png" width="750" alt="Visual editor" title="Visual editor">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/visual_editor_card_editor.png" width="750" alt="Visual editor" title="Visual editor" style="border-radius:20px">
 
 You can search for cards you want to add to the Simple Swipe Card in the search bar. Click on them to add them to the configuration. 
 
@@ -208,7 +208,7 @@ Simple Swipe Card can synchronize its current position with Home Assistant entit
 - **Fewer options than cards**: Only cards corresponding to available options can be controlled externally. Cards without corresponding options can still be reached through manual swiping but won't update the entity.
 - **Visibility conditions**: State synchronization works with visible cards only. If cards are hidden due to visibility conditions, the mapping adjusts automatically to match only the currently visible cards.
 
-<img style="display: block; margin: auto; border-radius:20px" src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select state synchronization example" title="input_select state  synchronization example">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select state synchronization example" title="input_select state  synchronization example" style="display: block; margin: auto; border-radius:20px">
 
 ### Example Use Case
 
