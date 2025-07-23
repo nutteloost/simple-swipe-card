@@ -207,9 +207,9 @@ Simple Swipe Card can synchronize its current position with Home Assistant entit
 - **More options than cards**: Extra options are ignored and cannot be selected.
 - **Fewer options than cards**: Only cards corresponding to available options can be controlled externally. Cards without corresponding options can still be reached through manual swiping but won't update the entity.
 - **Visibility conditions**: State synchronization works with visible cards only. If cards are hidden due to visibility conditions, the mapping adjusts automatically to match only the currently visible cards.
-
-<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select state synchronization example" title="input_select state  synchronization example" style="display: block; margin: auto; border-radius:20px">
-
+<p align="center">
+<img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card_state_synchronization_example.gif" width="750" alt="input_select state synchronization example" title="input_select state  synchronization example">
+</p>
 ### Example Use Case
 
 **Security Camera Alert**: When motion is detected at your front door, the Simple Swipe Card can automatically switch to display the camera feed, providing immediate visual confirmation of activity without requiring manual navigation. This ensures critical security events receive instant attention when they matter most.
