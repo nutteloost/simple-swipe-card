@@ -106,9 +106,9 @@ body:
   - type: textarea
     id: screenshots-logs
     attributes:
-      label: Screenshots or Console Errors
-      description: Add screenshots or browser console errors (F12 → Console tab).
-      placeholder: Drag and drop images or paste console errors here.
+      label: Screenshots or .gif
+      description: A picture is worth a thousand words... Add a screenshot of a .gif
+      placeholder: Drag and drop images here.
     validations:
       required: false
 
