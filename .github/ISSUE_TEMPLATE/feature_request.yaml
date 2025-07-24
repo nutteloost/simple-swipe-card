@@ -1,6 +1,6 @@
 name: ✨ Feature Request
 description: Suggest a new feature or improvement for the Simple Swipe Card
-title: "[FEATURE]: A brief, descriptive title for your feature request"
+title: "[FEATURE REQUEST]: A brief, descriptive title for your feature request"
 labels: ["under review"]
 assignees:
   - nutteloost
