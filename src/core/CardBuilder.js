@@ -388,10 +388,34 @@ export class CardBuilder {
    * @param {number} _containerHeight - Container height (unused - reserved for future vertical carousel support)
    * @private
    */
-  _setupCarouselLayout(containerWidth, _containerHeight) {
-    const cardsVisible = this.card._config.cards_visible || 2.5;
+  _setupCarouselLayout(containerWidth, containerHeight) {
+    // NEW: Support both responsive and legacy approaches
+    let cardsVisible;
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    if (this.card._config.cards_visible !== undefined) {
+      // Legacy approach - use fixed cards_visible (backwards compatibility)
+      cardsVisible = this.card._config.cards_visible;
+      logDebug(
+        "INIT",
+        "Carousel layout using legacy cards_visible approach:",
+        cardsVisible,
+      );
+    } else {
+      // NEW: Responsive approach - calculate fractional cards_visible from card_min_width
+      const minWidth = this.card._config.card_min_width || 200;
+      const rawCardsVisible =
+        (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
+      logDebug("INIT", "Carousel layout using responsive approach:", {
+        minWidth,
+        containerWidth,
+        cardSpacing,
+        rawCardsVisible: rawCardsVisible.toFixed(2),
+        finalCardsVisible: cardsVisible,
+      });
+    }
 
     // Calculate individual card width
     // Total spacing = (cards_visible - 1) * cardSpacing (spacing between visible cards)
@@ -400,7 +424,7 @@ export class CardBuilder {
 
     logDebug("INIT", "Carousel layout setup:", {
       containerWidth,
-      cardsVisible,
+      cardsVisible: cardsVisible.toFixed(2),
       cardSpacing,
       totalSpacing,
       cardWidth: cardWidth.toFixed(2),

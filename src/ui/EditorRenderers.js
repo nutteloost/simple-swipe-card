@@ -33,7 +33,6 @@ export function renderInfoPanel() {
  */
 export function renderViewModeOptions(config, valueChanged) {
   const viewMode = config.view_mode || "single";
-  const cardsVisible = config.cards_visible ?? 2.5;
 
   return html`
     <div class="section">
@@ -71,20 +70,38 @@ export function renderViewModeOptions(config, valueChanged) {
 
       ${viewMode === "carousel"
         ? html`
+            ${config.cards_visible !== undefined
+              ? html`
+                  <div class="option-info">
+                    <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+                    <span
+                      >Currently using legacy mode: cards_visible:
+                      ${config.cards_visible}</span
+                    >
+                  </div>
+                `
+              : ""}
+
             <ha-textfield
-              label="Cards Visible"
-              .value=${cardsVisible.toFixed(1).replace(/\.0$/, "")}
-              data-option="cards_visible"
+              label="Minimum Card Width (px)"
+              .value=${(config.card_min_width || 200).toString()}
+              data-option="card_min_width"
               type="number"
-              min="1.1"
-              max="8.0"
-              step="0.1"
-              lang="en-US"
+              min="50"
+              max="500"
+              step="10"
+              suffix="px"
               @change=${valueChanged}
+              @keydown=${(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.target.blur();
+                }
+              }}
               @input=${(e) => {
-                // Real-time validation feedback
                 const value = parseFloat(e.target.value);
-                if (value < 1.1 || value > 8.0 || isNaN(value)) {
+                if (value < 50 || value > 500 || isNaN(value)) {
                   e.target.style.borderColor = "var(--error-color, #f44336)";
                 } else {
                   e.target.style.borderColor = "";
@@ -94,8 +111,9 @@ export function renderViewModeOptions(config, valueChanged) {
               required
             ></ha-textfield>
             <div class="help-text">
-              Number of cards visible at once (1.1 - 8.0). Values like 2.5 show
-              2 full cards + partial third card.
+              ${config.cards_visible !== undefined
+                ? "Changing this value will switch to responsive mode and remove the cards_visible setting"
+                : "Minimum width per card in pixels. Number of visible cards adjusts automatically based on screen size."}
             </div>
           `
         : ""}

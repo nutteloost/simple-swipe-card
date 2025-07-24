@@ -12,18 +12,34 @@ export class CarouselView {
     this.card = cardInstance;
   }
 
-  /**
-   * Calculates the transform amount for carousel mode
-   * @param {number} targetIndex - The target card index
-   * @returns {number} Transform amount in pixels
-   */
   calculateTransform(targetIndex) {
     if (!this.card.cards || this.card.cards.length === 0) return 0;
 
-    const cardsVisible = this.card._config.cards_visible || 2.5;
+    // NEW: Support both responsive and legacy approaches
+    let cardsVisible;
+    const containerWidth = this.card.cardContainer.offsetWidth;
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
-    const containerWidth = this.card.cardContainer.offsetWidth;
+
+    if (this.card._config.cards_visible !== undefined) {
+      // Legacy approach - use fixed cards_visible (backwards compatibility)
+      cardsVisible = this.card._config.cards_visible;
+      logDebug("SWIPE", "Using legacy cards_visible approach:", cardsVisible);
+    } else {
+      // NEW: Responsive approach - calculate fractional cards_visible from card_min_width
+      const minWidth = this.card._config.card_min_width || 200;
+      const rawCardsVisible =
+        (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
+      logDebug("SWIPE", "Using responsive approach:", {
+        minWidth,
+        containerWidth,
+        cardSpacing,
+        rawCardsVisible: rawCardsVisible.toFixed(2),
+        finalCardsVisible: cardsVisible,
+      });
+    }
+
     const totalCards = this.card.visibleCardIndices.length;
 
     // Edge case: If we have fewer cards than cards_visible, don't transform at all
@@ -52,6 +68,7 @@ export class CarouselView {
       clampedIndex,
       totalCards,
       maxScrollableIndex,
+      cardsVisible: cardsVisible.toFixed(2),
       cardWidth: cardWidth.toFixed(2),
       cardSpacing,
       moveDistance: moveDistance.toFixed(2),

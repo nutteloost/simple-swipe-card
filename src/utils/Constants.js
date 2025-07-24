@@ -3,7 +3,7 @@
  */
 
 // Version management
-export const CARD_VERSION = "2.1.0";
+export const CARD_VERSION = "2.2.0";
 
 // Debug configuration - set to false for production
 export const DEBUG = true;
@@ -32,6 +32,7 @@ export const DEFAULT_CONFIG = {
   reset_target_card: 1,
   view_mode: "single",
   cards_visible: 2.5,
+  card_min_width: 200,
 };
 
 // Swipe gesture constants

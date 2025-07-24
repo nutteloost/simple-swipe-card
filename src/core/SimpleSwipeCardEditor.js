@@ -1598,10 +1598,6 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
     this.requestUpdate();
   }
 
-  /**
-   * Sets the configuration for the editor
-   * @param {Object} config - The configuration object
-   */
   setConfig(config) {
     if (!config) {
       throw new Error("Invalid configuration");
@@ -1674,6 +1670,42 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       );
     }
 
+    // Set defaults for view mode options
+    if (this._config.view_mode === undefined) {
+      this._config.view_mode = "single";
+    }
+
+    // Validate view_mode
+    if (!["single", "carousel"].includes(this._config.view_mode)) {
+      this._config.view_mode = "single";
+    }
+
+    // NEW: Handle both card_min_width and cards_visible for backwards compatibility
+    if (this._config.view_mode === "carousel") {
+      // Set default for card_min_width (new responsive approach)
+      if (this._config.card_min_width === undefined) {
+        this._config.card_min_width = 200;
+      } else {
+        const minWidth = parseInt(this._config.card_min_width);
+        if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+          this._config.card_min_width = 200;
+        }
+      }
+
+      // Handle legacy cards_visible for backwards compatibility
+      if (this._config.cards_visible !== undefined) {
+        // Validate cards_visible with better bounds
+        const cardsVisible = parseFloat(this._config.cards_visible);
+        if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+          this._config.cards_visible = 2.5;
+        } else {
+          // Round to 1 decimal place to avoid precision issues
+          this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+        }
+      }
+      // If cards_visible is undefined, we'll use the responsive approach
+    }
+
     delete this._config.title;
 
     // Ensure card picker is loaded after config is set
@@ -1743,10 +1775,13 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
         delete newConfig.reset_target_card;
         delete newConfig.state_entity;
 
-        // Set carousel defaults if not present
-        if (!newConfig.cards_visible) {
-          newConfig.cards_visible = 2.5;
+        // FIXED: Set responsive defaults for new users, preserve existing cards_visible for legacy
+        if (!newConfig.cards_visible && !newConfig.card_min_width) {
+          // New user - use responsive approach
+          newConfig.card_min_width = 200;
         }
+        // If they already have cards_visible, keep it (backwards compatibility)
+        // If they already have card_min_width, keep it
 
         logDebug(
           "EDITOR",
@@ -1756,6 +1791,7 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       } else if (value === "single") {
         // Switching TO single mode - remove carousel-mode-only options
         delete newConfig.cards_visible;
+        delete newConfig.card_min_width; // Remove both carousel options
 
         // Restore single mode defaults if needed
         if (!newConfig.swipe_direction) {
@@ -1770,6 +1806,32 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       }
 
       this._config = newConfig;
+      this._fireConfigChanged();
+      this.requestUpdate();
+      return;
+    }
+
+    // Handle card_min_width changes (with migration)
+    if (
+      finalOption === "card_min_width" &&
+      this._config[finalOption] !== value
+    ) {
+      logDebug(
+        "EDITOR",
+        `User changed card_min_width to ${value}, migrating from legacy mode`,
+      );
+
+      // If they had cards_visible, remove it (user-initiated migration)
+      if (this._config.cards_visible !== undefined) {
+        const newConfig = { ...this._config };
+        delete newConfig.cards_visible;
+        newConfig.card_min_width = value;
+        this._config = newConfig;
+        logDebug("EDITOR", "Migrated from cards_visible to card_min_width");
+      } else {
+        this._config = { ...this._config, [finalOption]: value };
+      }
+
       this._fireConfigChanged();
       this.requestUpdate();
       return;
@@ -1994,9 +2056,18 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
       cleanConfig.view_mode = config.view_mode;
     }
 
-    // Include cards_visible if in carousel mode (always, even if default value)
+    // FIXED: Include the appropriate carousel option
     if (config.view_mode === "carousel") {
-      cleanConfig.cards_visible = config.cards_visible || 2.5;
+      if (config.cards_visible !== undefined) {
+        // Legacy approach - include cards_visible
+        cleanConfig.cards_visible = config.cards_visible;
+      } else if (
+        config.card_min_width !== undefined &&
+        config.card_min_width !== 200
+      ) {
+        // New approach - include card_min_width (only if not default)
+        cleanConfig.card_min_width = config.card_min_width;
+      }
     }
 
     // Display Options section (matches UI order)

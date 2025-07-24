@@ -6,8 +6,11 @@
 [![Reddit Profile](https://img.shields.io/badge/Reddit-My%20stuff-orange?logo=reddit)](https://www.reddit.com/user/nutteloost/submitted/)
 [![Home Assistant Community Forum](https://img.shields.io/badge/Home%20Assistant-Community%20Forum-blue?logo=home-assistant)](https://community.home-assistant.io/t/simple-swipe-card-a-custom-card-for-easy-card-navigation/888415)
 
-
 A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
+
+> [!NOTE]  
+> This card is under active development with frequent updates and new features being added regularly. Check the [Releases](https://github.com/nutteloost/simple-swipe-card/releases) page for the latest improvements and updates.
+
 
 <img src="https://raw.githubusercontent.com/nutteloost/simple-swipe-card/main/images/simple-swipe-card-example.gif" width="400" alt="Example" title="Example" style="border-radius:20px" >
 
@@ -51,7 +54,7 @@ Displays multiple cards simultaneously with partial visibility of adjacent cards
 
 - Horizontal swiping only
 - Loopback support
-- Configurable number of visible cards (1.1 to 8.0)
+- Configurable minimum card width
 
 > [!NOTE]  
 > Auto-swipe, reset after timeout, and state synchronization features are not yet available in carousel mode.
@@ -129,6 +132,7 @@ This card can be configured using the visual editor or YAML.
 |------|------|---------|-------------|
 | cards | list | Required | List of cards to display |
 | view_mode | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
+| card_min_width | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
 | show_pagination | boolean | true | Show/hide pagination dots |
 | card_spacing | number | 15 | Space between cards in pixels |
 | enable_loopback | boolean | false | When enabled, swiping past the last card will circle back to the first card, and vice versa |
@@ -170,7 +174,7 @@ state_entity: input_select.dashboard_cards
 ```yaml
 type: custom:simple-swipe-card
 view_mode: carousel
-cards_visible: 2.5
+card_min_width: 220
 cards:
   - type: weather-forecast
     entity: weather.home

@@ -92,10 +92,6 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     };
   }
 
-  /**
-   * Sets the configuration for the editor
-   * @param {Object} config - The configuration object
-   */
   setConfig(config) {
     if (!config) {
       throw new Error("Invalid configuration");
@@ -178,18 +174,30 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       this._config.view_mode = "single";
     }
 
-    // Set default for cards_visible
-    if (this._config.cards_visible === undefined) {
-      this._config.cards_visible = 2.5;
-    } else {
-      // Validate cards_visible with better bounds
-      const cardsVisible = parseFloat(this._config.cards_visible);
-      if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
-        this._config.cards_visible = 2.5;
+    // NEW: Handle both card_min_width and cards_visible for backwards compatibility
+    if (this._config.view_mode === "carousel") {
+      // Set default for card_min_width (new responsive approach)
+      if (this._config.card_min_width === undefined) {
+        this._config.card_min_width = 200;
       } else {
-        // Round to 1 decimal place to avoid precision issues
-        this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+        const minWidth = parseInt(this._config.card_min_width);
+        if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+          this._config.card_min_width = 200;
+        }
       }
+
+      // Handle legacy cards_visible for backwards compatibility
+      if (this._config.cards_visible !== undefined) {
+        // Validate cards_visible with better bounds
+        const cardsVisible = parseFloat(this._config.cards_visible);
+        if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+          this._config.cards_visible = 2.5;
+        } else {
+          // Round to 1 decimal place to avoid precision issues
+          this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+        }
+      }
+      // If cards_visible is undefined, we'll use the responsive approach
     }
 
     // Store the card_mod configuration if present
