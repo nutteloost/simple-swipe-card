@@ -104,7 +104,7 @@ body:
       required: true
 
   - type: textarea
-    id: screenshots-logs
+    id: screenshots
     attributes:
       label: Screenshots or .gif
       description: A picture is worth a thousand words... Add a screenshot of a .gif
