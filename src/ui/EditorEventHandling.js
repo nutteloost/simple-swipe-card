@@ -166,7 +166,7 @@ export class EditorEventHandling {
           // Check if it's one we are tracking
           this.editor._activeChildEditors.delete(dialog);
           this.editor.requestUpdate(); // Update our own UI
-          setTimeout(() => this.editor._ensureCardPickerLoaded(), 100); // Ensure picker is good after dialog closes
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100); // Ensure picker is good after dialog closes
         }
       }
 
@@ -447,7 +447,7 @@ export class EditorEventHandling {
       };
 
       // Fire our own config-changed event with special flag
-      this.editor._fireConfigChanged({
+      this.editor.configManager.fireConfigChanged({
         nestedCardUpdate: true,
         updatedCardIndex: cardIndex,
         nestedCardType: e.detail.config.type,
@@ -464,7 +464,7 @@ export class EditorEventHandling {
       };
 
       // Fire our own config-changed event
-      this.editor._fireConfigChanged({
+      this.editor.configManager.fireConfigChanged({
         nestedCardUpdate: true,
         updatedCardIndex: cardIndex,
         nestedCardType: e.detail.config.type,
@@ -535,7 +535,7 @@ export class EditorEventHandling {
             };
 
             // Fire silent update
-            this.editor._fireConfigChanged({
+            this.editor.configManager.fireConfigChanged({
               maintainEditorState: true,
               fromElementEditor: true,
               elementEditorEvent: true,
@@ -568,7 +568,7 @@ export class EditorEventHandling {
       this.editor._config = { ...this.editor._config, cards: updatedCards };
 
       // Fire our own config-changed event, with maintainEditorState: true.
-      this.editor._fireConfigChanged({
+      this.editor.configManager.fireConfigChanged({
         maintainEditorState: true,
         updatedCardIndex: index,
         reason: `child_dialog_update_${e.detail.fromActionCardEditor ? "action_card" : "generic"}`,

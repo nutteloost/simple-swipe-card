@@ -23,6 +23,7 @@ import {
   initializeGlobalDialogStack,
 } from "../utils/EventHelpers.js";
 import { CarouselView } from "../features/CarouselView.js";
+import { LoopMode } from "../features/LoopMode.js";
 
 /**
  * Main Simple Swipe Card class
@@ -59,6 +60,7 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this.cardBuilder = new CardBuilder(this);
     this.stateSynchronization = new StateSynchronization(this);
     this.carouselView = new CarouselView(this);
+    this.loopMode = new LoopMode(this);
 
     this._visibilityUpdateTimeout = null;
     this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
@@ -108,9 +110,40 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       const spacing = parseInt(this._config.card_spacing);
       this._config.card_spacing = isNaN(spacing) || spacing < 0 ? 15 : spacing;
     }
-    // Set default for enable_loopback
-    if (this._config.enable_loopback === undefined)
-      this._config.enable_loopback = false;
+
+    // Migrate enable_loopback to loop_mode
+    if (
+      this._config.enable_loopback !== undefined &&
+      this._config.loop_mode === undefined
+    ) {
+      this._config.loop_mode = this._config.enable_loopback
+        ? "loopback"
+        : "none";
+      delete this._config.enable_loopback;
+      logDebug(
+        "CONFIG",
+        "Migrated enable_loopback to loop_mode:",
+        this._config.loop_mode,
+      );
+    }
+
+    // Set default for loop_mode
+    if (this._config.loop_mode === undefined) {
+      this._config.loop_mode = "none";
+    }
+
+    // Validate loop_mode
+    if (!["none", "loopback", "infinite"].includes(this._config.loop_mode)) {
+      logDebug(
+        "CONFIG",
+        "Invalid loop_mode, defaulting to 'none':",
+        this._config.loop_mode,
+      );
+      this._config.loop_mode = "none";
+    }
+
+    // Initialize loop mode after config is set
+    this.loopMode?.initialize();
 
     // Set default for swipe_direction
     if (
@@ -174,7 +207,7 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
       this._config.view_mode = "single";
     }
 
-    // NEW: Handle both card_min_width and cards_visible for backwards compatibility
+    // Handle both card_min_width and cards_visible for backwards compatibility
     if (this._config.view_mode === "carousel") {
       // Set default for card_min_width (new responsive approach)
       if (this._config.card_min_width === undefined) {
@@ -215,6 +248,22 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     this._viewMode = this._config.view_mode || "single";
 
     delete this._config.title;
+  }
+
+  /**
+   * Calculates cards visible from card_min_width (for responsive carousel)
+   * @returns {number} Number of cards visible
+   */
+  _calculateCardsVisibleFromMinWidth() {
+    if (!this.cardContainer) return 2.5; // Default fallback
+
+    const containerWidth = this.cardContainer.offsetWidth;
+    const minWidth = this._config.card_min_width || 200;
+    const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+
+    const rawCardsVisible =
+      (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+    return Math.max(1.1, Math.round(rawCardsVisible * 10) / 10);
   }
 
   /**
@@ -959,60 +1008,36 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     }
 
     const viewMode = this._config.view_mode || "single";
+    const loopMode = this._config.loop_mode || "none";
 
-    // Handle loopback logic
-    if (viewMode === "carousel" && this.carouselView) {
-      visibleIndex = this.carouselView.handleLoopback(visibleIndex);
-    } else {
-      // Original loopback logic for both single mode and carousel fallback
-      const loopbackEnabled = this._config.enable_loopback === true;
-
-      if (loopbackEnabled && totalVisibleCards > 1) {
-        if (visibleIndex < 0) {
-          visibleIndex = totalVisibleCards - 1;
-        } else if (visibleIndex >= totalVisibleCards) {
-          visibleIndex = 0;
-        }
-      } else {
-        // Clamp to valid range based on visible cards
-        visibleIndex = Math.max(
-          0,
-          Math.min(visibleIndex, totalVisibleCards - 1),
-        );
-      }
-    }
-
-    if (
-      visibleIndex === this.currentIndex &&
-      !this.autoSwipe.isInProgress &&
-      !this.resetAfter.isInProgress
-    ) {
-      logDebug(
-        "SWIPE",
-        `goToSlide: visible index ${visibleIndex} is current, no change needed.`,
-      );
-      return;
-    }
-
-    logDebug(
-      "SWIPE",
-      `Going to visible slide ${visibleIndex} (${viewMode} mode)`,
+    // Handle loop mode navigation
+    visibleIndex = this.loopMode.handleNavigation(
+      visibleIndex,
+      viewMode === "carousel",
     );
     this.currentIndex = visibleIndex;
 
-    // Notify state synchronization of navigation
-    this.stateSynchronization?.onCardNavigate(visibleIndex);
+    logDebug(
+      "SWIPE",
+      `Going to visible slide ${this.currentIndex} (${viewMode} mode)`,
+    );
 
-    // No preloading needed - all cards are already loaded
+    // Notify state synchronization (use wrapped index for infinite mode)
+    const stateIndex =
+      loopMode === "infinite"
+        ? ((this.currentIndex % totalVisibleCards) + totalVisibleCards) %
+          totalVisibleCards
+        : this.currentIndex;
+    this.stateSynchronization?.onCardNavigate(stateIndex);
+
     this.updateSlider();
 
     // Handle reset-after timer for manual user interactions
     if (!this.autoSwipe.isInProgress && !this.resetAfter.isInProgress) {
-      // This was a manual user interaction, start reset-after timer
       this.resetAfter.startTimer();
     }
 
-    // Only pause auto-swipe for manual user interactions, not auto-swipe itself or reset-after
+    // Only pause auto-swipe for manual user interactions
     if (
       this._config.enable_auto_swipe &&
       !this.autoSwipe.isInProgress &&
@@ -1027,6 +1052,11 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
    * @param {boolean} [animate=true] - Whether to animate the transition
    */
   updateSlider(animate = true) {
+    if (this.cardContainer) {
+      this.slideWidth = this.cardContainer.offsetWidth;
+      this.slideHeight = this.cardContainer.offsetHeight;
+    }
+
     const totalVisibleCards = this.visibleCardIndices.length;
     logDebug("SWIPE", `Updating slider to visible index ${this.currentIndex}`, {
       animate,
@@ -1050,46 +1080,70 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     }
 
     const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+    const viewMode = this._config.view_mode || "single";
+    const loopMode = this._config.loop_mode || "none";
 
     // Handle carousel mode
-    const viewMode = this._config.view_mode || "single";
     if (viewMode === "carousel" && this.carouselView) {
       // Set gap for carousel spacing
       this.sliderElement.style.gap = `${cardSpacing}px`;
       this.carouselView.updateSliderPosition(this.currentIndex, animate);
-      this.pagination.update();
+
+      // Handle pagination for carousel infinite mode
+      if (loopMode === "infinite") {
+        const wrappedIndex = this.loopMode.getWrappedIndexForPagination(
+          this.currentIndex,
+        );
+        this._updatePaginationDots(wrappedIndex);
+      } else {
+        this.pagination.update();
+      }
+
+      this.loopMode.scheduleSeamlessJump(this.currentIndex);
       return;
     }
 
-    // Original single mode logic
+    // Single mode logic
     const isHorizontal = this._swipeDirection === "horizontal";
 
-    // Handle loopback mode for index wrapping
-    const loopbackEnabled = this._config.enable_loopback === true;
+    // Calculate the DOM position from the logical index
+    let domPosition = this.currentIndex;
 
-    // Ensure currentIndex is valid according to visible cards
-    if (loopbackEnabled && totalVisibleCards > 1) {
-      if (this.currentIndex < 0) {
-        this.currentIndex = totalVisibleCards - 1;
-      } else if (this.currentIndex >= totalVisibleCards) {
-        this.currentIndex = 0;
-      }
-    } else {
-      this.currentIndex = Math.max(
-        0,
-        Math.min(this.currentIndex, totalVisibleCards - 1),
+    if (loopMode === "infinite") {
+      // In infinite mode, map logical index to DOM position
+      const duplicateCount = this.loopMode.getDuplicateCount();
+      domPosition = this.currentIndex + duplicateCount;
+
+      logDebug(
+        "SWIPE",
+        `Infinite mode: logical index ${this.currentIndex} -> DOM position ${domPosition}`,
       );
+    } else {
+      // For non-infinite modes, ensure currentIndex is valid
+      if (loopMode !== "none" && totalVisibleCards > 1) {
+        if (this.currentIndex < 0) {
+          this.currentIndex = totalVisibleCards - 1;
+        } else if (this.currentIndex >= totalVisibleCards) {
+          this.currentIndex = 0;
+        }
+      } else {
+        this.currentIndex = Math.max(
+          0,
+          Math.min(this.currentIndex, totalVisibleCards - 1),
+        );
+      }
+      domPosition = this.currentIndex;
     }
 
     // Use gap for spacing instead of margins to maintain transparency
     this.sliderElement.style.gap = `${cardSpacing}px`;
 
-    // Calculate transform amount based on direction for visible cards
+    // Calculate transform amount based on DOM position
     let translateAmount = 0;
     if (isHorizontal) {
-      translateAmount = this.currentIndex * (this.slideWidth + cardSpacing);
+      translateAmount = domPosition * (this.slideWidth + cardSpacing);
     } else {
-      translateAmount = this.currentIndex * (this.slideHeight + cardSpacing);
+      translateAmount = domPosition * (this.slideHeight + cardSpacing);
     }
 
     this.sliderElement.style.transition = this._getTransitionStyle(animate);
@@ -1104,13 +1158,38 @@ export class SimpleSwipeCard extends (LitElement || HTMLElement) {
     // Remove any existing margins that could interfere with transparency
     removeCardMargins(this.cards);
 
-    // Update pagination dots
-    this.pagination.update();
+    // Update pagination dots (use wrapped index for infinite mode)
+    if (loopMode === "infinite") {
+      const wrappedIndex = this.loopMode.getWrappedIndexForPagination(
+        this.currentIndex,
+      );
+      this._updatePaginationDots(wrappedIndex);
+    } else {
+      this.pagination.update();
+    }
 
     logDebug(
       "SWIPE",
-      `Slider updated, transform: -${translateAmount}px along ${isHorizontal ? "X" : "Y"} axis`,
+      `Slider updated, DOM position: ${domPosition}, transform: -${translateAmount}px along ${isHorizontal ? "X" : "Y"} axis`,
     );
+
+    // Schedule seamless jump for infinite mode
+    this.loopMode.scheduleSeamlessJump(this.currentIndex);
+  }
+
+  /**
+   * Updates pagination dots manually for infinite mode
+   * @param {number} activeIndex - The index that should be active
+   * @private
+   */
+  _updatePaginationDots(activeIndex) {
+    if (this.pagination.paginationElement) {
+      const dots =
+        this.pagination.paginationElement.querySelectorAll(".pagination-dot");
+      dots.forEach((dot, i) => {
+        dot.classList.toggle("active", i === activeIndex);
+      });
+    }
   }
 
   /**

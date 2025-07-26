@@ -133,10 +133,11 @@ export class Pagination {
    * Updates the pagination dots to reflect current state
    */
   update() {
-    // Update pagination dots - based on visible cards
+    // Update pagination dots - always based on visible cards, never duplicates
     if (this.paginationElement) {
       const dots = this.paginationElement.querySelectorAll(".pagination-dot");
       dots.forEach((dot, i) => {
+        // Always use currentIndex (which represents the virtual position)
         dot.classList.toggle("active", i === this.card.currentIndex);
       });
     }

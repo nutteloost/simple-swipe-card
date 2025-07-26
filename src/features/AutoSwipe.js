@@ -136,6 +136,17 @@ export class AutoSwipe {
       return;
     }
 
+    // Skip if currently paused
+    if (this._autoSwipePaused) {
+      // Only log occasionally to avoid spam
+      const now = Date.now();
+      if (now - this._lastLogTime > 5000) {
+        logDebug("AUTO", "Skipping auto-swipe: currently paused");
+        this._lastLogTime = now;
+      }
+      return;
+    }
+
     // Skip if currently dragging
     if (this.card.swipeGestures?._isDragging) {
       // Only log occasionally to avoid spam
@@ -152,45 +163,33 @@ export class AutoSwipe {
     const now = Date.now();
     let shouldLog = now - this._lastLogTime > 10000; // 10 seconds
 
-    let nextIndex;
+    const navigation = this.card.loopMode.handleAutoSwipeNavigation(
+      this.card.currentIndex,
+      this._autoSwipeDirection,
+    );
 
-    if (this.card._config.enable_loopback) {
-      nextIndex = this.card.currentIndex + 1;
-      if (nextIndex >= totalVisibleCards) {
-        nextIndex = 0;
-        shouldLog = true; // Always log when looping back
-      }
-    } else {
-      // Ping-pong logic for non-loopback
-      if (this._autoSwipeDirection === 1) {
-        // Moving forward
-        if (this.card.currentIndex >= totalVisibleCards - 1) {
-          // At the last visible card
-          this._autoSwipeDirection = -1; // Change direction to backward
-          nextIndex = this.card.currentIndex - 1;
-          shouldLog = true; // Always log direction changes
-        } else {
-          nextIndex = this.card.currentIndex + 1;
-        }
-      } else {
-        // Moving backward (this._autoSwipeDirection === -1)
-        if (this.card.currentIndex <= 0) {
-          // At the first visible card
-          this._autoSwipeDirection = 1; // Change direction to forward
-          nextIndex = this.card.currentIndex + 1;
-          shouldLog = true; // Always log direction changes
-        } else {
-          nextIndex = this.card.currentIndex - 1;
-        }
-      }
-      nextIndex = Math.max(0, Math.min(nextIndex, totalVisibleCards - 1));
+    const nextIndex = navigation.nextIndex;
+    if (navigation.shouldChangeDirection) {
+      this._autoSwipeDirection = -this._autoSwipeDirection;
+      shouldLog = true; // Always log direction changes
+    }
+
+    const loopMode = this.card.loopMode.getMode();
+    if (loopMode === "infinite" && nextIndex >= totalVisibleCards) {
+      shouldLog = true; // Log when going beyond bounds
+    } else if (
+      loopMode === "loopback" &&
+      nextIndex === 0 &&
+      this.card.currentIndex === totalVisibleCards - 1
+    ) {
+      shouldLog = true; // Always log when looping back
     }
 
     // Only log occasionally or on important events
     if (shouldLog) {
       logDebug(
         "AUTO",
-        `Auto-swipe: ${this.card.currentIndex} → ${nextIndex} (${this._autoSwipeDirection > 0 ? "forward" : "backward"})`,
+        `Auto-swipe: ${this.card.currentIndex} → ${nextIndex} (${loopMode === "none" ? (this._autoSwipeDirection > 0 ? "forward" : "backward") : loopMode} mode)`,
       );
       this._lastLogTime = now;
     }

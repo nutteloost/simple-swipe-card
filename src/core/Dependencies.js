@@ -1,8 +1,3 @@
-/**
- * Dependency loading and fallback handling for Simple Swipe Card
- * FIXED: Using synchronous loading pattern from working todo-swipe-card
- */
-
 import { logDebug } from "../utils/Debug.js";
 
 /**

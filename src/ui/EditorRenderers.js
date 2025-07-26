@@ -150,14 +150,17 @@ export function renderDisplayOptions(config, valueChanged) {
         pattern="[0-9]+"
         required
       ></ha-textfield>
-      <div class="help-text">
-        Visual gap between cards when swiping (in pixels)
-      </div>
+      <div class="help-text">Visual gap between cards</div>
 
       ${viewMode === "single"
         ? html`
             <div class="option-row">
-              <div class="option-label">Swipe direction</div>
+              <div class="option-left">
+                <div class="option-label">Swipe direction</div>
+                <div class="option-help">
+                  The direction to swipe between cards
+                </div>
+              </div>
               <div class="option-control">
                 <ha-select
                   .value=${swipeDirection}
@@ -184,7 +187,6 @@ export function renderDisplayOptions(config, valueChanged) {
                 </ha-select>
               </div>
             </div>
-            <div class="help-text">The direction to swipe between cards</div>
           `
         : html`
             <!-- Carousel mode: Only horizontal direction supported -->
@@ -230,7 +232,7 @@ export function renderAdvancedOptions(
   handleTargetChange,
   hass,
 ) {
-  const enableLoopback = config.enable_loopback === true;
+  const loopMode = config.loop_mode || "none";
   const enableAutoSwipe = config.enable_auto_swipe === true;
   const autoSwipeInterval = config.auto_swipe_interval ?? 2000;
   const enableResetAfter = config.enable_reset_after === true;
@@ -243,7 +245,7 @@ export function renderAdvancedOptions(
   let activeFeatures = 0;
   let blockedFeatures = 0;
 
-  if (enableLoopback) activeFeatures++;
+  if (loopMode !== "none") activeFeatures++;
 
   // Only count these features if in single mode
   if (viewMode === "single") {
@@ -293,7 +295,7 @@ export function renderAdvancedOptions(
           ? "expanded"
           : "collapsed"}"
       >
-        ${renderLoopbackOption(enableLoopback, valueChanged)}
+        ${renderLoopModeOption(loopMode, valueChanged)}
         ${viewMode === "single"
           ? html`
               ${renderAutoSwipeOptions(
@@ -330,25 +332,36 @@ export function renderAdvancedOptions(
 }
 
 /**
- * Renders the loopback option
- * @param {boolean} enableLoopback - Current loopback setting
+ * Renders the loop mode options
+ * @param {string} loopMode - Current loop mode setting
  * @param {Function} valueChanged - Value change handler
- * @returns {TemplateResult} The loopback option template
+ * @returns {TemplateResult} The loop mode options template
  */
-function renderLoopbackOption(enableLoopback, valueChanged) {
+function renderLoopModeOption(loopMode, valueChanged) {
   return html`
     <div class="option-row">
-      <div class="option-label">Enable loopback mode</div>
-      <div class="option-control">
-        <ha-switch
-          .checked=${enableLoopback}
-          data-option="enable_loopback"
-          @change=${valueChanged}
-        ></ha-switch>
+      <div class="option-left">
+        <div class="option-label">Loop behavior</div>
+        <div class="option-help">
+          ${loopMode === "none"
+            ? "Stop at first/last card (no looping)"
+            : loopMode === "loopback"
+              ? "Jump back to first/last card"
+              : "Continuous loop navigation"}
+        </div>
       </div>
-    </div>
-    <div class="help-text">
-      Swipe past the last card to circle back to the first card, and vice versa.
+      <div class="option-control">
+        <ha-select
+          .value=${loopMode}
+          data-option="loop_mode"
+          @change=${valueChanged}
+          @closed=${(ev) => ev.stopPropagation()}
+        >
+          <ha-list-item .value=${"none"}> No looping </ha-list-item>
+          <ha-list-item .value=${"loopback"}> Jump to start/end </ha-list-item>
+          <ha-list-item .value=${"infinite"}> Continuous loop </ha-list-item>
+        </ha-select>
+      </div>
     </div>
   `;
 }
@@ -376,9 +389,7 @@ function renderAutoSwipeOptions(
         ></ha-switch>
       </div>
     </div>
-    <div class="help-text">
-      Automatically swipe between slides at a set interval.
-    </div>
+    <div class="help-text">Automatically cycle through cards</div>
 
     ${enableAutoSwipe
       ? html`
@@ -394,9 +405,7 @@ function renderAutoSwipeOptions(
             pattern="[0-9]+"
             required
           ></ha-textfield>
-          <div class="help-text">
-            Time between automatic swipes (minimum 500ms).
-          </div>
+          <div class="help-text">Time between swipes (min. 500ms).</div>
         `
       : ""}
   `;
@@ -438,8 +447,8 @@ function renderResetAfterOptions(
     </div>
     <div class="help-text">
       ${enableAutoSwipe
-        ? "Reset after timeout is disabled when auto-swipe is enabled."
-        : "Return to target card after inactivity. Timer starts after manual interactions."}
+        ? "Disabled when auto-swipe is on"
+        : "Auto-return after inactivity"}
     </div>
 
     ${enableResetAfter && !enableAutoSwipe
@@ -457,7 +466,7 @@ function renderResetAfterOptions(
             required
           ></ha-textfield>
           <div class="help-text">
-            Time of inactivity before resetting (5 seconds to 1 hour).
+            Time of inactivity before resetting (5s to 1h)
           </div>
 
           <ha-textfield
@@ -473,10 +482,10 @@ function renderResetAfterOptions(
             required
           ></ha-textfield>
           <div class="help-text">
-            Which card to reset to (1 = first card, 2 = second card, etc.).
+            Which card to return to
             ${cards.length === 0
               ? "Add cards first to set a target."
-              : `Current range: 1-${cards.length}`}
+              : `(current range: 1-${cards.length})`}
           </div>
         `
       : ""}
@@ -491,24 +500,57 @@ function renderResetAfterOptions(
  * @returns {TemplateResult} The state synchronization options template
  */
 function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
+  // Get all input_select and input_number entities
+  const inputEntities = Object.keys(hass.states || {})
+    .filter(
+      (entityId) =>
+        entityId.startsWith("input_select.") ||
+        entityId.startsWith("input_number."),
+    )
+    .sort()
+    .map((entityId) => ({
+      entityId,
+      friendlyName:
+        hass.states[entityId].attributes.friendly_name ||
+        entityId
+          .replace(/^(input_select\.|input_number\.)/, "")
+          .replace(/_/g, " "),
+    }));
+
   return html`
     <div class="option-row">
-      <div class="option-label">State synchronization entity</div>
-      <div class="option-control">
-        <ha-entity-picker
-          .hass=${hass}
-          .value=${stateEntity || ""}
-          .includeDomains=${["input_select", "input_number"]}
-          data-option="state_entity"
-          @value-changed=${valueChanged}
-          allow-custom-entity
-        ></ha-entity-picker>
+      <div class="option-left">
+        <div class="option-label">State synchronization entity</div>
+        <div class="option-help">
+          Two-way sync with input_select/input_number entity
+        </div>
       </div>
-    </div>
-    <div class="help-text entity-picker-help">
-      Sync card position with an input_select or input_number entity.
-      input_select options are mapped by position to cards. input_number uses
-      1-based indexing (1 = first card).
+      <div class="option-control">
+        <ha-select
+          .value=${stateEntity || ""}
+          data-option="state_entity"
+          @change=${valueChanged}
+          @closed=${(ev) => ev.stopPropagation()}
+        >
+          <ha-list-item .value=${""}>
+            <span style="color: var(--secondary-text-color);"
+              >Select an entity</span
+            >
+          </ha-list-item>
+          ${inputEntities.map(
+            (entity) => html`
+              <ha-list-item .value=${entity.entityId}>
+                ${entity.friendlyName}
+                <span
+                  style="color: var(--secondary-text-color); font-size: 0.9em; margin-left: 8px;"
+                >
+                  (${entity.entityId})
+                </span>
+              </ha-list-item>
+            `,
+          )}
+        </ha-select>
+      </div>
     </div>
   `;
 }
@@ -773,13 +815,53 @@ export function renderCardPicker(hass, lovelace, handleCardPicked) {
 
 /**
  * Renders the version display section
- * @returns {TemplateResult} The version display template
+ * @returns {HTMLElement} The version display element
  */
 export function renderVersionDisplay() {
-  return html`
-    <div class="version-display">
-      <div class="version-text">Simple Swipe Card</div>
-      <div class="version-badge">v${CARD_VERSION}</div>
-    </div>
-  `;
+  // Create the main container
+  const versionDisplay = document.createElement("div");
+  versionDisplay.className = "version-display";
+
+  // Create the text part
+  const versionText = document.createElement("div");
+  versionText.className = "version-text";
+  versionText.textContent = "Simple Swipe Card";
+
+  // Create the badges container
+  const versionBadges = document.createElement("div");
+  versionBadges.className = "version-badges";
+
+  // Create the version badge
+  const versionBadge = document.createElement("div");
+  versionBadge.className = "version-badge";
+  versionBadge.textContent = `v${CARD_VERSION}`;
+
+  // Create the GitHub badge link
+  const githubBadge = document.createElement("a");
+  githubBadge.href = "https://github.com/nutteloost/simple-swipe-card";
+  githubBadge.target = "_blank";
+  githubBadge.rel = "noopener noreferrer";
+  githubBadge.className = "github-badge";
+
+  // Create the GitHub icon
+  const githubIcon = document.createElement("ha-icon");
+  githubIcon.icon = "mdi:github";
+
+  // Create the GitHub text
+  const githubText = document.createElement("span");
+  githubText.textContent = "GitHub";
+
+  // Assemble the GitHub badge
+  githubBadge.appendChild(githubIcon);
+  githubBadge.appendChild(githubText);
+
+  // Assemble the badges container
+  versionBadges.appendChild(versionBadge);
+  versionBadges.appendChild(githubBadge);
+
+  // Assemble the main container
+  versionDisplay.appendChild(versionText);
+  versionDisplay.appendChild(versionBadges);
+
+  return versionDisplay;
 }

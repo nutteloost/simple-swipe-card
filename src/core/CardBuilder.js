@@ -46,6 +46,8 @@ export class CardBuilder {
     // Reset state
     this.card.cards = [];
     this.card.currentIndex = 0;
+    this.card.virtualIndex = 0;
+    this.card.realIndex = 0;
     this.card.resizeObserver?.cleanup();
     this.card.swipeGestures?.removeGestures();
     this.card.autoSwipe?.stop();
@@ -122,28 +124,28 @@ export class CardBuilder {
     // If we reach here, we have visible cards - ensure card is visible
     this.card.style.display = "block";
 
-    // Build cards - load ALL visible cards upfront (no lazy loading)
-    logDebug(
-      "INIT",
-      "Building ALL visible cards:",
-      this.card.visibleCardIndices.length,
-      "out of",
-      this.card._config.cards.length,
+    // Initialize loop mode
+    this.card.loopMode.initialize();
+
+    // Build cards with duplication for infinite loop
+    const cardsToLoad = this.card.loopMode.prepareCardsForLoading(
+      this.card.visibleCardIndices,
+      this.card._config.cards,
     );
 
-    // Load all visible cards to ensure smooth animations
-    const cardsToLoad = Array.from(
-      { length: this.card.visibleCardIndices.length },
-      (_, i) => i,
-    );
+    logDebug("INIT", `Building cards:`, {
+      totalVisible: this.card.visibleCardIndices.length,
+      totalToLoad: cardsToLoad.length,
+      infiniteMode: this.card.isInfiniteMode,
+    });
 
-    const cardPromises = cardsToLoad.map((visibleIndex) => {
-      const originalIndex = this.card.visibleCardIndices[visibleIndex];
+    const cardPromises = cardsToLoad.map((cardInfo) => {
       return this.createCard(
-        this.card._config.cards[originalIndex],
-        visibleIndex,
-        originalIndex,
+        cardInfo.config,
+        cardInfo.visibleIndex,
+        cardInfo.originalIndex,
         helpers,
+        cardInfo.isDuplicate,
       );
     });
 
@@ -155,13 +157,15 @@ export class CardBuilder {
       .sort((a, b) => a.visibleIndex - b.visibleIndex)
       .forEach((cardData) => {
         if (cardData.slide) {
-          // Add data-index attribute for event targeting (use original index)
+          // Add data attributes for debugging
           cardData.slide.setAttribute("data-index", cardData.originalIndex);
           cardData.slide.setAttribute(
             "data-visible-index",
             cardData.visibleIndex,
           );
-          // Add card type attribute for debugging and event filtering
+          if (cardData.isDuplicate) {
+            cardData.slide.setAttribute("data-duplicate", "true");
+          }
           if (cardData.config && cardData.config.type) {
             cardData.slide.setAttribute("data-card-type", cardData.config.type);
           }
@@ -170,7 +174,6 @@ export class CardBuilder {
       });
 
     this.card.pagination?.create();
-
     this.card._applyCardModStyles();
 
     // Defer layout and gestures until next frame
@@ -178,7 +181,7 @@ export class CardBuilder {
 
     this.card.initialized = true;
     this.card.building = false;
-    logDebug("INIT", "Build finished - all cards loaded upfront.");
+    logDebug("INIT", "Build finished - all cards loaded.");
 
     // Restore reset-after state after rebuild
     this.card.resetAfter?.restoreState();
@@ -200,11 +203,18 @@ export class CardBuilder {
   /**
    * Creates a card element and adds it to the slider
    * @param {Object} cardConfig - Configuration for the card
-   * @param {number} visibleIndex - Index in the visible cards array
+   * @param {number} visibleIndex - Index in the visible cards array (can be negative for infinite mode leading duplicates)
    * @param {number} originalIndex - Original index in the full cards array
    * @param {Object} helpers - Home Assistant card helpers
+   * @param {boolean} isDuplicate - Whether this is a duplicate card for infinite scrolling
    */
-  async createCard(cardConfig, visibleIndex, originalIndex, helpers) {
+  async createCard(
+    cardConfig,
+    visibleIndex,
+    originalIndex,
+    helpers,
+    isDuplicate = false,
+  ) {
     const slideDiv = createSlide();
     let cardElement;
     const cardData = {
@@ -213,6 +223,7 @@ export class CardBuilder {
       slide: slideDiv,
       config: JSON.parse(JSON.stringify(cardConfig)),
       error: false,
+      isDuplicate: isDuplicate,
     };
 
     try {
@@ -260,7 +271,9 @@ export class CardBuilder {
       cardData.element = errorCard;
       slideDiv.appendChild(errorCard);
     }
-    this.card.cards[visibleIndex] = cardData;
+
+    // Use push instead of array index assignment to handle negative visibleIndex values
+    this.card.cards.push(cardData);
   }
 
   /**
@@ -385,11 +398,10 @@ export class CardBuilder {
   /**
    * Sets up carousel mode layout and sizing
    * @param {number} containerWidth - Container width
-   * @param {number} _containerHeight - Container height (unused - reserved for future vertical carousel support)
    * @private
    */
-  _setupCarouselLayout(containerWidth, containerHeight) {
-    // NEW: Support both responsive and legacy approaches
+  _setupCarouselLayout(containerWidth) {
+    // Support both responsive and legacy approaches
     let cardsVisible;
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
@@ -403,7 +415,7 @@ export class CardBuilder {
         cardsVisible,
       );
     } else {
-      // NEW: Responsive approach - calculate fractional cards_visible from card_min_width
+      // Responsive approach - calculate fractional cards_visible from card_min_width
       const minWidth = this.card._config.card_min_width || 200;
       const rawCardsVisible =
         (containerWidth + cardSpacing) / (minWidth + cardSpacing);

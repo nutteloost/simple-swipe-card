@@ -94,7 +94,7 @@ export class EditorCardManagement {
     [cards[index], cards[newIndex]] = [cards[newIndex], cards[index]];
 
     this.editor._config = { ...this.editor._config, cards };
-    this.editor._fireConfigChanged();
+    this.editor.configManager.fireConfigChanged();
     this.editor.requestUpdate();
   }
 
@@ -113,7 +113,7 @@ export class EditorCardManagement {
     logDebug("EDITOR", `Removing card at index ${index}`);
     const cards = this.editor._config.cards.filter((_, i) => i !== index);
     this.editor._config = { ...this.editor._config, cards };
-    this.editor._fireConfigChanged();
+    this.editor.configManager.fireConfigChanged();
     this.editor.requestUpdate();
   }
 
@@ -151,7 +151,7 @@ export class EditorCardManagement {
     updatedCards[parentIndex] = { ...parentCard, card: nestedCards };
     this.editor._config = { ...this.editor._config, cards: updatedCards };
 
-    this.editor._fireConfigChanged();
+    this.editor.configManager.fireConfigChanged();
     this.editor.requestUpdate();
   }
 
@@ -180,7 +180,7 @@ export class EditorCardManagement {
     updatedCards[parentIndex] = { ...parentCard, card: nestedCards };
     this.editor._config = { ...this.editor._config, cards: updatedCards };
 
-    this.editor._fireConfigChanged();
+    this.editor.configManager.fireConfigChanged();
     this.editor.requestUpdate();
   }
 
@@ -362,7 +362,7 @@ export class EditorCardManagement {
             );
           }
         }
-        setTimeout(() => this.editor._ensureCardPickerLoaded(), 100);
+        setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
       };
       dialog.addEventListener("dialog-closed", handleDialogClose);
 
@@ -428,7 +428,7 @@ export class EditorCardManagement {
               };
 
               // Fire a non-bubbling config change to update parent without closing
-              this.editor._fireConfigChanged({
+              this.editor.configManager.fireConfigChanged({
                 maintainEditorState: true,
                 fromElementEditor: true,
                 updatedCardIndex: index,
@@ -455,10 +455,12 @@ export class EditorCardManagement {
           updatedCards[index] = savedCardConfig;
           this.editor._config = { ...this.editor._config, cards: updatedCards };
           // Fire a BUBBLING event here, as the edit session for this card IS finished.
-          this.editor._fireConfigChanged({ reason: "child_dialog_saved" });
+          this.editor.configManager.fireConfigChanged({
+            reason: "child_dialog_saved",
+          });
           this.editor.requestUpdate();
           // Dialog will close itself, handleDialogClose will manage cleanup
-          setTimeout(() => this.editor._ensureCardPickerLoaded(), 100); // Also ensure here
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100); // Also ensure here
         },
       };
 
@@ -489,11 +491,14 @@ export class EditorCardManagement {
               ...this.editor._config,
               cards: updatedCards,
             };
-            this.editor._fireConfigChanged({
+            this.editor.configManager.fireConfigChanged({
               reason: "child_dialog_saved_fallback",
             });
             this.editor.requestUpdate();
-            setTimeout(() => this.editor._ensureCardPickerLoaded(), 100);
+            setTimeout(
+              () => this.editor.uiManager.ensureCardPickerLoaded(),
+              100,
+            );
           },
         },
       });
@@ -622,7 +627,7 @@ export class EditorCardManagement {
             console.warn("Error removing nested card dialog:", error);
           }
         }
-        setTimeout(() => this.editor._ensureCardPickerLoaded(), 100);
+        setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
       };
       dialog.addEventListener("dialog-closed", handleDialogClose);
 
@@ -662,7 +667,7 @@ export class EditorCardManagement {
               };
 
               // Fire a non-bubbling config change to update parent without closing
-              this.editor._fireConfigChanged({
+              this.editor.configManager.fireConfigChanged({
                 maintainEditorState: true,
                 fromElementEditor: true,
                 updatedCardIndex: parentIndex,
@@ -696,9 +701,9 @@ export class EditorCardManagement {
           const updatedCards = [...this.editor._config.cards];
           updatedCards[parentIndex] = updatedParentCard;
           this.editor._config = { ...this.editor._config, cards: updatedCards };
-          this.editor._fireConfigChanged();
+          this.editor.configManager.fireConfigChanged();
           this.editor.requestUpdate();
-          setTimeout(() => this.editor._ensureCardPickerLoaded(), 100);
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
         },
       };
       await dialog.showDialog(dialogParams);
@@ -728,9 +733,12 @@ export class EditorCardManagement {
               ...this.editor._config,
               cards: updatedCards,
             };
-            this.editor._fireConfigChanged();
+            this.editor.configManager.fireConfigChanged();
             this.editor.requestUpdate();
-            setTimeout(() => this.editor._ensureCardPickerLoaded(), 100);
+            setTimeout(
+              () => this.editor.uiManager.ensureCardPickerLoaded(),
+              100,
+            );
           },
         },
       });
@@ -758,14 +766,14 @@ export class EditorCardManagement {
       this.editor._config = updatedConfig;
 
       // Fire config changed event with special flag
-      this.editor._fireConfigChanged({
+      this.editor.configManager.fireConfigChanged({
         isSafeCardAddition: true,
         addedCardType: cardConfig.type,
       });
 
       // Force a visual update
       this.editor.requestUpdate();
-      setTimeout(() => this.editor._ensureCardPickerLoaded(), 50); // Ensure picker is fine after adding
+      setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 50); // Ensure picker is fine after adding
 
       // Log success
       logDebug("EDITOR", "Safely added card:", cardConfig.type);
@@ -805,7 +813,7 @@ export class EditorCardManagement {
     };
 
     this.editor._config = updatedConfig;
-    this.editor._fireConfigChanged();
+    this.editor.configManager.fireConfigChanged();
     this.editor.requestUpdate();
   }
 }

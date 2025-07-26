@@ -12,21 +12,26 @@ export class CarouselView {
     this.card = cardInstance;
   }
 
+  /**
+   * Calculates the transform value for carousel positioning
+   * @param {number} targetIndex - The target card index
+   * @returns {number} Transform value in pixels
+   */
   calculateTransform(targetIndex) {
     if (!this.card.cards || this.card.cards.length === 0) return 0;
 
-    // NEW: Support both responsive and legacy approaches
+    // Support both responsive and legacy approaches
     let cardsVisible;
     const containerWidth = this.card.cardContainer.offsetWidth;
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
 
     if (this.card._config.cards_visible !== undefined) {
-      // Legacy approach - use fixed cards_visible (backwards compatibility)
+      // Legacy approach - use fixed cards_visible for backwards compatibility
       cardsVisible = this.card._config.cards_visible;
       logDebug("SWIPE", "Using legacy cards_visible approach:", cardsVisible);
     } else {
-      // NEW: Responsive approach - calculate fractional cards_visible from card_min_width
+      // Responsive approach - calculate fractional cards_visible from card_min_width
       const minWidth = this.card._config.card_min_width || 200;
       const rawCardsVisible =
         (containerWidth + cardSpacing) / (minWidth + cardSpacing);
@@ -41,6 +46,7 @@ export class CarouselView {
     }
 
     const totalCards = this.card.visibleCardIndices.length;
+    const loopMode = this.card._config.loop_mode || "none";
 
     // Edge case: If we have fewer cards than cards_visible, don't transform at all
     if (totalCards <= Math.floor(cardsVisible)) {
@@ -51,9 +57,27 @@ export class CarouselView {
       return 0;
     }
 
-    // Edge case: Don't scroll past the point where we'd show empty space
-    const maxScrollableIndex = Math.max(0, totalCards - 1);
-    const clampedIndex = Math.min(targetIndex, maxScrollableIndex);
+    // Handle infinite mode - map logical index to DOM position
+    let domPosition;
+    let maxScrollableIndex;
+
+    if (loopMode === "infinite") {
+      // Map logical index to DOM position (same as single mode fix)
+      const duplicateCount = this.card.loopMode.getDuplicateCount();
+      domPosition = targetIndex + duplicateCount;
+      maxScrollableIndex = "infinite";
+      logDebug(
+        "SWIPE",
+        "Carousel infinite mode: logical index",
+        targetIndex,
+        "-> DOM position",
+        domPosition,
+      );
+    } else {
+      // Original logic for non-infinite modes
+      maxScrollableIndex = Math.max(0, totalCards - 1);
+      domPosition = Math.min(targetIndex, maxScrollableIndex);
+    }
 
     // Calculate individual card width (same logic as in CardBuilder)
     const totalSpacing = (cardsVisible - 1) * cardSpacing;
@@ -61,11 +85,11 @@ export class CarouselView {
 
     // In carousel mode, we move by single card width + spacing
     const moveDistance = cardWidth + cardSpacing;
-    const transform = clampedIndex * moveDistance;
+    const transform = domPosition * moveDistance;
 
     logDebug("SWIPE", "Carousel transform calculation:", {
       targetIndex,
-      clampedIndex,
+      domPosition,
       totalCards,
       maxScrollableIndex,
       cardsVisible: cardsVisible.toFixed(2),
@@ -73,6 +97,7 @@ export class CarouselView {
       cardSpacing,
       moveDistance: moveDistance.toFixed(2),
       transform: transform.toFixed(2),
+      loopMode,
     });
 
     return transform;
@@ -107,20 +132,20 @@ export class CarouselView {
    * @returns {number} The actual index after loopback logic
    */
   handleLoopback(proposedIndex) {
-    const totalVisibleCards = this.card.visibleCardIndices.length;
-    const loopbackEnabled = this.card._config.enable_loopback === true;
+    return this.card.loopMode.handleNavigation(proposedIndex, true);
+  }
 
-    if (loopbackEnabled && totalVisibleCards > 1) {
-      if (proposedIndex < 0) {
-        return totalVisibleCards - 1;
-      } else if (proposedIndex >= totalVisibleCards) {
-        return 0;
-      }
-    } else {
-      // Clamp to valid range
-      return Math.max(0, Math.min(proposedIndex, totalVisibleCards - 1));
-    }
-
-    return proposedIndex;
+  /**
+   * Helper method for infinite loop virtual index calculation
+   * @param {number} index - Proposed index that may be out of bounds
+   * @returns {number} Virtual index for infinite loop
+   * @private
+   */
+  _getVirtualIndex(index) {
+    const totalCards = this.card.visibleCardIndices.length;
+    // For now, return wrapped index - will enhance for true infinite loop
+    if (index < 0) return totalCards - 1;
+    if (index >= totalCards) return 0;
+    return index;
   }
 }

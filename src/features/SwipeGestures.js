@@ -74,8 +74,6 @@ export class SwipeGestures {
         this._boundHandleSwipeStart,
         { passive: false },
       );
-
-      // Remove click prevention listeners - fixed options to match addGestures
       this.card.cardContainer.removeEventListener(
         "click",
         this._boundPreventClick,
@@ -161,8 +159,6 @@ export class SwipeGestures {
       this._boundHandleSwipeStart,
       { passive: false },
     );
-
-    // Add click prevention listeners - fixed options to match v1.7.2
     this.card.cardContainer.addEventListener("click", this._boundPreventClick, {
       capture: true,
       // Remove passive: false to match working version
@@ -347,9 +343,6 @@ export class SwipeGestures {
         `${isHorizontal ? "Horizontal" : "Vertical"} move detected`,
       );
 
-      // THIS IS THE KEY: Only prevent default when we're actually swiping
-      if (e.cancelable) e.preventDefault();
-
       // Update current position based on swipe direction
       if (isHorizontal) {
         this._currentX = clientX;
@@ -412,7 +405,6 @@ export class SwipeGestures {
       window.removeEventListener("mouseup", this._boundMouseUp);
     }
 
-    // RESTORED CLICK PREVENTION LOGIC (from v1.7.2)
     const hasSignificantMovement =
       this._hasMovedDuringGesture &&
       this._totalMovement > this._gestureThreshold;
@@ -496,37 +488,46 @@ export class SwipeGestures {
       }
 
       let nextIndex = this.card.currentIndex;
-      const loopbackEnabled = this.card._config.enable_loopback === true;
+      const loopMode = this.card._config.loop_mode || "none";
       const totalVisibleCards = this.card.visibleCardIndices.length;
 
-      // Use consistent velocity threshold (matching v1.7.2 logic)
+      // Use consistent velocity threshold
       if (
         Math.abs(totalMove) > threshold ||
         Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
       ) {
-        if (totalMove > 0) {
-          // Swiping right/down - go to previous visible card
-          if (this.card.currentIndex > 0) {
-            nextIndex--;
-          } else if (loopbackEnabled && totalVisibleCards > 1) {
-            nextIndex = totalVisibleCards - 1;
-            logDebug(
-              "SWIPE",
-              "Loopback: Looping from first to last visible card",
-            );
-          }
-        } else if (totalMove < 0) {
-          // Swiping left/up - go to next visible card
-          if (this.card.currentIndex < totalVisibleCards - 1) {
-            nextIndex++;
-          } else if (loopbackEnabled && totalVisibleCards > 1) {
-            nextIndex = 0;
-            logDebug(
-              "SWIPE",
-              "Loopback: Looping from last to first visible card",
-            );
-          }
+        logDebug("SWIPE", `Swipe threshold crossed:`, {
+          totalMove: totalMove,
+          threshold: threshold,
+          velocity: velocityForSwipe,
+          velocityThreshold: this._swipeVelocityThreshold,
+          currentIndex: this.card.currentIndex,
+          totalVisibleCards: totalVisibleCards,
+          loopMode: loopMode,
+        });
+
+        if (
+          Math.abs(totalMove) > threshold ||
+          Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
+        ) {
+          nextIndex = this.card.loopMode.handleSwipeNavigation(
+            this.card.currentIndex,
+            totalMove,
+          );
+
+          logDebug(
+            "SWIPE",
+            `Swipe resulted in navigation: ${this.card.currentIndex} → ${nextIndex} (${this.card.loopMode.getMode()} mode)`,
+          );
         }
+      } else {
+        logDebug("SWIPE", `Swipe threshold NOT crossed:`, {
+          totalMove: totalMove,
+          threshold: threshold,
+          velocity: velocityForSwipe,
+          velocityThreshold: this._swipeVelocityThreshold,
+          viewMode: viewMode,
+        });
       }
 
       if (nextIndex !== this.card.currentIndex) {

@@ -279,18 +279,49 @@ export const getEditorStyles = () => css`
 
   .option-row {
     display: flex;
-    align-items: center;
+    align-items: anchor-center;
     justify-content: space-between;
     padding: 6px 0;
     min-height: 36px;
   }
 
+  .option-left {
+    flex: 1;
+    margin-right: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .option-label {
+    font-size: 14px;
+    color: var(--primary-text-color);
+    margin: 0 0 2px 0;
+    line-height: 1.2;
+  }
+
+  .option-help {
+    color: var(--secondary-text-color);
+    font-size: 12px;
+    line-height: 1.3;
+    margin: 0;
+    max-width: 100%;
+    margin-top: 8px;
+  }
+
+  .option-control {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px; /* Small offset to align with label baseline */
+  }
+
   .option-row:not(:last-of-type) {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .option-row + .help-text {
-    margin-top: -33px;
+    margin-top: -8px; /* Small negative margin for close spacing */
+    margin-bottom: 16px;
+    margin-left: 0;
   }
 
   .help-text + .option-row {
@@ -302,13 +333,15 @@ export const getEditorStyles = () => css`
     margin-right: 12px;
     font-size: 14px;
     color: var(--primary-text-color);
+    margin: 0;
   }
 
   .help-text {
     color: var(--secondary-text-color);
     font-size: 12px;
-    margin-top: 0px;
+    margin-top: 4px;
     margin-bottom: 8px;
+    line-height: 1.3;
   }
 
   .help-text:last-child {
@@ -328,7 +361,24 @@ export const getEditorStyles = () => css`
       --card-background-color,
       var(--primary-background-color)
     );
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
+  }
+
+  .collapsible-section .section-content {
+    overflow: visible; /* Allow dropdowns to overflow */
+    position: relative;
+  }
+
+  /* Ensure ha-select dropdowns can overflow the collapsible container */
+  .collapsible-section ha-select {
+    position: relative;
+    z-index: 100; /* Ensure dropdown appears above other content */
+  }
+
+  /* Make sure the dropdown menu itself has proper z-index */
+  .collapsible-section ha-select mwc-menu {
+    z-index: 1000;
   }
 
   .collapsible-section .section-toggle {
@@ -433,20 +483,21 @@ export const getEditorStyles = () => css`
   .section-content.expanded {
     max-height: 500px;
     opacity: 1;
+    overflow: visible;
   }
 
   .compact-options .option-row {
-    padding: 4px 0;
-    min-height: 32px;
+    padding: 8px 0;
+    min-height: 20px;
   }
 
   .compact-options .option-row + .help-text {
-    margin-top: -20px;
-    margin-bottom: 6px;
+    margin-top: -8px; /* Same small negative margin */
+    margin-bottom: 12px;
   }
 
   .compact-options ha-textfield + .help-text {
-    margin-top: 2px;
+    margin-top: 4px;
     margin-bottom: 8px;
   }
 
@@ -466,7 +517,7 @@ export const getEditorStyles = () => css`
     padding: 8px;
     border: 1px solid var(--divider-color);
     border-radius: var(--ha-card-border-radius, 4px);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     background: var(--secondary-background-color);
   }
 
@@ -637,7 +688,9 @@ export const getEditorStyles = () => css`
   }
 
   ha-select {
-    width: 100%;
+    width: 185px;
+    max-width: 185px;
+    --ha-select-height: 40px;
   }
 
   .direction-icon {
@@ -681,8 +734,7 @@ export const getEditorStyles = () => css`
   }
 
   .entity-picker-help {
-    margin-top: 0px !important;
-    margin-bottom: 16px !important;
+    margin-top: 4px !important;
   }
 
   /* VIEW MODE SECTION */
@@ -772,5 +824,62 @@ export const getEditorStyles = () => css`
     width: 16px;
     height: 16px;
     flex-shrink: 0;
+  }
+
+  .version-display {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--divider-color);
+    padding-top: 16px;
+  }
+
+  .version-text {
+    color: var(--secondary-text-color);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .version-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .version-badge {
+    background-color: var(--primary-color);
+    color: var(--text-primary-color);
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .github-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #24292e;
+    color: white;
+    border-radius: 16px;
+    padding: 4px 12px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+
+  .github-badge:hover {
+    background-color: #444d56;
+  }
+
+  .github-badge ha-icon {
+    --mdc-icon-size: 16px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 `;

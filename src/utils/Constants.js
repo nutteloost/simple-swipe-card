@@ -3,10 +3,10 @@
  */
 
 // Version management
-export const CARD_VERSION = "2.2.0";
+export const CARD_VERSION = "2.3.0";
 
 // Debug configuration - set to false for production
-export const DEBUG = true;
+export const DEBUG = false;
 
 // Debug level configuration (can be modified for development)
 export const DEBUG_LEVEL = {
@@ -23,7 +23,7 @@ export const DEFAULT_CONFIG = {
   cards: [],
   show_pagination: true,
   card_spacing: 15,
-  enable_loopback: false,
+  loop_mode: "none",
   swipe_direction: "horizontal",
   enable_auto_swipe: false,
   auto_swipe_interval: 2000,
