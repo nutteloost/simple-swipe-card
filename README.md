@@ -5,6 +5,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 [![Reddit Profile](https://img.shields.io/badge/Reddit-My%20stuff-orange?logo=reddit)](https://www.reddit.com/user/nutteloost/submitted/)
 [![Home Assistant Community Forum](https://img.shields.io/badge/Home%20Assistant-Community%20Forum-blue?logo=home-assistant)](https://community.home-assistant.io/t/simple-swipe-card-a-custom-card-for-easy-card-navigation/888415)
+![TEST](https://img.shields.io/github/downloads/nutteloost/simple-swipe-card/latest/total
+)
 
 A swipeable container card for Home Assistant that allows you to add multiple cards and swipe between them.
 
@@ -22,7 +24,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Pagination dots
 - Configurable card spacing
 - Visual editor support
-- Loopback mode for continuous navigation
+- Multiple loop modes: no looping, jump to start/end, or continuous infinite scrolling
 - Support for both horizontal and vertical swiping
 - Automatic Slideshow (Auto-Swipe):
     - Cards can cycle automatically at a user-defined interval
@@ -79,7 +81,7 @@ Or click this button to open the repository page in HACS:
 6. Search for "Simple Swipe Card" and install it
 
 ### Manual Installation
-1. Download `simple-swipe-card.js` from the latest release
+1. Download `simple-swipe-card.js` from the latest release or from the `/build` folder in the main repository
 2. Copy it to `config/www/simple-swipe-card/simple-swipe-card.js`
 3. Add the following to your configuration.yaml:
    ```yaml
@@ -135,7 +137,7 @@ This card can be configured using the visual editor or YAML.
 | card_min_width | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
 | show_pagination | boolean | true | Show/hide pagination dots |
 | card_spacing | number | 15 | Space between cards in pixels |
-| enable_loopback | boolean | false | When enabled, swiping past the last card will circle back to the first card, and vice versa |
+| loop_mode | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
 | swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
 | enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides. Only available in single mode |
 | auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
@@ -160,7 +162,7 @@ cards:
     entity: media_player.living_room
 show_pagination: true
 card_spacing: 15
-enable_loopback: true
+loop_mode: loopback
 swipe_direction: horizontal
 enable_auto_swipe: false
 auto_swipe_interval: 3000
@@ -188,7 +190,7 @@ cards:
     entity: sensor.outdoor_temperature
 show_pagination: true
 card_spacing: 20
-enable_loopback: true
+loop_mode: infinite
 ```
 
 ## State Synchronization
