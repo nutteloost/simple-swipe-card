@@ -227,14 +227,8 @@ export class EditorConfigManager {
       if (value === "carousel") {
         // Switching TO carousel mode - remove single-mode-only options
         delete newConfig.swipe_direction; // Carousel only supports horizontal
-        delete newConfig.enable_auto_swipe;
-        delete newConfig.auto_swipe_interval;
-        delete newConfig.enable_reset_after;
-        delete newConfig.reset_after_timeout;
-        delete newConfig.reset_target_card;
-        delete newConfig.state_entity;
 
-        // FIXED: Set responsive defaults for new users, preserve existing cards_visible for legacy
+        // Set responsive defaults for new users, preserve existing cards_visible for legacy
         if (!newConfig.cards_visible && !newConfig.card_min_width) {
           // New user - use responsive approach
           newConfig.card_min_width = 200;

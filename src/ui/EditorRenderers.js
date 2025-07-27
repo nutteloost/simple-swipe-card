@@ -239,21 +239,18 @@ export function renderAdvancedOptions(
   const resetAfterTimeout = config.reset_after_timeout ?? 30000;
   const resetTargetCard = config.reset_target_card ?? 1;
   const stateEntity = config.state_entity || "";
-  const viewMode = config.view_mode || "single";
 
-  // Count active and blocked advanced features
+  // Count active and blocked advanced features (now works for both modes)
   let activeFeatures = 0;
   let blockedFeatures = 0;
 
   if (loopMode !== "none") activeFeatures++;
 
-  // Only count these features if in single mode
-  if (viewMode === "single") {
-    if (enableAutoSwipe) activeFeatures++;
-    if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
-    if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
-    if (stateEntity) activeFeatures++; // Count state sync as active feature
-  }
+  // Count features for both single and carousel modes
+  if (enableAutoSwipe) activeFeatures++;
+  if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
+  if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
+  if (stateEntity) activeFeatures++; // Count state sync as active feature
 
   // Create separate badges for active and blocked features
   let activeBadge = "";
@@ -296,36 +293,22 @@ export function renderAdvancedOptions(
           : "collapsed"}"
       >
         ${renderLoopModeOption(loopMode, valueChanged)}
-        ${viewMode === "single"
-          ? html`
-              ${renderAutoSwipeOptions(
-                enableAutoSwipe,
-                autoSwipeInterval,
-                valueChanged,
-              )}
-              ${renderResetAfterOptions(
-                enableResetAfter,
-                enableAutoSwipe,
-                resetAfterTimeout,
-                resetTargetCard,
-                cards,
-                valueChanged,
-                handleTimeoutChange,
-                handleTargetChange,
-              )}
-              ${renderStateSynchronizationOptions(
-                stateEntity,
-                hass,
-                valueChanged,
-              )}
-            `
-          : html`
-              <!-- Carousel mode: Limited options available -->
-              <div class="option-info">
-                <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
-                <span>Additional features available in Single card mode</span>
-              </div>
-            `}
+        ${renderAutoSwipeOptions(
+          enableAutoSwipe,
+          autoSwipeInterval,
+          valueChanged,
+        )}
+        ${renderResetAfterOptions(
+          enableResetAfter,
+          enableAutoSwipe,
+          resetAfterTimeout,
+          resetTargetCard,
+          cards,
+          valueChanged,
+          handleTimeoutChange,
+          handleTargetChange,
+        )}
+        ${renderStateSynchronizationOptions(stateEntity, hass, valueChanged)}
       </div>
     </div>
   `;

@@ -29,9 +29,17 @@ import { LoopMode } from "../features/LoopMode.js";
  * Main Simple Swipe Card class
  * @extends LitElement
  */
-export class SimpleSwipeCard extends (LitElement || HTMLElement) {
+export class SimpleSwipeCard extends LitElement {
   constructor() {
     super();
+
+    // LitElement should create shadowRoot automatically, but ensure it exists
+    // This is needed because our build method runs before LitElement's first update
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: "open" });
+      logDebug("INIT", "Created shadowRoot for manual DOM manipulation");
+    }
+
     logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
 
     this._config = {};

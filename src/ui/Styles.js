@@ -161,17 +161,45 @@ export function getStyles() {
         opacity: 0;
         pointer-events: none;
      }
+
     .pagination-dot {
         width: var(--simple-swipe-card-pagination-dot-size, 8px);
         height: var(--simple-swipe-card-pagination-dot-size, 8px);
         border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);
         background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
         cursor: pointer;
-        transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease;
-        border: none;
         opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);
+        
+        /* Border support */
+        border-width: var(--simple-swipe-card-pagination-dot-border-width, 0px);
+        border-color: var(--simple-swipe-card-pagination-dot-border-color, transparent);
+        border-style: var(--simple-swipe-card-pagination-dot-border-style, solid);
+        
+        /* Box shadow support */
+        box-shadow: var(--simple-swipe-card-pagination-dot-box-shadow, none);
+        
+        /* Updated transition to include new animatable properties */
+        transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
     
+    /* Hover effects */
+    .pagination-dot:hover {
+        background-color: var(--simple-swipe-card-pagination-dot-hover-color, var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6)));
+        opacity: var(--simple-swipe-card-pagination-dot-hover-opacity, var(--simple-swipe-card-pagination-dot-inactive-opacity, 1));
+        border-color: var(--simple-swipe-card-pagination-dot-hover-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));
+        transform: var(--simple-swipe-card-pagination-dot-hover-transform, none);
+        box-shadow: var(--simple-swipe-card-pagination-dot-hover-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));
+    }    
+
+    /* Active hover state */
+    .pagination-dot.active:hover {
+        background-color: var(--simple-swipe-card-pagination-dot-active-hover-color, var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4)));
+        opacity: var(--simple-swipe-card-pagination-dot-active-hover-opacity, var(--simple-swipe-card-pagination-dot-active-opacity, 1));
+        border-color: var(--simple-swipe-card-pagination-dot-active-hover-border-color, var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent)));
+        transform: var(--simple-swipe-card-pagination-dot-active-hover-transform, var(--simple-swipe-card-pagination-dot-hover-transform, none));
+        box-shadow: var(--simple-swipe-card-pagination-dot-active-hover-box-shadow, var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none)));
+    }    
+
     /* Spacing for horizontal pagination dots */
     .pagination.horizontal .pagination-dot {
         margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);
@@ -187,6 +215,17 @@ export function getStyles() {
         width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
         height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
         opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);
+        
+        /* Separate active border radius */
+        border-radius: var(--simple-swipe-card-pagination-dot-active-border-radius, var(--simple-swipe-card-pagination-border-radius, 50%));
+        
+        /* Active border support */
+        border-width: var(--simple-swipe-card-pagination-dot-active-border-width, var(--simple-swipe-card-pagination-dot-border-width, 0px));
+        border-color: var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));
+        border-style: var(--simple-swipe-card-pagination-dot-active-border-style, var(--simple-swipe-card-pagination-dot-border-style, solid));
+        
+        /* Active box shadow support */
+        box-shadow: var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));
     }
 
      ha-alert {

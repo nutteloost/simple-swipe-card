@@ -30,7 +30,7 @@ import {
  * Editor class for the Simple Swipe Card with Visibility Support and Reset After
  * @extends LitElement
  */
-export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
+export class SimpleSwipeCardEditor extends LitElement {
   static get properties() {
     return {
       hass: { type: Object },
@@ -45,12 +45,6 @@ export class SimpleSwipeCardEditor extends (LitElement || HTMLElement) {
 
   constructor() {
     super();
-
-    // Only manually attach shadow if not using LitElement
-    if (!this.shadowRoot && this.constructor === HTMLElement) {
-      this.attachShadow({ mode: "open" });
-    }
-
     logDebug("EDITOR", "SimpleSwipeCardEditor Constructor invoked.");
     logDebug(
       "EDITOR",
