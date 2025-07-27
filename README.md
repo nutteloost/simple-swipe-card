@@ -138,7 +138,6 @@ This card can be configured using the visual editor or YAML.
 
 ### Example Configuration
 
-**Single Mode (Default):**
 ```yaml
 type: custom:simple-swipe-card
 cards:
@@ -152,7 +151,7 @@ cards:
     entity: media_player.living_room
 show_pagination: true
 card_spacing: 15
-loop_mode: loopback
+loop_mode: infinite
 swipe_direction: horizontal
 enable_auto_swipe: false
 auto_swipe_interval: 3000
@@ -160,30 +159,6 @@ enable_reset_after: true
 reset_after_timeout: 45000
 reset_target_card: 1
 state_entity: input_select.dashboard_cards
-```
-
-**Carousel Mode:**
-```yaml
-type: custom:simple-swipe-card
-view_mode: carousel
-card_min_width: 220
-cards:
-  - type: weather-forecast
-    entity: weather.home
-  - type: entities
-    entities:
-      - sensor.temperature
-      - sensor.humidity
-  - type: media-control
-    entity: media_player.living_room
-  - type: sensor
-    entity: sensor.outdoor_temperature
-show_pagination: true
-card_spacing: 20
-loop_mode: infinite
-enable_auto_swipe: true
-auto_swipe_interval: 4000
-state_entity: input_number.carousel_position
 ```
 
 ## State Synchronization
