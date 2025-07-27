@@ -1,7 +1,7 @@
 {
   "name": "Simple Swipe Card",
   "render_readme": true,
-  "filename": "build/simple-swipe-card.js",
+  "filename": "simple-swipe-card.js",
   "content_in_root": false,
   "homeassistant": "2023.11.0"
 }
