@@ -394,24 +394,24 @@ Transform your Simple Swipe Card with these stunning pagination dot designs. Eac
 card_mod:
   style: |
     :host {
-      /* Glassmorphism effect */
+      /* Pagination dots */
       --simple-swipe-card-pagination-dot-inactive-color: rgba(255, 255, 255, 0.1);
       --simple-swipe-card-pagination-dot-border-width: 1px;
       --simple-swipe-card-pagination-dot-border-color: rgba(255, 255, 255, 0.2);
       --simple-swipe-card-pagination-dot-size: 10px;
       
-      /* Active dot with enhanced glow */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: rgba(255, 255, 255, 0.3);
       --simple-swipe-card-pagination-dot-active-border-color: rgba(255, 255, 255, 0.4);
       --simple-swipe-card-pagination-dot-active-box-shadow: 
         0 0 15px rgba(255, 255, 255, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.4);
       
-      /* Smooth hover transitions */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-color: rgba(255, 255, 255, 0.2);
       --simple-swipe-card-pagination-dot-hover-transform: scale(1.1);
       
-      /* Frosted container */
+      /* Container */
       --simple-swipe-card-pagination-background: rgba(255, 255, 255, 0.1);
       --simple-swipe-card-pagination-padding: 8px 16px;
     }
@@ -428,13 +428,13 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Dark gaming aesthetic */
+      /* Pagination Dots */
       --simple-swipe-card-pagination-dot-inactive-color: #0a0a0a;
       --simple-swipe-card-pagination-dot-border-width: 1px;
       --simple-swipe-card-pagination-dot-border-color: #333;
       --simple-swipe-card-pagination-dot-size: 8px;
       
-      /* Neon green active dot */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: #00ff41;
       --simple-swipe-card-pagination-dot-active-size: 10px;
       --simple-swipe-card-pagination-dot-active-box-shadow: 
@@ -443,13 +443,13 @@ card_mod:
         0 0 30px #00ff41,
         inset 0 0 5px rgba(0, 255, 65, 0.3);
       
-      /* Cyan hover effect */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-color: #00ffff;
       --simple-swipe-card-pagination-dot-hover-box-shadow: 
         0 0 8px #00ffff;
       --simple-swipe-card-pagination-dot-hover-transform: scale(1.2);
       
-      /* Dark container with subtle glow */
+      /* Container */
       --simple-swipe-card-pagination-background: rgba(0, 0, 0, 0.8);
       --simple-swipe-card-pagination-padding: 6px 12px;
     }
@@ -466,30 +466,26 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Dark gaming aesthetic */
-      --simple-swipe-card-pagination-dot-inactive-color: #0a0a0a;
-      --simple-swipe-card-pagination-dot-border-width: 1px;
-      --simple-swipe-card-pagination-dot-border-color: #333;
-      --simple-swipe-card-pagination-dot-size: 8px;
+      /* Pagination dots */
+      --simple-swipe-card-pagination-dot-inactive-color: #f8f9ff;
+      --simple-swipe-card-pagination-dot-border-width: 2px;
+      --simple-swipe-card-pagination-dot-border-color: #e8e9f3;
+      --simple-swipe-card-pagination-dot-size: 12px;
       
-      /* Neon green active dot */
-      --simple-swipe-card-pagination-dot-active-color: #00ff41;
-      --simple-swipe-card-pagination-dot-active-size: 10px;
+      /* Active pagination dot */
+      --simple-swipe-card-pagination-dot-active-color: #ffb3d1;
+      --simple-swipe-card-pagination-dot-active-border-color: #ff8bc3;
       --simple-swipe-card-pagination-dot-active-box-shadow: 
-        0 0 10px #00ff41,
-        0 0 20px #00ff41,
-        0 0 30px #00ff41,
-        inset 0 0 5px rgba(0, 255, 65, 0.3);
+        0 2px 8px rgba(255, 139, 195, 0.3);
       
-      /* Cyan hover effect */
-      --simple-swipe-card-pagination-dot-hover-color: #00ffff;
-      --simple-swipe-card-pagination-dot-hover-box-shadow: 
-        0 0 8px #00ffff;
-      --simple-swipe-card-pagination-dot-hover-transform: scale(1.2);
+      /* Hover effect */
+      --simple-swipe-card-pagination-dot-hover-color: #f0f1ff;
+      --simple-swipe-card-pagination-dot-hover-transform: scale(1.05);
       
-      /* Dark container with subtle glow */
-      --simple-swipe-card-pagination-background: rgba(0, 0, 0, 0.8);
-      --simple-swipe-card-pagination-padding: 6px 12px;
+      /* Container */
+      --simple-swipe-card-pagination-background: 
+        linear-gradient(135deg, rgba(255, 179, 209, 0.1), rgba(240, 241, 255, 0.1));
+      --simple-swipe-card-pagination-padding: 8px 20px;
     }
 ```
 </details>
@@ -504,26 +500,26 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Neumorphism base */
+      /* Pagination dots */
       --simple-swipe-card-pagination-dot-inactive-color: #e6e7ee;
       --simple-swipe-card-pagination-dot-size: 14px;
       --simple-swipe-card-pagination-dot-box-shadow: 
         4px 4px 8px #d1d9e6,
         -4px -4px 8px #ffffff;
       
-      /* Pressed effect for active dot */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: #e6e7ee;
       --simple-swipe-card-pagination-dot-active-box-shadow: 
         inset 4px 4px 8px #d1d9e6,
         inset -4px -4px 8px #ffffff;
       
-      /* Gentle hover lifting */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-box-shadow: 
         6px 6px 12px #d1d9e6,
         -6px -6px 12px #ffffff;
       --simple-swipe-card-pagination-dot-hover-transform: translateY(-1px);
       
-      /* Seamless container integration */
+      /* Container */
       --simple-swipe-card-pagination-background: #e6e7ee;
       --simple-swipe-card-pagination-padding: 12px 24px;
     }
@@ -540,13 +536,13 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Luxury base tones */
+      /* Pagination dots */
       --simple-swipe-card-pagination-dot-inactive-color: #2c2c2c;
       --simple-swipe-card-pagination-dot-border-width: 1px;
       --simple-swipe-card-pagination-dot-border-color: #444;
       --simple-swipe-card-pagination-dot-size: 10px;
       
-      /* Golden active accent */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: 
         linear-gradient(45deg, #ffd700, #ffed4e);
       --simple-swipe-card-pagination-dot-active-border-color: #ffd700;
@@ -554,13 +550,13 @@ card_mod:
         0 0 15px rgba(255, 215, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
       
-      /* Refined hover effect */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-border-color: #666;
       --simple-swipe-card-pagination-dot-active-hover-box-shadow: 
         0 0 20px rgba(255, 215, 0, 0.7),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
       
-      /* Premium container */
+      /* Container */
       --simple-swipe-card-pagination-background: 
         linear-gradient(135deg, rgba(44, 44, 44, 0.9), rgba(68, 68, 68, 0.9));
       --simple-swipe-card-pagination-padding: 8px 16px;
@@ -578,7 +574,7 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Industrial metal base */
+      /* Pagination dots */
       --simple-swipe-card-pagination-border-radius: 1px;
       --simple-swipe-card-pagination-dot-inactive-color: #4a5568;
       --simple-swipe-card-pagination-dot-border-width: 2px;
@@ -587,7 +583,7 @@ card_mod:
       --simple-swipe-card-pagination-dot-box-shadow: 
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       
-      /* Orange warning active state */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: #ff6b35;
       --simple-swipe-card-pagination-dot-active-border-color: #e53e3e;
       --simple-swipe-card-pagination-dot-active-size: 10px;
@@ -595,11 +591,11 @@ card_mod:
         0 0 8px rgba(255, 107, 53, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
       
-      /* Mechanical hover feedback */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-color: #718096;
       --simple-swipe-card-pagination-dot-hover-transform: scale(1.1);
       
-      /* Steel container */
+      /* Container */
       --simple-swipe-card-pagination-background: 
         linear-gradient(180deg, #4a5568, #2d3748);
       --simple-swipe-card-pagination-padding: 6px 14px;
@@ -618,13 +614,13 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Ocean-inspired organic shapes */
+      /* Shaped pagination dots */
       --simple-swipe-card-pagination-border-radius: 50% 30% 70% 40%;
       --simple-swipe-card-pagination-dot-inactive-color: rgba(56, 178, 172, 0.3);
       --simple-swipe-card-pagination-dot-size: 12px;
       --simple-swipe-card-pagination-dot-spacing: 10px;
       
-      /* Deep ocean active state */
+      /* Active pagination dot */
       --simple-swipe-card-pagination-dot-active-color: #0891b2;
       --simple-swipe-card-pagination-dot-active-border-radius: 40% 60% 30% 70%;
       --simple-swipe-card-pagination-dot-active-size: 16px;
@@ -632,13 +628,13 @@ card_mod:
         0 0 20px rgba(8, 145, 178, 0.4),
         0 4px 8px rgba(8, 145, 178, 0.2);
       
-      /* Ripple hover effect */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-color: rgba(56, 178, 172, 0.5);
       --simple-swipe-card-pagination-dot-hover-transform: scale(1.1) rotate(5deg);
       --simple-swipe-card-pagination-dot-hover-box-shadow: 
         0 0 12px rgba(56, 178, 172, 0.3);
       
-      /* Wave-like container */
+      /* Container */
       --simple-swipe-card-pagination-background: 
         linear-gradient(135deg, rgba(56, 178, 172, 0.1), rgba(8, 145, 178, 0.1));
       --simple-swipe-card-pagination-padding: 10px 20px;
@@ -656,14 +652,14 @@ card_mod:
 card_mod:
   style: |
     :host {
-      /* Creative asymmetric shapes */
+      /* Shaped pagination dots */
       --simple-swipe-card-pagination-dot-inactive-color: #f7fafc;
       --simple-swipe-card-pagination-dot-border-width: 3px;
       --simple-swipe-card-pagination-dot-border-color: #e2e8f0;
       --simple-swipe-card-pagination-dot-size: 10px;
       --simple-swipe-card-pagination-border-radius: 30% 70% 60% 40%;
       
-      /* Vibrant paint splash active */
+      /* Active dot */
       --simple-swipe-card-pagination-dot-active-color: #8b5cf6;
       --simple-swipe-card-pagination-dot-active-border-color: #7c3aed;
       --simple-swipe-card-pagination-dot-active-size: 14px;
@@ -672,12 +668,12 @@ card_mod:
         0 0 15px rgba(139, 92, 246, 0.4),
         0 0 5px rgba(124, 58, 237, 0.6);
       
-      /* Playful hover animation */
+      /* Hover effect */
       --simple-swipe-card-pagination-dot-hover-color: #fbbf24;
       --simple-swipe-card-pagination-dot-hover-border-color: #f59e0b;
       --simple-swipe-card-pagination-dot-hover-transform: scale(1.15) rotate(10deg);
       
-      /* Canvas-like container */
+      /* Container */
       --simple-swipe-card-pagination-background: 
         radial-gradient(circle, rgba(247, 250, 252, 0.9), rgba(226, 232, 240, 0.9));
       --simple-swipe-card-pagination-padding: 12px 24px;
