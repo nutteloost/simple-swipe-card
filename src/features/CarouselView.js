@@ -57,26 +57,25 @@ export class CarouselView {
       return 0;
     }
 
-    // Handle infinite mode - map logical index to DOM position
+    // FIXED: Handle infinite mode properly for carousel - use real DOM positioning
     let domPosition;
-    let maxScrollableIndex;
 
     if (loopMode === "infinite") {
-      // Map logical index to DOM position (same as single mode fix)
+      // FIXED: For carousel infinite mode, also use real DOM positioning like single mode
       const duplicateCount = this.card.loopMode.getDuplicateCount();
       domPosition = targetIndex + duplicateCount;
-      maxScrollableIndex = "infinite";
       logDebug(
         "SWIPE",
         "Carousel infinite mode: logical index",
         targetIndex,
         "-> DOM position",
         domPosition,
+        "duplicateCount:",
+        duplicateCount,
       );
     } else {
       // Original logic for non-infinite modes
-      maxScrollableIndex = Math.max(0, totalCards - 1);
-      domPosition = Math.min(targetIndex, maxScrollableIndex);
+      domPosition = Math.min(targetIndex, Math.max(0, totalCards - 1));
     }
 
     // Calculate individual card width (same logic as in CardBuilder)
@@ -91,7 +90,6 @@ export class CarouselView {
       targetIndex,
       domPosition,
       totalCards,
-      maxScrollableIndex,
       cardsVisible: cardsVisible.toFixed(2),
       cardWidth: cardWidth.toFixed(2),
       cardSpacing,
@@ -113,9 +111,16 @@ export class CarouselView {
 
     const transform = this.calculateTransform(targetIndex);
 
-    // Set transition
-    this.card.sliderElement.style.transition =
-      this.card._getTransitionStyle(animate);
+    // Handle custom animation duration for multi-card swipes (like single mode)
+    if (animate && this.card._config.swipe_behavior === "free" && this.card._lastSkipCount > 1) {
+      const animationDuration = this.card.swipeBehavior.calculateAnimationDuration(this.card._lastSkipCount);
+      const easingFunction = this.card.swipeBehavior.getEasingFunction(this.card._lastSkipCount);
+      this.card.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+      logDebug("SWIPE", `Carousel multi-card animation: ${this.card._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+    } else {
+      // Use default transition
+      this.card.sliderElement.style.transition = this.card._getTransitionStyle(animate);
+    }
 
     // Apply transform (carousel only supports horizontal)
     this.card.sliderElement.style.transform = `translateX(-${transform}px)`;

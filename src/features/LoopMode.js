@@ -17,6 +17,10 @@ export class LoopMode {
     this.virtualIndex = 0; // User-perceived position (0-based)
     this.realIndex = 0; // Actual DOM position (0-based)
     this.totalRealCards = 0; // Total cards in DOM (including duplicates)
+    
+    // Seamless jump state management
+    this._pendingSeamlessJump = null; // Track pending jumps to prevent duplicates
+    this._activeTransitionHandler = null; // Store reference to active transition handler
   }
 
   /**
@@ -58,16 +62,29 @@ export class LoopMode {
    */
   getDuplicateCount() {
     const viewMode = this.card._config.view_mode || "single";
+    const swipeBehavior = this.card._config.swipe_behavior || "single";
 
     if (viewMode === "single") {
-      // For single mode, we only need 1 card at each end
-      return 1;
+      // For single mode with free swipe, need more duplicates for hard swipes
+      return swipeBehavior === "free" ? 6 : 1;
     } else {
-      // For carousel mode, duplicate enough to fill the visible area
+      // For carousel mode, we need significantly more duplicates
       const cardsVisible =
         this.card._config.cards_visible ||
         this.card._calculateCardsVisibleFromMinWidth();
-      return Math.ceil(cardsVisible) + 1; // Extra buffer for smooth transitions
+      
+      // Base count: at least 2x the visible cards to handle wide screens
+      const baseCount = Math.max(6, Math.ceil(cardsVisible * 2));
+      
+      if (swipeBehavior === "free") {
+        // For free swipe in carousel: base count + extra buffer for multi-card swipes
+        // Add up to 8 extra duplicates to handle fast swipes on wide screens
+        const extraBuffer = Math.min(8, Math.ceil(cardsVisible));
+        return baseCount + extraBuffer;
+      } else {
+        // For single swipe in carousel: base count is usually sufficient
+        return baseCount;
+      }
     }
   }
 
@@ -97,10 +114,11 @@ export class LoopMode {
     const duplicateCount = this.getDuplicateCount();
     const totalVisibleCards = visibleCardIndices.length;
 
-    // Add leading duplicates (copies of last cards)
+    // FIXED: Add leading duplicates (copies of last cards) with proper wrapping
     for (let i = 0; i < duplicateCount; i++) {
-      const sourceIndex = totalVisibleCards - duplicateCount + i;
-      const originalIndex = visibleCardIndices[sourceIndex];
+      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      const sourceVisibleIndex = (totalVisibleCards - duplicateCount + i + totalVisibleCards) % totalVisibleCards;
+      const originalIndex = visibleCardIndices[sourceVisibleIndex];
       cardsToLoad.push({
         config: configCards[originalIndex],
         visibleIndex: i - duplicateCount, // Negative index for leading duplicates
@@ -119,9 +137,11 @@ export class LoopMode {
       });
     });
 
-    // Add trailing duplicates (copies of first cards)
+    // FIXED: Add trailing duplicates (copies of first cards) with proper wrapping  
     for (let i = 0; i < duplicateCount; i++) {
-      const originalIndex = visibleCardIndices[i];
+      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      const sourceVisibleIndex = i % totalVisibleCards;
+      const originalIndex = visibleCardIndices[sourceVisibleIndex];
       cardsToLoad.push({
         config: configCards[originalIndex],
         visibleIndex: totalVisibleCards + i, // Index after real cards
@@ -233,57 +253,183 @@ export class LoopMode {
 
   /**
    * Schedules a seamless jump to reset position for continued infinite scrolling
-   * @param {number} currentIndex - Current card index
+   * @param {number} targetIndex - The target index that the animation is moving to
+   * @param {number} [customDuration] - Custom animation duration to wait for
    */
-  scheduleSeamlessJump(currentIndex = this.card.currentIndex) {
-    if (!this.shouldPerformSeamlessJump(currentIndex)) return;
+  scheduleSeamlessJump(targetIndex, customDuration = null) {
+    // Cancel any existing pending jump first
+    this._cancelPendingSeamlessJump();
+    
+    if (!this.shouldPerformSeamlessJump(targetIndex)) {
+      logDebug("LOOP", `Seamless jump not needed for target index ${targetIndex}`);
+      return;
+    }
 
-    // Wait longer for the transition to be visible to the user
-    const transitionDuration = 400; // Slightly longer to ensure user sees the transition
+    // Use custom duration if provided, otherwise use default
+    let transitionDuration = customDuration || 400;
+    
+    logDebug("LOOP", `Scheduling seamless jump for target index ${targetIndex} after ${transitionDuration}ms animation`);
 
-    setTimeout(() => {
-      if (!this.card.isConnected || this.card.building) return;
-
-      const totalVisibleCards = this.card.visibleCardIndices.length;
-      let newIndex;
-
-      if (currentIndex < 0) {
-        // We're showing last card from virtual position, reset to actual last card position
-        newIndex = totalVisibleCards - 1;
-      } else if (currentIndex >= totalVisibleCards) {
-        // We're showing first card from virtual position, reset to actual first card position
-        newIndex = 0;
-      } else {
-        // We're not in a virtual position, no jump needed
+    // Use transitionend event for more precise timing, with timeout as fallback
+    let jumpExecuted = false;
+    
+    const executeJump = () => {
+      if (jumpExecuted) return; // Prevent double execution
+      jumpExecuted = true;
+      
+      // Clear any pending timeout
+      if (this._pendingSeamlessJump) {
+        clearTimeout(this._pendingSeamlessJump);
+        this._pendingSeamlessJump = null;
+      }
+      
+      if (!this.card.isConnected || this.card.building) {
+        logDebug("LOOP", "Seamless jump cancelled - card disconnected or building");
+        // Ensure flag is cleared even if jump is cancelled
+        this.card._performingSeamlessJump = false;
         return;
       }
 
-      logDebug(
-        "LOOP",
-        `Seamless jump: virtual ${currentIndex} → real ${newIndex}`,
-      );
+      // Wait for next animation frame to ensure rendering is complete
+      requestAnimationFrame(() => {
+        try {
+          // Use the actual current index at the time of execution
+          const actualCurrentIndex = this.card.currentIndex;
+          
+          logDebug("LOOP", `Seamless jump executing: target was ${targetIndex}, actual current is ${actualCurrentIndex}`);
+          
+          // Double-check we still need to jump using the actual current index
+          if (!this.shouldPerformSeamlessJump(actualCurrentIndex)) {
+            logDebug("LOOP", `Seamless jump cancelled - conditions changed (target: ${targetIndex}, actual: ${actualCurrentIndex})`);
+            this.card._performingSeamlessJump = false;
+            return;
+          }
 
-      // Disable transitions temporarily
-      if (this.card.sliderElement) {
-        this.card.sliderElement.style.transition = "none";
-      }
+          const totalVisibleCards = this.card.visibleCardIndices.length;
+          let newIndex;
 
-      // Jump to real position
-      this.card.currentIndex = newIndex;
-      this.card.updateSlider(false);
+          if (actualCurrentIndex < 0) {
+            // We're showing last card from virtual position
+            newIndex = totalVisibleCards + (actualCurrentIndex % totalVisibleCards);
+            if (newIndex >= totalVisibleCards) newIndex = totalVisibleCards - 1;
+          } else if (actualCurrentIndex >= totalVisibleCards) {
+            // We're showing a duplicate card, jump to equivalent real position
+            newIndex = actualCurrentIndex % totalVisibleCards;
+          } else {
+            // We're not in a virtual position, no jump needed
+            logDebug("LOOP", `Seamless jump not needed - already in valid position (${actualCurrentIndex})`);
+            this.card._performingSeamlessJump = false;
+            return;
+          }
 
-      // Re-enable transitions after a delay
-      setTimeout(() => {
-        if (this.card.sliderElement) {
-          this.card.sliderElement.style.transition =
-            this.card._getTransitionStyle(true);
+          logDebug(
+            "LOOP",
+            `Performing seamless jump: virtual ${actualCurrentIndex} → real ${newIndex}`,
+          );
+
+          // Set flag to prevent interference
+          this.card._performingSeamlessJump = true;
+
+          // Disable transitions temporarily with extra safety
+          if (this.card.sliderElement) {
+            this.card.sliderElement.style.transition = "none";
+            
+            // Force a reflow to ensure the transition: none is applied
+            this.card.sliderElement.offsetHeight;
+          }
+
+          // Jump to real position
+          this.card.currentIndex = newIndex;
+          this.card.updateSlider(false);
+
+          // Re-enable transitions after ensuring the jump has been processed
+          requestAnimationFrame(() => {
+            try {
+              if (this.card.sliderElement) {
+                this.card.sliderElement.style.transition =
+                  this.card._getTransitionStyle(true);
+              }
+              
+              logDebug(
+                "LOOP",
+                `Seamless jump completed - now at real position ${newIndex}, ready for continued scrolling`,
+              );
+            } catch (error) {
+              logDebug("ERROR", "Error in seamless jump transition restoration:", error);
+            } finally {
+              // CRITICAL: Always clear the flag, even if there's an error
+              this.card._performingSeamlessJump = false;
+            }
+          });
+        } catch (error) {
+          // CRITICAL: Always clear the flag if an error occurs
+          logDebug("ERROR", "Error during seamless jump execution:", error);
+          this.card._performingSeamlessJump = false;
         }
-        logDebug(
-          "LOOP",
-          `Jump completed - now at real position ${newIndex}, ready for continued scrolling`,
-        );
-      }, 50); // Small delay to ensure the jump has completed
-    }, transitionDuration);
+      });
+    };
+
+    // Listen for transitionend event for precise timing
+    const transitionEndHandler = (event) => {
+      // Only handle transform transitions on the slider element
+      if (event.target === this.card.sliderElement && 
+          event.propertyName === 'transform' && 
+          !jumpExecuted) {
+        
+        logDebug("LOOP", "Transform transition ended, executing seamless jump");
+        this.card.sliderElement.removeEventListener('transitionend', transitionEndHandler);
+        this._activeTransitionHandler = null;
+        
+        // Add a small delay to ensure all rendering is complete
+        setTimeout(executeJump, 50);
+      }
+    };
+
+    if (this.card.sliderElement && transitionDuration > 0) {
+      this._activeTransitionHandler = transitionEndHandler;
+      this.card.sliderElement.addEventListener('transitionend', transitionEndHandler);
+    }
+
+    // Fallback timeout in case transitionend doesn't fire
+    const bufferTime = Math.max(150, Math.min(transitionDuration * 0.2, 300));
+    const totalWaitTime = transitionDuration + bufferTime;
+    
+    this._pendingSeamlessJump = setTimeout(() => {
+      if (this._activeTransitionHandler && this.card.sliderElement) {
+        this.card.sliderElement.removeEventListener('transitionend', this._activeTransitionHandler);
+        this._activeTransitionHandler = null;
+      }
+      
+      if (!jumpExecuted) {
+        logDebug("LOOP", "Executing seamless jump via timeout fallback");
+        executeJump();
+      }
+    }, totalWaitTime);
+  }
+
+  /**
+   * Cancels any pending seamless jump
+   * @private
+   */
+  _cancelPendingSeamlessJump() {
+    if (this._pendingSeamlessJump) {
+      clearTimeout(this._pendingSeamlessJump);
+      this._pendingSeamlessJump = null;
+      
+      // Clear the flag if we're cancelling a pending jump
+      if (this.card._performingSeamlessJump) {
+        logDebug("LOOP", "Clearing seamless jump flag during cancellation");
+        this.card._performingSeamlessJump = false;
+      }
+      
+      // Clean up any active transition handler
+      if (this._activeTransitionHandler && this.card.sliderElement) {
+        this.card.sliderElement.removeEventListener('transitionend', this._activeTransitionHandler);
+        this._activeTransitionHandler = null;
+      }
+      
+      logDebug("LOOP", "Cancelled pending seamless jump and cleaned up event listeners");
+    }
   }
 
   /**
@@ -408,38 +554,58 @@ export class LoopMode {
    * // Navigate from first card with left swipe in loopback mode
    * const newIndex = handleSwipeNavigation(0, -1); // Returns last card index
    */
-  handleSwipeNavigation(currentIndex, direction) {
+  handleSwipeNavigation(currentIndex, skipCount) {
     const mode = this.getMode();
     const totalVisibleCards = this.card.visibleCardIndices.length;
     let nextIndex = currentIndex;
 
-    if (direction > 0) {
-      // Swiping right/down - go to previous visible card
-      if (currentIndex > 0) {
-        nextIndex--;
-      } else if (mode !== "none" && totalVisibleCards > 1) {
-        if (mode === "infinite") {
-          // For infinite mode, allow going to -1 (will be handled by seamless jump)
-          nextIndex = -1;
+    if (skipCount > 0) {
+      // Swiping right/down - go to previous visible cards
+      nextIndex = currentIndex - Math.abs(skipCount);
+      
+      if (nextIndex < 0) {
+        if (mode !== "none" && totalVisibleCards > 1) {
+          if (mode === "infinite") {
+            // For infinite mode, allow negative indices (handled by seamless jump)
+            // nextIndex stays negative
+          } else {
+            // Loopback mode - wrap around
+            nextIndex = totalVisibleCards + nextIndex; // nextIndex is negative, so this subtracts
+            if (nextIndex < 0) nextIndex = totalVisibleCards - 1; // Safety fallback
+          }
         } else {
-          // Loopback mode - jump directly
-          nextIndex = totalVisibleCards - 1;
-        }
-      }
-    } else if (direction < 0) {
-      // Swiping left/up - go to next visible card
-      if (currentIndex < totalVisibleCards - 1) {
-        nextIndex++;
-      } else if (mode !== "none" && totalVisibleCards > 1) {
-        if (mode === "infinite") {
-          // For infinite mode, allow going beyond bounds
-          nextIndex = totalVisibleCards;
-        } else {
-          // Loopback mode - jump directly
+          // No looping - clamp to first card
           nextIndex = 0;
         }
       }
+    } else if (skipCount < 0) {
+      // Swiping left/up - go to next visible cards
+      nextIndex = currentIndex + Math.abs(skipCount);
+      
+      if (nextIndex >= totalVisibleCards) {
+        if (mode !== "none" && totalVisibleCards > 1) {
+          if (mode === "infinite") {
+            // For infinite mode, allow going beyond bounds
+            // nextIndex stays >= totalVisibleCards
+          } else {
+            // Loopback mode - wrap around
+            nextIndex = nextIndex - totalVisibleCards; // Wrap to beginning
+            if (nextIndex >= totalVisibleCards) nextIndex = 0; // Safety fallback
+          }
+        } else {
+          // No looping - clamp to last card
+          nextIndex = totalVisibleCards - 1;
+        }
+      }
     }
+
+    logDebug("LOOP", "Swipe navigation:", {
+      currentIndex,
+      skipCount,
+      mode,
+      totalVisibleCards,
+      nextIndex,
+    });
 
     return nextIndex;
   }

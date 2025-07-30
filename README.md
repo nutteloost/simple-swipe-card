@@ -48,6 +48,18 @@ Displays multiple cards simultaneously with partial visibility of adjacent cards
 > [!NOTE]  
 > Vertical swiping is not available in carousel mode (horizontal only).
 
+## Swipe Behavior
+
+Simple Swipe Card has two ways to handle swiping:
+
+### Single Behavior (Default)
+Each swipe moves exactly one card. This gives you precise control and works with all loop modes.
+
+### Free Behavior
+Swipe multiple cards at once based on how fast and far you swipe. A quick swipe can jump several cards while a gentle swipe moves just one. It feels natural and smooth, like swiping through photos on your phone.
+
+> [!NOTE]  
+> Free swipe behavior only works when `loop_mode` is set to `infinite`.
 
 ## Installation
 
@@ -129,6 +141,7 @@ This card can be configured using the visual editor or YAML.
 | card_spacing | number | 15 | Space between cards in pixels |
 | loop_mode | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
 | swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
+| swipe_behavior | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
 | enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides |
 | auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
 | enable_reset_after | boolean | false | Enable automatic return to target card after inactivity |
@@ -153,6 +166,7 @@ show_pagination: true
 card_spacing: 15
 loop_mode: infinite
 swipe_direction: horizontal
+swipe_behavior: single
 enable_auto_swipe: false
 auto_swipe_interval: 3000
 enable_reset_after: true

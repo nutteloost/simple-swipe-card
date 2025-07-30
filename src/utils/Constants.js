@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG = {
   card_spacing: 15,
   loop_mode: "none",
   swipe_direction: "horizontal",
+  swipe_behavior: "single",
   enable_auto_swipe: false,
   auto_swipe_interval: 2000,
   enable_reset_after: false,

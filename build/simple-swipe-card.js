@@ -1,4 +1,2409 @@
-const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",swipe_direction:"horizontal",enable_auto_swipe:!1,auto_swipe_interval:2e3,enable_reset_after:!1,reset_after_timeout:3e4,reset_target_card:1,view_mode:"single",cards_visible:2.5,card_min_width:200},e=8,s=300,n=.3,o="_simpleSwipeEditorRegistry",r="_simpleSwipeCardEditors",a={EDITOR:!0,EVENT:!0,CONFIG:!0,SWIPE:!0,ERROR:!0,INIT:!0,SYSTEM:!0,ELEMENT:!0,AUTO:!1,CARD_MOD:!0,VISIBILITY:!0,RESET:!0},d=new Map,h=(t,...i)=>{if(!1===a[t])return;const e=`${t}:${i[0]}`,s=Date.now();if(d.has(e)){if(s-d.get(e)<5e3)return}(["AUTO","SWIPE","VISIBILITY"].includes(t)||["Setting hass","Visible cards updated","Auto-swipe","Updating slider"].some(t=>i[0]&&i[0].toString().includes(t)))&&d.set(e,s)},c=globalThis,l=c.ShadowRoot&&(void 0===c.ShadyCSS||c.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,p=Symbol(),u=new WeakMap;let g=class t{constructor(t,i,e){if(this.i=!0,e!==p)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=i}get styleSheet(){let t=this.o;const i=this.t;if(l&&void 0===t){const e=void 0!==i&&1===i.length;e&&(t=u.get(i)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&u.set(i,t))}return t}toString(){return this.cssText}};const m=(t,...i)=>{const e=1===t.length?t[0]:i.reduce((i,e,s)=>i+(t=>{if(!0===t.i)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(e)+t[s+1],t[0]);return new g(e,t,p)},v=l?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let i="";for(const e of t.cssRules)i+=e.cssText;return(t=>new g("string"==typeof t?t:t+"",void 0,p))(i)})(t):t,{is:f,defineProperty:w,getOwnPropertyDescriptor:b,getOwnPropertyNames:x,getOwnPropertySymbols:E,getPrototypeOf:y}=Object,I=globalThis,S=I.trustedTypes,C=S?S.emptyScript:"",T=I.reactiveElementPolyfillSupport,$=(t,i)=>t,_={toAttribute(t,i){switch(i){case Boolean:t=t?C:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t)}return t},fromAttribute(t,i){let e=t;switch(i){case Boolean:e=null!==t;break;case Number:e=null===t?null:Number(t);break;case Object:case Array:try{e=JSON.parse(t)}catch(t){e=null}}return e}},N=(t,i)=>!f(t,i),k={attribute:!0,type:String,converter:_,reflect:!1,useDefault:!1,hasChanged:N};Symbol.metadata??=Symbol("metadata"),I.litPropertyMetadata??=new WeakMap;let D=class t extends HTMLElement{static addInitializer(t){this.m(),(this.l??=[]).push(t)}static get observedAttributes(){return this.finalize(),this.v&&[...this.v.keys()]}static createProperty(t,i=k){if(i.state&&(i.attribute=!1),this.m(),this.prototype.hasOwnProperty(t)&&((i=Object.create(i)).wrapped=!0),this.elementProperties.set(t,i),!i.noAccessor){const e=Symbol(),s=this.getPropertyDescriptor(t,e,i);void 0!==s&&w(this.prototype,t,s)}}static getPropertyDescriptor(t,i,e){const{get:s,set:n}=b(this.prototype,t)??{get(){return this[i]},set(t){this[i]=t}};return{get:s,set(i){const o=s?.call(this);n?.call(this,i),this.requestUpdate(t,o,e)},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??k}static m(){if(this.hasOwnProperty($("elementProperties")))return;const t=y(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties)}static finalize(){if(this.hasOwnProperty($("finalized")))return;if(this.finalized=!0,this.m(),this.hasOwnProperty($("properties"))){const t=this.properties,i=[...x(t),...E(t)];for(const e of i)this.createProperty(e,t[e])}const t=this[Symbol.metadata];if(null!==t){const i=litPropertyMetadata.get(t);if(void 0!==i)for(const[t,e]of i)this.elementProperties.set(t,e)}this.v=new Map;for(const[t,i]of this.elementProperties){const e=this.I(t,i);void 0!==e&&this.v.set(e,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(t){const i=[];if(Array.isArray(t)){const e=new Set(t.flat(1/0).reverse());for(const t of e)i.unshift(v(t))}else void 0!==t&&i.push(v(t));return i}static I(t,i){const e=i.attribute;return!1===e?void 0:"string"==typeof e?e:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this.S=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._=null,this.N()}N(){this.D=new Promise(t=>this.enableUpdating=t),this.R=new Map,this.M(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this))}addController(t){(this.A??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.()}removeController(t){this.A?.delete(t)}M(){const t=new Map,i=this.constructor.elementProperties;for(const e of i.keys())this.hasOwnProperty(e)&&(t.set(e,this[e]),delete this[e]);t.size>0&&(this.S=t)}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((t,i)=>{if(l)t.adoptedStyleSheets=i.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const e of i){const i=document.createElement("style"),s=c.litNonce;void 0!==s&&i.setAttribute("nonce",s),i.textContent=e.cssText,t.appendChild(i)}})(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this.A?.forEach(t=>t.hostConnected?.())}enableUpdating(t){}disconnectedCallback(){this.A?.forEach(t=>t.hostDisconnected?.())}attributeChangedCallback(t,i,e){this.L(t,e)}P(t,i){const e=this.constructor.elementProperties.get(t),s=this.constructor.I(t,e);if(void 0!==s&&!0===e.reflect){const n=(void 0!==e.converter?.toAttribute?e.converter:_).toAttribute(i,e.type);this._=t,null==n?this.removeAttribute(s):this.setAttribute(s,n),this._=null}}L(t,i){const e=this.constructor,s=e.v.get(t);if(void 0!==s&&this._!==s){const t=e.getPropertyOptions(s),n="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:_;this._=s;const o=n.fromAttribute(i,t.type);this[s]=o??this.V?.get(s)??o,this._=null}}requestUpdate(t,i,e){if(void 0!==t){const s=this.constructor,n=this[t];if(e??=s.getPropertyOptions(t),!((e.hasChanged??N)(n,i)||e.useDefault&&e.reflect&&n===this.V?.get(t)&&!this.hasAttribute(s.I(t,e))))return;this.C(t,i,e)}!1===this.isUpdatePending&&(this.D=this.W())}C(t,i,{useDefault:e,reflect:s,wrapped:n},o){e&&!(this.V??=new Map).has(t)&&(this.V.set(t,o??i??this[t]),!0!==n||void 0!==o)||(this.R.has(t)||(this.hasUpdated||e||(i=void 0),this.R.set(t,i)),!0===s&&this._!==t&&(this.U??=new Set).add(t))}async W(){this.isUpdatePending=!0;try{await this.D}catch(t){Promise.reject(t)}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this.S){for(const[t,i]of this.S)this[t]=i;this.S=void 0}const t=this.constructor.elementProperties;if(t.size>0)for(const[i,e]of t){const{wrapped:t}=e,s=this[i];!0!==t||this.R.has(i)||void 0===s||this.C(i,void 0,e,s)}}let t=!1;const i=this.R;try{t=this.shouldUpdate(i),t?(this.willUpdate(i),this.A?.forEach(t=>t.hostUpdate?.()),this.update(i)):this.F()}catch(i){throw t=!1,this.F(),i}t&&this.H(i)}willUpdate(t){}H(t){this.A?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t)}F(){this.R=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this.D}shouldUpdate(t){return!0}update(t){this.U&&=this.U.forEach(t=>this.P(t,this[t])),this.F()}updated(t){}firstUpdated(t){}};D.elementStyles=[],D.shadowRootOptions={mode:"open"},D[$("elementProperties")]=new Map,D[$("finalized")]=new Map,T?.({ReactiveElement:D}),(I.reactiveElementVersions??=[]).push("2.1.1");const O=globalThis,R=O.trustedTypes,M=R?R.createPolicy("lit-html",{createHTML:t=>t}):void 0,A="$lit$",L=`lit$${Math.random().toFixed(9).slice(2)}$`,z="?"+L,P=`<${z}>`,V=document,W=()=>V.createComment(""),U=t=>null===t||"object"!=typeof t&&"function"!=typeof t,F=Array.isArray,H="[ \t\n\f\r]",Y=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,B=/-->/g,J=/>/g,j=RegExp(`>|${H}(?:([^\\s"'>=/]+)(${H}*=${H}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),X=/'/g,G=/"/g,q=/^(?:script|style|textarea|title)$/i,Z=(t=>(i,...e)=>({Y:t,strings:i,values:e}))(1),K=Symbol.for("lit-noChange"),Q=Symbol.for("lit-nothing"),tt=new WeakMap,it=V.createTreeWalker(V,129);function et(t,i){if(!F(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==M?M.createHTML(i):i}const st=(t,i)=>{const e=t.length-1,s=[];let n,o=2===i?"<svg>":3===i?"<math>":"",r=Y;for(let i=0;i<e;i++){const e=t[i];let a,d,h=-1,c=0;for(;c<e.length&&(r.lastIndex=c,d=r.exec(e),null!==d);)c=r.lastIndex,r===Y?"!--"===d[1]?r=B:void 0!==d[1]?r=J:void 0!==d[2]?(q.test(d[2])&&(n=RegExp("</"+d[2],"g")),r=j):void 0!==d[3]&&(r=j):r===j?">"===d[0]?(r=n??Y,h=-1):void 0===d[1]?h=-2:(h=r.lastIndex-d[2].length,a=d[1],r=void 0===d[3]?j:'"'===d[3]?G:X):r===G||r===X?r=j:r===B||r===J?r=Y:(r=j,n=void 0);const l=r===j&&t[i+1].startsWith("/>")?" ":"";o+=r===Y?e+P:h>=0?(s.push(a),e.slice(0,h)+A+e.slice(h)+L+l):e+L+(-2===h?i:l)}return[et(t,o+(t[e]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),s]};class nt{constructor({strings:t,Y:i},e){let s;this.parts=[];let n=0,o=0;const r=t.length-1,a=this.parts,[d,h]=st(t,i);if(this.el=nt.createElement(d,e),it.currentNode=this.el.content,2===i||3===i){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(s=it.nextNode())&&a.length<r;){if(1===s.nodeType){if(s.hasAttributes())for(const t of s.getAttributeNames())if(t.endsWith(A)){const i=h[o++],e=s.getAttribute(t).split(L),r=/([.?@])?(.*)/.exec(i);a.push({type:1,index:n,name:r[2],strings:e,ctor:"."===r[1]?ht:"?"===r[1]?ct:"@"===r[1]?lt:dt}),s.removeAttribute(t)}else t.startsWith(L)&&(a.push({type:6,index:n}),s.removeAttribute(t));if(q.test(s.tagName)){const t=s.textContent.split(L),i=t.length-1;if(i>0){s.textContent=R?R.emptyScript:"";for(let e=0;e<i;e++)s.append(t[e],W()),it.nextNode(),a.push({type:2,index:++n});s.append(t[i],W())}}}else if(8===s.nodeType)if(s.data===z)a.push({type:2,index:n});else{let t=-1;for(;-1!==(t=s.data.indexOf(L,t+1));)a.push({type:7,index:n}),t+=L.length-1}n++}}static createElement(t,i){const e=V.createElement("template");return e.innerHTML=t,e}}function ot(t,i,e=t,s){if(i===K)return i;let n=void 0!==s?e.B?.[s]:e.J;const o=U(i)?void 0:i.X;return n?.constructor!==o&&(n?.G?.(!1),void 0===o?n=void 0:(n=new o(t),n.q(t,e,s)),void 0!==s?(e.B??=[])[s]=n:e.J=n),void 0!==n&&(i=ot(t,n.Z(t,i.values),n,s)),i}class rt{constructor(t,i){this.K=[],this.tt=void 0,this.it=t,this.et=i}get parentNode(){return this.et.parentNode}get st(){return this.et.st}u(t){const{el:{content:i},parts:e}=this.it,s=(t?.creationScope??V).importNode(i,!0);it.currentNode=s;let n=it.nextNode(),o=0,r=0,a=e[0];for(;void 0!==a;){if(o===a.index){let i;2===a.type?i=new at(n,n.nextSibling,this,t):1===a.type?i=new a.ctor(n,a.name,a.strings,this,t):6===a.type&&(i=new pt(n,this,t)),this.K.push(i),a=e[++r]}o!==a?.index&&(n=it.nextNode(),o++)}return it.currentNode=V,s}p(t){let i=0;for(const e of this.K)void 0!==e&&(void 0!==e.strings?(e.nt(t,e,i),i+=e.strings.length-2):e.nt(t[i])),i++}}class at{get st(){return this.et?.st??this.ot}constructor(t,i,e,s){this.type=2,this.rt=Q,this.tt=void 0,this.dt=t,this.ht=i,this.et=e,this.options=s,this.ot=s?.isConnected??!0}get parentNode(){let t=this.dt.parentNode;const i=this.et;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this.dt}get endNode(){return this.ht}nt(t,i=this){t=ot(this,t,i),U(t)?t===Q||null==t||""===t?(this.rt!==Q&&this.ct(),this.rt=Q):t!==this.rt&&t!==K&&this.lt(t):void 0!==t.Y?this.$(t):void 0!==t.nodeType?this.T(t):(t=>F(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this.lt(t)}O(t){return this.dt.parentNode.insertBefore(t,this.ht)}T(t){this.rt!==t&&(this.ct(),this.rt=this.O(t))}lt(t){this.rt!==Q&&U(this.rt)?this.dt.nextSibling.data=t:this.T(V.createTextNode(t)),this.rt=t}$(t){const{values:i,Y:e}=t,s="number"==typeof e?this.ut(t):(void 0===e.el&&(e.el=nt.createElement(et(e.h,e.h[0]),this.options)),e);if(this.rt?.it===s)this.rt.p(i);else{const t=new rt(s,this),e=t.u(this.options);t.p(i),this.T(e),this.rt=t}}ut(t){let i=tt.get(t.strings);return void 0===i&&tt.set(t.strings,i=new nt(t)),i}k(t){F(this.rt)||(this.rt=[],this.ct());const i=this.rt;let e,s=0;for(const n of t)s===i.length?i.push(e=new at(this.O(W()),this.O(W()),this,this.options)):e=i[s],e.nt(n),s++;s<i.length&&(this.ct(e&&e.ht.nextSibling,s),i.length=s)}ct(t=this.dt.nextSibling,i){for(this.gt?.(!1,!0,i);t!==this.ht;){const i=t.nextSibling;t.remove(),t=i}}setConnected(t){void 0===this.et&&(this.ot=t,this.gt?.(t))}}class dt{get tagName(){return this.element.tagName}get st(){return this.et.st}constructor(t,i,e,s,n){this.type=1,this.rt=Q,this.tt=void 0,this.element=t,this.name=i,this.et=s,this.options=n,e.length>2||""!==e[0]||""!==e[1]?(this.rt=Array(e.length-1).fill(new String),this.strings=e):this.rt=Q}nt(t,i=this,e,s){const n=this.strings;let o=!1;if(void 0===n)t=ot(this,t,i,0),o=!U(t)||t!==this.rt&&t!==K,o&&(this.rt=t);else{const s=t;let r,a;for(t=n[0],r=0;r<n.length-1;r++)a=ot(this,s[e+r],i,r),a===K&&(a=this.rt[r]),o||=!U(a)||a!==this.rt[r],a===Q?t=Q:t!==Q&&(t+=(a??"")+n[r+1]),this.rt[r]=a}o&&!s&&this.j(t)}j(t){t===Q?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class ht extends dt{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===Q?void 0:t}}class ct extends dt{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==Q)}}class lt extends dt{constructor(t,i,e,s,n){super(t,i,e,s,n),this.type=5}nt(t,i=this){if((t=ot(this,t,i,0)??Q)===K)return;const e=this.rt,s=t===Q&&e!==Q||t.capture!==e.capture||t.once!==e.once||t.passive!==e.passive,n=t!==Q&&(e===Q||s);s&&this.element.removeEventListener(this.name,this,e),n&&this.element.addEventListener(this.name,this,t),this.rt=t}handleEvent(t){"function"==typeof this.rt?this.rt.call(this.options?.host??this.element,t):this.rt.handleEvent(t)}}class pt{constructor(t,i,e){this.element=t,this.type=6,this.tt=void 0,this.et=i,this.options=e}get st(){return this.et.st}nt(t){ot(this,t)}}const ut=O.litHtmlPolyfillSupport;ut?.(nt,at),(O.litHtmlVersions??=[]).push("3.3.1");const gt=globalThis;class mt extends D{constructor(){super(...arguments),this.renderOptions={host:this},this.vt=void 0}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const i=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this.vt=((t,i,e)=>{const s=e?.renderBefore??i;let n=s.ft;if(void 0===n){const t=e?.renderBefore??null;s.ft=n=new at(i.insertBefore(W(),t),t,void 0,e??{})}return n.nt(t),n})(i,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this.vt?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this.vt?.setConnected(!1)}render(){return K}}mt.wt=!0,mt.finalized=!0,gt.litElementHydrateSupport?.({LitElement:mt});const vt=gt.litElementPolyfillSupport;vt?.({LitElement:mt}),(gt.litElementVersions??=[]).push("4.2.1");function ft(){return window.loadCardHelpers&&"function"==typeof window.loadCardHelpers?window.loadCardHelpers():Promise.resolve({createCardElement:async t=>{try{if(t.type&&window.customElements&&window.customElements.get(t.type)){const i=document.createElement(t.type);return i.setConfig&&i.setConfig(t),i}if(t.type&&!t.type.startsWith("custom:")){const i=`hui-${t.type}-card`;if(window.customElements&&window.customElements.get(i)){const e=document.createElement(i);return e.setConfig&&e.setConfig(t),e}}const i=document.createElement("div");return i.innerHTML=`\n          <ha-card>\n            <div style="padding: 16px; text-align: center; color: var(--secondary-text-color);">\n              <ha-icon icon="mdi:card-outline" style="font-size: 48px; margin-bottom: 8px; opacity: 0.5;"></ha-icon>\n              <div style="font-weight: 500;">${t.type}</div>\n              <div style="font-size: 12px; opacity: 0.7;">Card type not available</div>\n            </div>\n          </ha-card>\n        `,i.firstElementChild}catch(i){const e=document.createElement("div");return e.innerHTML=`\n          <ha-card>\n            <div style="padding: 16px; text-align: center; color: var(--error-color, #f44336);">\n              <ha-icon icon="mdi:alert-circle" style="font-size: 24px; margin-bottom: 8px;"></ha-icon>\n              <div style="font-weight: 500;">Card Error</div>\n              <div style="font-size: 12px;">${t.type}</div>\n              <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">${i.message}</div>\n            </div>\n          </ha-card>\n        `,e.firstElementChild}},createErrorCardElement:(t,i)=>{const e=document.createElement("div");return e.innerHTML=`\n        <ha-card>\n          <div style="padding: 16px; text-align: center; color: var(--error-color, #f44336);">\n            <ha-icon icon="mdi:alert-circle" style="font-size: 24px; margin-bottom: 8px;"></ha-icon>\n            <div style="font-weight: 500;">Card Error</div>\n            <div style="font-size: 12px; opacity: 0.8;">${t.type}</div>\n            <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">${i}</div>\n          </div>\n        </ha-card>\n      `,e.firstElementChild}})}function wt(t,i){return!t||!Array.isArray(t)||0===t.length||(i?t.every(t=>{try{return function(t,i){if(!t||"object"!=typeof t)return!0;const{condition:e,entity:s,state:n,state_not:o}=t;switch(e){case"state":{if(!s||!i.states[s])return h("VISIBILITY",`Entity ${s} not found for state condition`),!1;const t=i.states[s].state;if(void 0!==n){const i=String(n),e=String(t),o=e===i;return h("VISIBILITY",`State condition: ${s} = ${e}, expected: ${i}, result: ${o}`),o}if(void 0!==o){const i=String(o),e=String(t),n=e!==i;return h("VISIBILITY",`State not condition: ${s} = ${e}, not expected: ${i}, result: ${n}`),n}return!0}case"numeric_state":{if(!s||!i.states[s])return h("VISIBILITY",`Entity ${s} not found for numeric_state condition`),!1;const e=parseFloat(i.states[s].state);if(isNaN(e))return!1;let n=!0;return void 0!==t.above&&(n=n&&e>parseFloat(t.above)),void 0!==t.below&&(n=n&&e<parseFloat(t.below)),h("VISIBILITY",`Numeric state condition: ${s} = ${e}, result: ${n}`),n}case"screen":{const i=t.media_query;if(i&&window.matchMedia){const t=window.matchMedia(i).matches;return h("VISIBILITY",`Screen condition: ${i}, result: ${t}`),t}return!0}case"user":if(t.users&&Array.isArray(t.users)){const e=i.user;if(e&&e.id){const i=t.users.includes(e.id);return h("VISIBILITY",`User condition: current user ${e.id}, allowed users: ${t.users}, result: ${i}`),i}}return!0;default:return h("VISIBILITY",`Unknown condition type: ${e}`),!0}}(t,i)}catch(i){return h("VISIBILITY","Error evaluating condition:",t,i),!0}}):(h("VISIBILITY","No hass object available for condition evaluation"),!0))}class bt{constructor(t){this.card=t,this.bt=!1,this.xt=0,this.Et=0,this.yt=0,this.It=0,this.St=0,this.Ct=0,this.Tt=!1,this.$t=!1,this._t=0,this.Nt=0,this.kt=!1,this.Dt=e,this.Ot=null,this.Rt=!1,this.Mt=s,this.At=0,this.Lt=n,this.zt=this.Pt.bind(this),this.Vt=this.Wt.bind(this),this.Ut=this.Ft.bind(this),this.Ht=this.Wt.bind(this),this.Yt=this.Ft.bind(this),this.Bt=this.Jt.bind(this),this.jt=this.Xt.bind(this)}removeGestures(){h("SWIPE","Removing swipe gesture listeners"),this.card.cardContainer&&(this.card.cardContainer.removeEventListener("touchstart",this.zt,{passive:!0}),this.card.cardContainer.removeEventListener("touchmove",this.Vt,{passive:!1}),this.card.cardContainer.removeEventListener("touchend",this.Ut,{passive:!0}),this.card.cardContainer.removeEventListener("touchcancel",this.Ut,{passive:!0}),this.card.cardContainer.removeEventListener("mousedown",this.zt,{passive:!1}),this.card.cardContainer.removeEventListener("click",this.Bt,{capture:!0}),this.card.cardContainer.removeEventListener("pointerdown",this.jt,{capture:!0}),this.card.cardContainer.removeEventListener("pointerup",this.jt,{capture:!0}),h("SWIPE","Removed swipe listeners from cardContainer.")),window.removeEventListener("mousemove",this.Ht,{passive:!1}),window.removeEventListener("mouseup",this.Yt,{passive:!0}),h("SWIPE","Removed potential swipe listeners from window."),this.bt=!1,this.Tt=!1,this.Ot&&(clearTimeout(this.Ot),this.Ot=null,this.Rt=!1)}addGestures(){this.removeGestures(),!this.card.cardContainer||this.card.visibleCardIndices.length<=1||!this.card.initialized?h("SWIPE","Skipping addSwiperGesture",{container:!!this.card.cardContainer,visibleCount:this.card.visibleCardIndices.length,init:this.card.initialized}):(h("SWIPE","Adding swipe listeners with click prevention."),this.card.cardContainer.addEventListener("touchstart",this.zt,{passive:!0}),this.card.cardContainer.addEventListener("touchmove",this.Vt,{passive:!1}),this.card.cardContainer.addEventListener("touchend",this.Ut,{passive:!0}),this.card.cardContainer.addEventListener("touchcancel",this.Ut,{passive:!0}),this.card.cardContainer.addEventListener("mousedown",this.zt,{passive:!1}),this.card.cardContainer.addEventListener("click",this.Bt,{capture:!0}),this.card.cardContainer.addEventListener("pointerdown",this.jt,{capture:!0}),this.card.cardContainer.addEventListener("pointerup",this.jt,{capture:!0}))}Jt(t){if(this.Rt||this.bt)return h("SWIPE","Click prevented during/after swipe gesture"),t.preventDefault(),t.stopPropagation(),t.stopImmediatePropagation(),!1}Xt(t){if(this.bt&&this.kt)return t.preventDefault(),t.stopPropagation(),!1}Gt(t=this.Mt){this.Rt=!0,this.At=Date.now(),this.Ot&&clearTimeout(this.Ot),this.Ot=setTimeout(()=>{this.Rt=!1,this.Ot=null,h("SWIPE","Click blocking period ended")},t),h("SWIPE",`Blocking clicks for ${t}ms`)}Pt(t){if(h("SWIPE","Swipe Start:",t.type),this.bt||"mousedown"===t.type&&0!==t.button)return void h("SWIPE","Swipe Start ignored (already dragging or wrong button)");if(this.qt(t.target))return void h("SWIPE","Swipe Start ignored (interactive element):",t.target);this.bt=!0,this.Tt=!1,this.kt=!1,this.Nt=0,this._t=Date.now(),this.$t=!0;const i="touchstart"===t.type?t.touches[0]:t;if(this.xt=i.clientX,this.Et=i.clientY,this.yt=this.xt,this.It=this.Et,this.Ct=this._t,this.card.sliderElement){const t=window.getComputedStyle(this.card.sliderElement),i=new DOMMatrixReadOnly(t.transform);this.St=i.m41,"vertical"===this.card.Zt&&(this.St=i.m42),this.card.sliderElement.style.transition=this.card.Kt(!1),this.card.sliderElement.style.cursor="grabbing"}"mousedown"===t.type&&(h("SWIPE","Attaching mousemove/mouseup listeners to window"),t.preventDefault(),window.addEventListener("mousemove",this.Ht,{passive:!1}),window.addEventListener("mouseup",this.Yt,{passive:!0})),this.card.Qt.enable_auto_swipe&&this.card.autoSwipe?.pause(5e3)}Wt(t){if(!this.bt)return;const i="touchmove"===t.type?t.touches[0]:t,e=i.clientX,s=i.clientY,n=e-this.xt,o=s-this.Et,r=Date.now(),a=Math.sqrt(n*n+o*o);this.Nt=Math.max(this.Nt,a);const d="horizontal"===this.card.Zt,c=d?n:o,l=d?o:n;if(!this.Tt&&Math.abs(l)>Math.abs(c)&&Math.abs(l)>10&&(h("SWIPE",`${d?"Vertical":"Horizontal"} scroll detected, cancelling ${d?"horizontal":"vertical"} drag.`),this.Tt=!0,this.$t=!1),a>this.Dt&&(this.kt=!0),!this.Tt&&Math.abs(c)>this.Dt){h("SWIPE",(d?"Horizontal":"Vertical")+" move detected"),d?this.yt=e:this.It=s;let t=c;if(!(!0===this.card.Qt.enable_loopback)){const i=0===this.card.currentIndex,e=this.card.currentIndex===this.card.visibleCardIndices.length-1;if(i&&t>0||e&&t<0){t*=.5*(.3+.7/(1+Math.abs(t)/(d?this.card.slideWidth:this.card.slideHeight)*.5))}}const i=this.St+t;this.card.sliderElement&&(this.card.sliderElement.style.transform=d?`translateX(${i}px)`:`translateY(${i}px)`),this.Ct=r}}Ft(t){if(h("SWIPE","Swipe End:",t.type),!this.bt)return void h("SWIPE","Swipe End ignored (not dragging)");"mouseup"===t.type&&(h("SWIPE","Removing mousemove/mouseup listeners from window"),window.removeEventListener("mousemove",this.Ht),window.removeEventListener("mouseup",this.Yt));const i=this.kt&&this.Nt>this.Dt,e=Date.now()-this._t,s=e<200,n="horizontal"===this.card.Zt,o=n?this.yt-this.xt:this.It-this.Et,r=Date.now()-this.Ct,a=r>10?Math.abs(o)/r:0,d=a>this.Lt;(i||s&&d)&&(this.Gt(d?400:300),h("SWIPE","Prevented clicks after swipe gesture",{movement:this.Nt,velocity:a,gestureTime:e,eventType:t.type})),this.$t=!1,Promise.resolve().then(()=>{if(!this.card.sliderElement)return;const i=this.bt;if(this.bt=!1,this.card.sliderElement.style.transition=this.card.Kt(!0),this.card.sliderElement.style.cursor="",!i)return void h("SWIPE","Swipe End: Not dragging or already processed.");if(this.Tt||"touchcancel"===t.type)return h("SWIPE","Swipe End: Scrolling or Cancelled - Snapping back."),this.card.updateSlider(),void(this.Tt=!1);const e=Date.now()-this.Ct,s=e>10?Math.abs(o)/e:0,r=n?this.card.slideWidth:this.card.slideHeight,a=this.card.Qt.view_mode||"single";let d;if("carousel"===a){const t=this.card.Qt.cards_visible||2.5,i=(t-1)*(Math.max(0,parseInt(this.card.Qt.card_spacing))||0);d=.2*((this.card.slideWidth-i)/t)}else d=.2*r;let c=this.card.currentIndex;const l=this.card.Qt.loop_mode||"none",p=this.card.visibleCardIndices.length;Math.abs(o)>d||Math.abs(s)>this.Lt?(h("SWIPE","Swipe threshold crossed:",{totalMove:o,threshold:d,velocity:s,velocityThreshold:this.Lt,currentIndex:this.card.currentIndex,totalVisibleCards:p,loopMode:l}),(Math.abs(o)>d||Math.abs(s)>this.Lt)&&(c=this.card.loopMode.handleSwipeNavigation(this.card.currentIndex,o),h("SWIPE",`Swipe resulted in navigation: ${this.card.currentIndex} → ${c} (${this.card.loopMode.getMode()} mode)`))):h("SWIPE","Swipe threshold NOT crossed:",{totalMove:o,threshold:d,velocity:s,velocityThreshold:this.Lt,viewMode:a}),c!==this.card.currentIndex?(h("SWIPE",`Swipe resulted in index change to ${c}`),this.card.goToSlide(c),setTimeout(()=>{this.card.isConnected&&!this.card.ti&&this.card.resetAfter?.startTimer()},100)):(h("SWIPE","Swipe did not cross threshold or velocity, snapping back."),this.card.updateSlider())})}qt(t){if(!t||t===this.card.cardContainer||t===this.card.sliderElement)return!1;const i=t.localName?.toLowerCase(),e=t.getAttribute("role");if(["input","textarea","select","button","a","audio","video","ha-switch","ha-checkbox","mwc-checkbox","paper-checkbox","ha-textfield","ha-slider","paper-slider","ha-control-button","ha-control-select","ha-control-slider","ha-control-button-group","ha-text-input","mwc-button","paper-button","ha-icon-button","paper-icon-button","ha-select","paper-dropdown-menu","vaadin-combo-box","ha-card","hui-entity-button","more-info-content"].includes(i)||e&&["button","checkbox","switch","slider","link","menuitem","textbox","combobox","option"].includes(e))return h("SWIPE","_isInteractiveOrScrollable: Found interactive tag/role:",i||e),!0;if(t.classList.contains("clickable")||t.hasAttribute("clickable")||t.getAttribute("data-domain")||t.closest(".entity, .clickable, [data-domain]"))return h("SWIPE","_isInteractiveOrScrollable: Found clickable element"),!0;if(t.closest("\n            ha-control-button, ha-control-select, ha-control-slider, ha-control-button-group, \n            ha-alert[action], ha-more-info-control, hui-buttons-base, ha-form, ha-formfield, \n            ha-icon-button, mwc-list-item, paper-item, ha-list-item, hui-entity-button,\n            more-info-content, ha-card[clickable], .clickable\n        ".replace(/\s+/g," ").trim()))return h("SWIPE","_isInteractiveOrScrollable: Found interactive ancestor component."),!0;let s=t,n=0;for(;s&&s!==this.card.sliderElement&&s!==this.card.cardContainer&&n<10;){if(s.nodeType===Node.ELEMENT_NODE)try{const t=window.getComputedStyle(s),i=("auto"===t.overflowY||"scroll"===t.overflowY)&&s.scrollHeight>s.clientHeight+1,e=("auto"===t.overflowX||"scroll"===t.overflowX)&&s.scrollWidth>s.clientWidth+1;if(i||e)return h("SWIPE","_isInteractiveOrScrollable: Found scrollable ancestor:",s),!0;if("ha-logbook"===s.localName||"hui-logbook-card"===s.localName||"hui-history-graph-card"===s.localName)return h("SWIPE","_isInteractiveOrScrollable: Found specific scrollable card type:",s.localName),!0}catch(t){h("ERROR","Error accessing style/scroll properties for:",s,t)}s=s.assignedSlot||s.parentNode||(s.getRootNode()instanceof ShadowRoot?s.getRootNode().host:null),n++}return!1}}class xt{constructor(t){this.card=t,this.ii=null,this.ei=!1,this.si=null,this.ti=!1,this.ni=1,this.oi=0,this.ri=this.ai.bind(this)}manage(){this.card.initialized&&this.card.isConnected&&(this.stop(),this.card.Qt.enable_auto_swipe&&this.card.visibleCardIndices.length>1&&(h("AUTO","Starting auto-swipe with interval:",this.card.Qt.auto_swipe_interval),this.start()))}start(){this.ii&&this.stop(),this.ni=1,this.ei=!1,this.ii=setInterval(this.ri,this.card.Qt.auto_swipe_interval),h("AUTO","Auto-swipe timer started with interval:",this.card.Qt.auto_swipe_interval)}stop(){this.ii&&(clearInterval(this.ii),this.ii=null,h("AUTO","Auto-swipe timer stopped")),this.si&&(clearTimeout(this.si),this.si=null)}pause(t=5e3){this.card.Qt.enable_auto_swipe&&(h("AUTO",`Auto-swipe paused for ${t}ms`),this.ei=!0,this.si&&clearTimeout(this.si),this.si=setTimeout(()=>{this.ei=!1,h("AUTO","Auto-swipe pause ended"),this.card.isConnected&&this.card.Qt.enable_auto_swipe&&this.start()},t))}ai(){const t=this.card.visibleCardIndices.length;if(!this.card.isConnected||!this.card.initialized||t<=1)return void(this.ii&&(h("AUTO","Stopping auto-swipe, conditions not met or insufficient visible cards."),this.stop()));if(this.ei){const t=Date.now();return void(t-this.oi>5e3&&(h("AUTO","Skipping auto-swipe: currently paused"),this.oi=t))}if(this.card.swipeGestures?.bt){const t=Date.now();return void(t-this.oi>5e3&&(h("AUTO","Skipping auto-swipe: currently dragging"),this.oi=t))}const i=Date.now();let e=i-this.oi>1e4;const s=this.card.loopMode.handleAutoSwipeNavigation(this.card.currentIndex,this.ni),n=s.nextIndex;s.shouldChangeDirection&&(this.ni=-this.ni,e=!0);const o=this.card.loopMode.getMode();("infinite"===o&&n>=t||"loopback"===o&&0===n&&this.card.currentIndex===t-1)&&(e=!0),e&&(h("AUTO",`Auto-swipe: ${this.card.currentIndex} → ${n} (${"none"===o?this.ni>0?"forward":"backward":o} mode)`),this.oi=i),this.ti=!0,this.card.goToSlide(n),this.ti=!1}get isInProgress(){return this.ti}}class Et{constructor(t){this.card=t,this.di=null,this.hi=0,this.ci=!1,this.li=null,this.pi=this.ui.bind(this)}manage(){this.card.initialized&&this.card.isConnected&&(this.stopTimer(),this.card.Qt.enable_reset_after&&!this.card.Qt.enable_auto_swipe&&this.card.visibleCardIndices.length>1?h("RESET","Reset-after feature enabled with timeout:",this.card.Qt.reset_after_timeout):h("RESET","Reset-after feature disabled",{enabled:this.card.Qt.enable_reset_after,autoSwipeDisabled:!this.card.Qt.enable_auto_swipe,multipleCards:this.card.visibleCardIndices.length>1}))}startTimer(){!this.card.Qt.enable_reset_after||this.card.Qt.enable_auto_swipe||this.card.visibleCardIndices.length<=1||!this.card.initialized||!this.card.isConnected||(this.stopTimer(),this.hi=Date.now(),h("RESET",`Starting reset-after timer: ${this.card.Qt.reset_after_timeout}ms`),this.di=setTimeout(this.pi,this.card.Qt.reset_after_timeout))}stopTimer(){this.di&&(clearTimeout(this.di),this.di=null,h("RESET","Reset-after timer stopped"))}preserveState(){if(this.card.Qt.enable_reset_after&&!this.card.Qt.enable_auto_swipe)if(this.di){const t=this.card.Qt.reset_after_timeout-(Date.now()-this.hi);t>1e3?(this.li={remainingTime:Math.max(1e3,t),targetCard:this.card.Qt.reset_target_card,wasActive:!0},h("RESET","Preserved reset-after state:",this.li)):this.li=null}else this.li=null;else this.li=null}restoreState(){this.li&&this.card.Qt.enable_reset_after&&!this.card.Qt.enable_auto_swipe?(this.li.wasActive&&this.card.visibleCardIndices.length>1&&(h("RESET","Restoring reset-after timer with remaining time:",this.li.remainingTime),this.hi=Date.now()-(this.card.Qt.reset_after_timeout-this.li.remainingTime),this.di=setTimeout(this.pi,this.li.remainingTime)),this.li=null):this.li=null}ui(){const t=this.card.visibleCardIndices.length;if(!this.card.isConnected||!this.card.initialized||t<=1)return void h("RESET","Reset-after skipped: conditions not met");let i=(parseInt(this.card.Qt.reset_target_card)||1)-1;const e=i,s=this.card.visibleCardIndices.indexOf(e);if(-1!==s)i=s,h("RESET",`Target card ${this.card.Qt.reset_target_card} is visible at position ${i}`);else{let t=0;for(let i=0;i<this.card.visibleCardIndices.length;i++)if(this.card.visibleCardIndices[i]>=e){t=i;break}i=t,h("RESET",`Target card ${this.card.Qt.reset_target_card} not visible, using closest visible card at position ${i}`)}i>=t&&(i=0,h("RESET","Target index out of range, using first visible card")),this.card.currentIndex!==i?(h("RESET",`Performing reset: current=${this.card.currentIndex}, target=${i}, timeout=${this.card.Qt.reset_after_timeout}ms`),this.ci=!0,this.card.goToSlide(i),this.ci=!1):h("RESET","Reset-after skipped: already at target card")}get isInProgress(){return this.ci}}class yt{constructor(t){this.card=t,this.paginationElement=null}create(){this.remove();if(!1!==this.card.Qt.show_pagination&&this.card.visibleCardIndices.length>1){h("INIT","Creating pagination for",this.card.visibleCardIndices.length,"visible cards"),this.paginationElement=document.createElement("div"),this.paginationElement.className=`pagination ${this.card.Zt}`,this.gi();for(let t=0;t<this.card.visibleCardIndices.length;t++){const i=document.createElement("div");i.className="pagination-dot",t===this.card.currentIndex&&i.classList.add("active"),i.addEventListener("click",i=>{i.stopPropagation(),this.card.goToSlide(t)}),this.paginationElement.appendChild(i)}this.card.shadowRoot.appendChild(this.paginationElement),this.card.mi&&this.card.fi()}}gi(){this.paginationElement&&requestAnimationFrame(()=>{const t=this.card.shadowRoot?.host||this.card,i=getComputedStyle(this.paginationElement),e=getComputedStyle(t),s=t=>{if(!t||""===t)return null;const i=t.trim(),e=parseInt(i.replace(/px|rem|em/,""));return isNaN(e)?null:e},n=t=>s(i.getPropertyValue(t))||s(e.getPropertyValue(t)),o=n("--simple-swipe-card-pagination-dot-active-size")||n("--simple-swipe-card-pagination-dot-size")||8,r=n("--simple-swipe-card-pagination-dot-size")||8,a=Math.max(o,r),d=i.getPropertyValue("--simple-swipe-card-pagination-padding").trim()||"4px 8px",c=d.split(" "),l=2*(s(c[0])||4),p=a+l;if("horizontal"===this.card.Zt)this.paginationElement.style.height=`${p}px`,this.paginationElement.style.minHeight="unset";else{const t=a+2*(s(c[1]||c[0])||8);this.paginationElement.style.width=`${t}px`,this.paginationElement.style.minWidth="unset"}h("INIT","Set FIXED pagination dimensions:",{activeDotSize:o,inactiveDotSize:r,maxDotSize:a,totalVerticalPadding:l,fixedDimension:`${p}px`,direction:this.card.Zt,paddingValue:d})})}update(){if(this.paginationElement){this.paginationElement.querySelectorAll(".pagination-dot").forEach((t,i)=>{t.classList.toggle("active",i===this.card.currentIndex)})}}updateLayout(){!1!==this.card.Qt.show_pagination&&this.card.visibleCardIndices.length>1?this.paginationElement?this.paginationElement.style.display="flex":this.create():this.paginationElement&&(this.paginationElement.style.display="none")}remove(){this.paginationElement&&(this.paginationElement.remove(),this.paginationElement=null)}}const It=()=>m`
+/**
+ * Constants for Simple Swipe Card
+ */
+
+// Version management
+const CARD_VERSION = "2.4.0";
+
+// Default configuration values
+const DEFAULT_CONFIG = {
+  cards: [],
+  show_pagination: true,
+  card_spacing: 15,
+  loop_mode: "none",
+  swipe_direction: "horizontal",
+  swipe_behavior: "single",
+  enable_auto_swipe: false,
+  auto_swipe_interval: 2000,
+  enable_reset_after: false,
+  reset_after_timeout: 30000,
+  reset_target_card: 1,
+  view_mode: "single",
+  cards_visible: 2.5,
+  card_min_width: 200,
+};
+
+// Swipe gesture constants
+const SWIPE_CONSTANTS = {
+  gestureThreshold: 8,
+  clickBlockDuration: 300,
+  swipeVelocityThreshold: 0.3,
+};
+
+// Global state management
+const GLOBAL_STATE = {
+  dialogStack: "_simpleSwipeDialogStack",
+  editorRegistry: "_simpleSwipeEditorRegistry",
+  cardEditors: "_simpleSwipeCardEditors",
+};
+
+/**
+ * Debug utilities for Simple Swipe Card
+ */
+
+
+// Configure which categories to show (can be modified for selective debugging)
+const DEBUG_CATEGORIES = {
+  EDITOR: true,
+  EVENT: true,
+  CONFIG: true,
+  SWIPE: true,
+  ERROR: true,
+  INIT: true,
+  SYSTEM: true,
+  ELEMENT: true,
+  AUTO: false, // Reduced by default due to frequency
+  CARD_MOD: true,
+  VISIBILITY: true,
+  RESET: true,
+};
+
+// Rate limiting for frequent messages
+const MESSAGE_THROTTLE = new Map();
+const THROTTLE_DURATION = 5000; // 5 seconds
+
+/**
+ * Enhanced debugging function that categorizes log messages
+ * @param {string} category - Category of the log message
+ * @param {...any} args - Arguments to log
+ */
+const logDebug = (category, ...args) => {
+
+  // Check if this category is enabled
+  if (DEBUG_CATEGORIES[category] === false) return;
+
+  // Create a message key for throttling
+  const messageKey = `${category}:${args[0]}`;
+  const now = Date.now();
+
+  // Check if this message should be throttled
+  if (MESSAGE_THROTTLE.has(messageKey)) {
+    const lastTime = MESSAGE_THROTTLE.get(messageKey);
+    if (now - lastTime < THROTTLE_DURATION) {
+      return; // Skip this message
+    }
+  }
+
+  // Update throttle time for messages that might be frequent
+  const frequentCategories = ["AUTO", "SWIPE", "VISIBILITY"];
+  const frequentMessages = [
+    "Setting hass",
+    "Visible cards updated",
+    "Auto-swipe",
+    "Updating slider",
+  ];
+
+  if (
+    frequentCategories.includes(category) ||
+    frequentMessages.some((msg) => args[0] && args[0].toString().includes(msg))
+  ) {
+    MESSAGE_THROTTLE.set(messageKey, now);
+  }
+
+  const categoryColors = {
+    EDITOR: "color: #4caf50; font-weight: bold",
+    EVENT: "color: #2196f3; font-weight: bold",
+    CONFIG: "color: #ff9800; font-weight: bold",
+    SWIPE: "color: #9c27b0; font-weight: bold",
+    ERROR: "color: #f44336; font-weight: bold",
+    INIT: "color: #795548; font-weight: bold",
+    SYSTEM: "color: #00bcd4; font-weight: bold",
+    DEFAULT: "color: #607d8b; font-weight: bold",
+    ELEMENT: "color: #e91e63; font-weight: bold",
+    AUTO: "color: #3f51b5; font-weight: bold",
+    CARD_MOD: "color: #9932cc; font-weight: bold",
+    VISIBILITY: "color: #ff5722; font-weight: bold",
+    RESET: "color: #8bc34a; font-weight: bold",
+  };
+
+  const style = categoryColors[category] || categoryColors.DEFAULT;
+  console.debug(`%cSimpleSwipeCard [${category}]:`, style, ...args);
+};
+
+/**
+ * @license
+ * Copyright 2019 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+const t$1=globalThis,e$2=t$1.ShadowRoot&&(void 0===t$1.ShadyCSS||t$1.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s$2=Symbol(),o$3=new WeakMap;let n$2 = class n{constructor(t,e,o){if(this._$cssResult$=!0,o!==s$2)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e;}get styleSheet(){let t=this.o;const s=this.t;if(e$2&&void 0===t){const e=void 0!==s&&1===s.length;e&&(t=o$3.get(s)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&o$3.set(s,t));}return t}toString(){return this.cssText}};const r$2=t=>new n$2("string"==typeof t?t:t+"",void 0,s$2),i$3=(t,...e)=>{const o=1===t.length?t[0]:e.reduce(((e,s,o)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(s)+t[o+1]),t[0]);return new n$2(o,t,s$2)},S$1=(s,o)=>{if(e$2)s.adoptedStyleSheets=o.map((t=>t instanceof CSSStyleSheet?t:t.styleSheet));else for(const e of o){const o=document.createElement("style"),n=t$1.litNonce;void 0!==n&&o.setAttribute("nonce",n),o.textContent=e.cssText,s.appendChild(o);}},c$2=e$2?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const s of t.cssRules)e+=s.cssText;return r$2(e)})(t):t;
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */const{is:i$2,defineProperty:e$1,getOwnPropertyDescriptor:h$1,getOwnPropertyNames:r$1,getOwnPropertySymbols:o$2,getPrototypeOf:n$1}=Object,a$1=globalThis,c$1=a$1.trustedTypes,l$1=c$1?c$1.emptyScript:"",p$1=a$1.reactiveElementPolyfillSupport,d$1=(t,s)=>t,u$1={toAttribute(t,s){switch(s){case Boolean:t=t?l$1:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t);}return t},fromAttribute(t,s){let i=t;switch(s){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t);}catch(t){i=null;}}return i}},f$1=(t,s)=>!i$2(t,s),b={attribute:!0,type:String,converter:u$1,reflect:!1,useDefault:!1,hasChanged:f$1};Symbol.metadata??=Symbol("metadata"),a$1.litPropertyMetadata??=new WeakMap;let y$1 = class y extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t);}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,s=b){if(s.state&&(s.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(t)&&((s=Object.create(s)).wrapped=!0),this.elementProperties.set(t,s),!s.noAccessor){const i=Symbol(),h=this.getPropertyDescriptor(t,i,s);void 0!==h&&e$1(this.prototype,t,h);}}static getPropertyDescriptor(t,s,i){const{get:e,set:r}=h$1(this.prototype,t)??{get(){return this[s]},set(t){this[s]=t;}};return {get:e,set(s){const h=e?.call(this);r?.call(this,s),this.requestUpdate(t,h,i);},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??b}static _$Ei(){if(this.hasOwnProperty(d$1("elementProperties")))return;const t=n$1(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties);}static finalize(){if(this.hasOwnProperty(d$1("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(d$1("properties"))){const t=this.properties,s=[...r$1(t),...o$2(t)];for(const i of s)this.createProperty(i,t[i]);}const t=this[Symbol.metadata];if(null!==t){const s=litPropertyMetadata.get(t);if(void 0!==s)for(const[t,i]of s)this.elementProperties.set(t,i);}this._$Eh=new Map;for(const[t,s]of this.elementProperties){const i=this._$Eu(t,s);void 0!==i&&this._$Eh.set(i,t);}this.elementStyles=this.finalizeStyles(this.styles);}static finalizeStyles(s){const i=[];if(Array.isArray(s)){const e=new Set(s.flat(1/0).reverse());for(const s of e)i.unshift(c$2(s));}else void 0!==s&&i.push(c$2(s));return i}static _$Eu(t,s){const i=s.attribute;return !1===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev();}_$Ev(){this._$ES=new Promise((t=>this.enableUpdating=t)),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach((t=>t(this)));}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.();}removeController(t){this._$EO?.delete(t);}_$E_(){const t=new Map,s=this.constructor.elementProperties;for(const i of s.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t);}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return S$1(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach((t=>t.hostConnected?.()));}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach((t=>t.hostDisconnected?.()));}attributeChangedCallback(t,s,i){this._$AK(t,i);}_$ET(t,s){const i=this.constructor.elementProperties.get(t),e=this.constructor._$Eu(t,i);if(void 0!==e&&!0===i.reflect){const h=(void 0!==i.converter?.toAttribute?i.converter:u$1).toAttribute(s,i.type);this._$Em=t,null==h?this.removeAttribute(e):this.setAttribute(e,h),this._$Em=null;}}_$AK(t,s){const i=this.constructor,e=i._$Eh.get(t);if(void 0!==e&&this._$Em!==e){const t=i.getPropertyOptions(e),h="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:u$1;this._$Em=e;const r=h.fromAttribute(s,t.type);this[e]=r??this._$Ej?.get(e)??r,this._$Em=null;}}requestUpdate(t,s,i){if(void 0!==t){const e=this.constructor,h=this[t];if(i??=e.getPropertyOptions(t),!((i.hasChanged??f$1)(h,s)||i.useDefault&&i.reflect&&h===this._$Ej?.get(t)&&!this.hasAttribute(e._$Eu(t,i))))return;this.C(t,s,i);}!1===this.isUpdatePending&&(this._$ES=this._$EP());}C(t,s,{useDefault:i,reflect:e,wrapped:h},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??s??this[t]),!0!==h||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(s=void 0),this._$AL.set(t,s)),!0===e&&this._$Em!==t&&(this._$Eq??=new Set).add(t));}async _$EP(){this.isUpdatePending=!0;try{await this._$ES;}catch(t){Promise.reject(t);}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,s]of this._$Ep)this[t]=s;this._$Ep=void 0;}const t=this.constructor.elementProperties;if(t.size>0)for(const[s,i]of t){const{wrapped:t}=i,e=this[s];!0!==t||this._$AL.has(s)||void 0===e||this.C(s,void 0,i,e);}}let t=!1;const s=this._$AL;try{t=this.shouldUpdate(s),t?(this.willUpdate(s),this._$EO?.forEach((t=>t.hostUpdate?.())),this.update(s)):this._$EM();}catch(s){throw t=!1,this._$EM(),s}t&&this._$AE(s);}willUpdate(t){}_$AE(t){this._$EO?.forEach((t=>t.hostUpdated?.())),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t);}_$EM(){this._$AL=new Map,this.isUpdatePending=!1;}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return !0}update(t){this._$Eq&&=this._$Eq.forEach((t=>this._$ET(t,this[t]))),this._$EM();}updated(t){}firstUpdated(t){}};y$1.elementStyles=[],y$1.shadowRootOptions={mode:"open"},y$1[d$1("elementProperties")]=new Map,y$1[d$1("finalized")]=new Map,p$1?.({ReactiveElement:y$1}),(a$1.reactiveElementVersions??=[]).push("2.1.1");
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+const t=globalThis,i$1=t.trustedTypes,s$1=i$1?i$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,e="$lit$",h=`lit$${Math.random().toFixed(9).slice(2)}$`,o$1="?"+h,n=`<${o$1}>`,r=document,l=()=>r.createComment(""),c=t=>null===t||"object"!=typeof t&&"function"!=typeof t,a=Array.isArray,u=t=>a(t)||"function"==typeof t?.[Symbol.iterator],d="[ \t\n\f\r]",f=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,v=/-->/g,_=/>/g,m=RegExp(`>|${d}(?:([^\\s"'>=/]+)(${d}*=${d}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),p=/'/g,g=/"/g,$=/^(?:script|style|textarea|title)$/i,y=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),x=y(1),T=Symbol.for("lit-noChange"),E=Symbol.for("lit-nothing"),A=new WeakMap,C=r.createTreeWalker(r,129);function P(t,i){if(!a(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==s$1?s$1.createHTML(i):i}const V=(t,i)=>{const s=t.length-1,o=[];let r,l=2===i?"<svg>":3===i?"<math>":"",c=f;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,y=0;for(;y<s.length&&(c.lastIndex=y,u=c.exec(s),null!==u);)y=c.lastIndex,c===f?"!--"===u[1]?c=v:void 0!==u[1]?c=_:void 0!==u[2]?($.test(u[2])&&(r=RegExp("</"+u[2],"g")),c=m):void 0!==u[3]&&(c=m):c===m?">"===u[0]?(c=r??f,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?m:'"'===u[3]?g:p):c===g||c===p?c=m:c===v||c===_?c=f:(c=m,r=void 0);const x=c===m&&t[i+1].startsWith("/>")?" ":"";l+=c===f?s+n:d>=0?(o.push(a),s.slice(0,d)+e+s.slice(d)+h+x):s+h+(-2===d?i:x);}return [P(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),o]};class N{constructor({strings:t,_$litType$:s},n){let r;this.parts=[];let c=0,a=0;const u=t.length-1,d=this.parts,[f,v]=V(t,s);if(this.el=N.createElement(f,n),C.currentNode=this.el.content,2===s||3===s){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=C.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(e)){const i=v[a++],s=r.getAttribute(t).split(h),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:c,name:e[2],strings:s,ctor:"."===e[1]?H:"?"===e[1]?I:"@"===e[1]?L:k}),r.removeAttribute(t);}else t.startsWith(h)&&(d.push({type:6,index:c}),r.removeAttribute(t));if($.test(r.tagName)){const t=r.textContent.split(h),s=t.length-1;if(s>0){r.textContent=i$1?i$1.emptyScript:"";for(let i=0;i<s;i++)r.append(t[i],l()),C.nextNode(),d.push({type:2,index:++c});r.append(t[s],l());}}}else if(8===r.nodeType)if(r.data===o$1)d.push({type:2,index:c});else {let t=-1;for(;-1!==(t=r.data.indexOf(h,t+1));)d.push({type:7,index:c}),t+=h.length-1;}c++;}}static createElement(t,i){const s=r.createElement("template");return s.innerHTML=t,s}}function S(t,i,s=t,e){if(i===T)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=c(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(!1),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=S(t,h._$AS(t,i.values),h,e)),i}class M{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??r).importNode(i,!0);C.currentNode=e;let h=C.nextNode(),o=0,n=0,l=s[0];for(;void 0!==l;){if(o===l.index){let i;2===l.type?i=new R(h,h.nextSibling,this,t):1===l.type?i=new l.ctor(h,l.name,l.strings,this,t):6===l.type&&(i=new z(h,this,t)),this._$AV.push(i),l=s[++n];}o!==l?.index&&(h=C.nextNode(),o++);}return C.currentNode=r,e}p(t){let i=0;for(const s of this._$AV)void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class R{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=E,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??!0;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=S(this,t,i),c(t)?t===E||null==t||""===t?(this._$AH!==E&&this._$AR(),this._$AH=E):t!==this._$AH&&t!==T&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):u(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==E&&c(this._$AH)?this._$AA.nextSibling.data=t:this.T(r.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=N.createElement(P(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new M(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=A.get(t.strings);return void 0===i&&A.set(t.strings,i=new N(t)),i}k(t){a(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new R(this.O(l()),this.O(l()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,i){for(this._$AP?.(!1,!0,i);t!==this._$AB;){const i=t.nextSibling;t.remove(),t=i;}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class k{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=E,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=E;}_$AI(t,i=this,s,e){const h=this.strings;let o=!1;if(void 0===h)t=S(this,t,i,0),o=!c(t)||t!==this._$AH&&t!==T,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=S(this,e[s+n],i,n),r===T&&(r=this._$AH[n]),o||=!c(r)||r!==this._$AH[n],r===E?t=E:t!==E&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===E?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class H extends k{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===E?void 0:t;}}class I extends k{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==E);}}class L extends k{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=S(this,t,i,0)??E)===T)return;const s=this._$AH,e=t===E&&s!==E||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==E&&(s===E||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){S(this,t);}}const j=t.litHtmlPolyfillSupport;j?.(N,R),(t.litHtmlVersions??=[]).push("3.3.1");const B=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new R(i.insertBefore(l(),t),t,void 0,s??{});}return h._$AI(t),h};
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */const s=globalThis;class i extends y$1{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0;}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const r=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=B(r,this.renderRoot,this.renderOptions);}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0);}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1);}render(){return T}}i._$litElement$=!0,i["finalized"]=!0,s.litElementHydrateSupport?.({LitElement:i});const o=s.litElementPolyfillSupport;o?.({LitElement:i});(s.litElementVersions??=[]).push("4.2.1");
+
+/**
+ * SIMPLE DEPENDENCY LOADING - STATIC IMPORTS ONLY
+ *
+ * Uses only standard static ES6 imports that Rollup bundles into the final file.
+ * No dynamic imports, no runtime detection - just simple, reliable imports.
+ */
+
+
+// Simple fireEvent implementation (no external dependencies)
+const fireEvent = (node, type, detail = {}) => {
+  const event = new CustomEvent(type, {
+    detail,
+    bubbles: true,
+    composed: true,
+  });
+  node.dispatchEvent(event);
+};
+
+/**
+ * Ensures all dependencies are properly loaded
+ * @returns {Promise<boolean>} True when dependencies are ready
+ */
+async function ensureDependencies() {
+  logDebug("SYSTEM", "Using bundled LitElement dependencies");
+  return true;
+}
+
+/**
+ * Gets the card helpers
+ * @returns {Promise<Object>} Card helpers object
+ */
+function getHelpers() {
+  // Try HA's built-in card helpers first
+  if (window.loadCardHelpers && typeof window.loadCardHelpers === "function") {
+    return window.loadCardHelpers();
+  }
+
+  // Simple fallback that works offline
+  return Promise.resolve({
+    createCardElement: async (config) => {
+      try {
+        // Try to create custom cards
+        if (
+          config.type &&
+          window.customElements &&
+          window.customElements.get(config.type)
+        ) {
+          const element = document.createElement(config.type);
+          if (element.setConfig) {
+            element.setConfig(config);
+          }
+          return element;
+        }
+
+        // Try built-in cards with hui- prefix
+        if (config.type && !config.type.startsWith("custom:")) {
+          const huiType = `hui-${config.type}-card`;
+          if (window.customElements && window.customElements.get(huiType)) {
+            const element = document.createElement(huiType);
+            if (element.setConfig) {
+              element.setConfig(config);
+            }
+            return element;
+          }
+        }
+
+        // Simple placeholder for unknown cards
+        const element = document.createElement("div");
+        element.innerHTML = `
+          <ha-card>
+            <div style="padding: 16px; text-align: center; color: var(--secondary-text-color);">
+              <ha-icon icon="mdi:card-outline" style="font-size: 48px; margin-bottom: 8px; opacity: 0.5;"></ha-icon>
+              <div style="font-weight: 500;">${config.type}</div>
+              <div style="font-size: 12px; opacity: 0.7;">Card type not available</div>
+            </div>
+          </ha-card>
+        `;
+        return element.firstElementChild;
+      } catch (error) {
+        // Error card
+        const element = document.createElement("div");
+        element.innerHTML = `
+          <ha-card>
+            <div style="padding: 16px; text-align: center; color: var(--error-color, #f44336);">
+              <ha-icon icon="mdi:alert-circle" style="font-size: 24px; margin-bottom: 8px;"></ha-icon>
+              <div style="font-weight: 500;">Card Error</div>
+              <div style="font-size: 12px;">${config.type}</div>
+              <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">${error.message}</div>
+            </div>
+          </ha-card>
+        `;
+        return element.firstElementChild;
+      }
+    },
+
+    createErrorCardElement: (config, error) => {
+      const element = document.createElement("div");
+      element.innerHTML = `
+        <ha-card>
+          <div style="padding: 16px; text-align: center; color: var(--error-color, #f44336);">
+            <ha-icon icon="mdi:alert-circle" style="font-size: 24px; margin-bottom: 8px;"></ha-icon>
+            <div style="font-weight: 500;">Card Error</div>
+            <div style="font-size: 12px; opacity: 0.8;">${config.type}</div>
+            <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">${error}</div>
+          </div>
+        </ha-card>
+      `;
+      return element.firstElementChild;
+    },
+  });
+}
+
+/**
+ * Visibility conditions evaluation for Simple Swipe Card
+ */
+
+
+/**
+ * Evaluates visibility conditions for a card
+ * @param {Array} conditions - Array of visibility conditions
+ * @param {Object} hass - Home Assistant object
+ * @returns {boolean} True if the card should be visible
+ */
+function evaluateVisibilityConditions(conditions, hass) {
+  if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+    return true; // No conditions means always visible
+  }
+
+  if (!hass) {
+    logDebug("VISIBILITY", "No hass object available for condition evaluation");
+    return true; // Default to visible if we can't evaluate
+  }
+
+  // All conditions must be true for the card to be visible (AND logic)
+  return conditions.every((condition) => {
+    try {
+      return evaluateSingleCondition(condition, hass);
+    } catch (error) {
+      logDebug("VISIBILITY", "Error evaluating condition:", condition, error);
+      return true; // Default to visible on error
+    }
+  });
+}
+
+/**
+ * Evaluates a single visibility condition
+ * @param {Object} condition - The condition to evaluate
+ * @param {Object} hass - Home Assistant object
+ * @returns {boolean} True if the condition is met
+ */
+function evaluateSingleCondition(condition, hass) {
+  if (!condition || typeof condition !== "object") {
+    return true;
+  }
+
+  const { condition: conditionType, entity, state, state_not } = condition;
+
+  switch (conditionType) {
+    case "state": {
+      if (!entity || !hass.states[entity]) {
+        logDebug(
+          "VISIBILITY",
+          `Entity ${entity} not found for state condition`,
+        );
+        return false;
+      }
+
+      const entityState = hass.states[entity].state;
+
+      if (state !== undefined) {
+        const expectedState = String(state);
+        const actualState = String(entityState);
+        const result = actualState === expectedState;
+        logDebug(
+          "VISIBILITY",
+          `State condition: ${entity} = ${actualState}, expected: ${expectedState}, result: ${result}`,
+        );
+        return result;
+      }
+
+      if (state_not !== undefined) {
+        const notExpectedState = String(state_not);
+        const actualState = String(entityState);
+        const result = actualState !== notExpectedState;
+        logDebug(
+          "VISIBILITY",
+          `State not condition: ${entity} = ${actualState}, not expected: ${notExpectedState}, result: ${result}`,
+        );
+        return result;
+      }
+
+      return true;
+    }
+
+    case "numeric_state": {
+      if (!entity || !hass.states[entity]) {
+        logDebug(
+          "VISIBILITY",
+          `Entity ${entity} not found for numeric_state condition`,
+        );
+        return false;
+      }
+
+      const numericValue = parseFloat(hass.states[entity].state);
+      if (isNaN(numericValue)) {
+        return false;
+      }
+
+      let result = true;
+      if (condition.above !== undefined) {
+        result = result && numericValue > parseFloat(condition.above);
+      }
+      if (condition.below !== undefined) {
+        result = result && numericValue < parseFloat(condition.below);
+      }
+
+      logDebug(
+        "VISIBILITY",
+        `Numeric state condition: ${entity} = ${numericValue}, result: ${result}`,
+      );
+      return result;
+    }
+
+    case "screen": {
+      // Screen size conditions
+      const media = condition.media_query;
+      if (media && window.matchMedia) {
+        const mediaQuery = window.matchMedia(media);
+        const result = mediaQuery.matches;
+        logDebug("VISIBILITY", `Screen condition: ${media}, result: ${result}`);
+        return result;
+      }
+      return true;
+    }
+
+    case "user": {
+      // User-based conditions
+      if (condition.users && Array.isArray(condition.users)) {
+        const currentUser = hass.user;
+        if (currentUser && currentUser.id) {
+          const result = condition.users.includes(currentUser.id);
+          logDebug(
+            "VISIBILITY",
+            `User condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`,
+          );
+          return result;
+        }
+      }
+      return true;
+    }
+
+    default:
+      logDebug("VISIBILITY", `Unknown condition type: ${conditionType}`);
+      return true; // Unknown conditions default to visible
+  }
+}
+
+/**
+ * Swipe gesture handling for Simple Swipe Card
+ */
+
+
+/**
+ * Swipe gesture manager class
+ */
+class SwipeGestures {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+
+    // Swipe state management
+    this._isDragging = false;
+    this._startX = 0;
+    this._startY = 0;
+    this._currentX = 0;
+    this._currentY = 0;
+    this._initialTransform = 0;
+    this._lastMoveTime = 0;
+    this._isScrolling = false;
+    this._isGestureActive = false;
+    this._gestureStartTime = 0;
+    this._totalMovement = 0;
+    this._hasMovedDuringGesture = false;
+    this._gestureThreshold = SWIPE_CONSTANTS.gestureThreshold;
+    this._clickBlockTimer = null;
+    this._isClickBlocked = false;
+    this._clickBlockDuration = SWIPE_CONSTANTS.clickBlockDuration;
+    this._lastSwipeTime = 0;
+    this._swipeVelocityThreshold = SWIPE_CONSTANTS.swipeVelocityThreshold;
+
+    // Bind event handlers for proper cleanup
+    this._boundHandleSwipeStart = this._handleSwipeStart.bind(this);
+    this._boundHandleSwipeMove = this._handleSwipeMove.bind(this);
+    this._boundHandleSwipeEnd = this._handleSwipeEnd.bind(this);
+    this._boundMouseMove = this._handleSwipeMove.bind(this);
+    this._boundMouseUp = this._handleSwipeEnd.bind(this);
+    this._boundPreventClick = this._preventClick.bind(this);
+    this._boundPreventPointerEvents = this._preventPointerEvents.bind(this);
+  }
+
+  /**
+   * Remove all swipe gesture event listeners
+   */
+  removeGestures() {
+    logDebug("SWIPE", "Removing swipe gesture listeners");
+    if (this.card.cardContainer) {
+      // Remove swipe gesture listeners
+      this.card.cardContainer.removeEventListener(
+        "touchstart",
+        this._boundHandleSwipeStart,
+        { passive: true },
+      );
+      this.card.cardContainer.removeEventListener(
+        "touchmove",
+        this._boundHandleSwipeMove,
+        { passive: false },
+      );
+      this.card.cardContainer.removeEventListener(
+        "touchend",
+        this._boundHandleSwipeEnd,
+        { passive: true },
+      );
+      this.card.cardContainer.removeEventListener(
+        "touchcancel",
+        this._boundHandleSwipeEnd,
+        { passive: true },
+      );
+      this.card.cardContainer.removeEventListener(
+        "mousedown",
+        this._boundHandleSwipeStart,
+        { passive: false },
+      );
+      this.card.cardContainer.removeEventListener(
+        "click",
+        this._boundPreventClick,
+        { capture: true },
+      );
+      this.card.cardContainer.removeEventListener(
+        "pointerdown",
+        this._boundPreventPointerEvents,
+        { capture: true },
+      );
+      this.card.cardContainer.removeEventListener(
+        "pointerup",
+        this._boundPreventPointerEvents,
+        { capture: true },
+      );
+
+      logDebug("SWIPE", "Removed swipe listeners from cardContainer.");
+    }
+
+    // Clean up window listeners
+    window.removeEventListener("mousemove", this._boundMouseMove, {
+      passive: false,
+    });
+    window.removeEventListener("mouseup", this._boundMouseUp, {
+      passive: true,
+    });
+    logDebug("SWIPE", "Removed potential swipe listeners from window.");
+
+    // Reset state flags
+    this._isDragging = false;
+    this._isScrolling = false;
+
+    // Clear click blocking timer
+    if (this._clickBlockTimer) {
+      clearTimeout(this._clickBlockTimer);
+      this._clickBlockTimer = null;
+      this._isClickBlocked = false;
+    }
+  }
+
+  /**
+   * Enhanced method to add swipe gesture listeners with click prevention
+   */
+  addGestures() {
+    this.removeGestures();
+    if (
+      !this.card.cardContainer ||
+      this.card.visibleCardIndices.length <= 1 ||
+      !this.card.initialized
+    ) {
+      logDebug("SWIPE", "Skipping addSwiperGesture", {
+        container: !!this.card.cardContainer,
+        visibleCount: this.card.visibleCardIndices.length,
+        init: this.card.initialized,
+      });
+      return;
+    }
+    logDebug("SWIPE", "Adding swipe listeners with click prevention.");
+
+    // Add swipe gesture listeners
+    this.card.cardContainer.addEventListener(
+      "touchstart",
+      this._boundHandleSwipeStart,
+      { passive: true },
+    );
+    this.card.cardContainer.addEventListener(
+      "touchmove",
+      this._boundHandleSwipeMove,
+      { passive: false },
+    );
+    this.card.cardContainer.addEventListener(
+      "touchend",
+      this._boundHandleSwipeEnd,
+      { passive: true },
+    );
+    this.card.cardContainer.addEventListener(
+      "touchcancel",
+      this._boundHandleSwipeEnd,
+      { passive: true },
+    );
+    this.card.cardContainer.addEventListener(
+      "mousedown",
+      this._boundHandleSwipeStart,
+      { passive: false },
+    );
+    this.card.cardContainer.addEventListener("click", this._boundPreventClick, {
+      capture: true,
+      // Remove passive: false to match working version
+    });
+    this.card.cardContainer.addEventListener(
+      "pointerdown",
+      this._boundPreventPointerEvents,
+      { capture: true },
+    );
+    this.card.cardContainer.addEventListener(
+      "pointerup",
+      this._boundPreventPointerEvents,
+      { capture: true },
+    );
+  }
+
+  /**
+   * Prevents click events during and after swipe gestures
+   * @param {Event} e - Click event to potentially prevent
+   * @private
+   */
+  _preventClick(e) {
+    if (this._isClickBlocked || this._isDragging) {
+      logDebug("SWIPE", "Click prevented during/after swipe gesture");
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }
+
+  /**
+   * Prevents pointer events during swipe gestures
+   * @param {Event} e - Pointer event to potentially prevent
+   * @private
+   */
+  _preventPointerEvents(e) {
+    if (this._isDragging && this._hasMovedDuringGesture) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }
+
+  /**
+   * Blocks clicks for a specified duration
+   * @param {number} duration - Duration to block clicks in milliseconds
+   * @private
+   */
+  _blockClicksTemporarily(duration = this._clickBlockDuration) {
+    this._isClickBlocked = true;
+    this._lastSwipeTime = Date.now();
+
+    if (this._clickBlockTimer) {
+      clearTimeout(this._clickBlockTimer);
+    }
+
+    this._clickBlockTimer = setTimeout(() => {
+      this._isClickBlocked = false;
+      this._clickBlockTimer = null;
+      logDebug("SWIPE", "Click blocking period ended");
+    }, duration);
+
+    logDebug("SWIPE", `Blocking clicks for ${duration}ms`);
+  }
+
+  /**
+   * Enhanced swipe start handler - simplified
+   * @param {Event} e - Touch or mouse event
+   * @private
+   */
+  _handleSwipeStart(e) {
+    logDebug("SWIPE", "Swipe Start:", e.type);
+
+    if (this._isDragging || (e.type === "mousedown" && e.button !== 0)) {
+      logDebug(
+        "SWIPE",
+        "Swipe Start ignored (already dragging or wrong button)",
+      );
+      return;
+    }
+
+    if (this._isInteractiveOrScrollable(e.target)) {
+      logDebug("SWIPE", "Swipe Start ignored (interactive element):", e.target);
+      return;
+    }
+
+    // Reset gesture state
+    this._isDragging = true;
+    this._isScrolling = false;
+    this._hasMovedDuringGesture = false;
+    this._totalMovement = 0;
+    this._gestureStartTime = Date.now();
+    this._isGestureActive = true; // Mark gesture as active
+
+    const isTouch = e.type === "touchstart";
+    const point = isTouch ? e.touches[0] : e;
+    this._startX = point.clientX;
+    this._startY = point.clientY;
+    this._currentX = this._startX;
+    this._currentY = this._startY;
+    this._lastMoveTime = this._gestureStartTime;
+
+    if (this.card.sliderElement) {
+      const style = window.getComputedStyle(this.card.sliderElement);
+      const matrix = new DOMMatrixReadOnly(style.transform);
+      this._initialTransform = matrix.m41; // For horizontal, we track X transform
+      if (this.card._swipeDirection === "vertical") {
+        this._initialTransform = matrix.m42; // For vertical, we track Y transform
+      }
+      this.card.sliderElement.style.transition =
+        this.card._getTransitionStyle(false);
+      this.card.sliderElement.style.cursor = "grabbing";
+    }
+
+    if (e.type === "mousedown") {
+      logDebug("SWIPE", "Attaching mousemove/mouseup listeners to window");
+      e.preventDefault();
+      window.addEventListener("mousemove", this._boundMouseMove, {
+        passive: false,
+      });
+      window.addEventListener("mouseup", this._boundMouseUp, { passive: true });
+    }
+
+    // Pause auto-swipe when user interaction begins
+    if (this.card._config.enable_auto_swipe) {
+      this.card.autoSwipe?.pause(5000);
+    }
+  }
+
+  /**
+   * Enhanced swipe move handler - simplified
+   * @param {Event} e - Touch or mouse event
+   * @private
+   */
+  _handleSwipeMove(e) {
+    if (!this._isDragging) return;
+
+    const isTouch = e.type === "touchmove";
+    const point = isTouch ? e.touches[0] : e;
+    const clientX = point.clientX;
+    const clientY = point.clientY;
+
+    const deltaX = clientX - this._startX;
+    const deltaY = clientY - this._startY;
+    const currentTime = Date.now();
+
+    // Calculate total movement distance
+    const movementDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    this._totalMovement = Math.max(this._totalMovement, movementDistance);
+
+    // Determine if this is a horizontal or vertical swipe based on configuration
+    const isHorizontal = this.card._swipeDirection === "horizontal";
+
+    // Calculate the primary and secondary deltas based on swipe direction
+    const primaryDelta = isHorizontal ? deltaX : deltaY;
+    const secondaryDelta = isHorizontal ? deltaY : deltaX;
+
+    // Check for scrolling in the perpendicular direction
+    if (
+      !this._isScrolling &&
+      Math.abs(secondaryDelta) > Math.abs(primaryDelta) &&
+      Math.abs(secondaryDelta) > 10
+    ) {
+      logDebug(
+        "SWIPE",
+        `${isHorizontal ? "Vertical" : "Horizontal"} scroll detected, cancelling ${isHorizontal ? "horizontal" : "vertical"} drag.`,
+      );
+      this._isScrolling = true;
+      this._isGestureActive = false; // Not a swipe gesture
+    }
+
+    // Mark that we've moved during this gesture if movement exceeds threshold
+    if (movementDistance > this._gestureThreshold) {
+      this._hasMovedDuringGesture = true;
+    }
+
+    // Process movement in the primary direction
+    if (!this._isScrolling && Math.abs(primaryDelta) > this._gestureThreshold) {
+      logDebug(
+        "SWIPE",
+        `${isHorizontal ? "Horizontal" : "Vertical"} move detected`,
+      );
+
+      // Update current position based on swipe direction
+      if (isHorizontal) {
+        this._currentX = clientX;
+      } else {
+        this._currentY = clientY;
+      }
+
+      let dragAmount = primaryDelta;
+
+      // Apply resistance at edges (only if loopback mode is not enabled)
+      const loopbackEnabled = this.card._config.enable_loopback === true;
+      if (!loopbackEnabled) {
+        const atFirstEdge = this.card.currentIndex === 0;
+        const atLastEdge =
+          this.card.currentIndex === this.card.visibleCardIndices.length - 1;
+        if ((atFirstEdge && dragAmount > 0) || (atLastEdge && dragAmount < 0)) {
+          const resistanceFactor =
+            0.3 +
+            0.7 /
+              (1 +
+                (Math.abs(dragAmount) /
+                  (isHorizontal
+                    ? this.card.slideWidth
+                    : this.card.slideHeight)) *
+                  0.5);
+          dragAmount *= resistanceFactor * 0.5;
+        }
+      }
+
+      const newTransform = this._initialTransform + dragAmount;
+
+      if (this.card.sliderElement) {
+        // Apply transform based on swipe direction
+        if (isHorizontal) {
+          this.card.sliderElement.style.transform = `translateX(${newTransform}px)`;
+        } else {
+          this.card.sliderElement.style.transform = `translateY(${newTransform}px)`;
+        }
+        // Update pagination dots to match current transform position
+        this._updatePaginationDuringSwipe(newTransform);        
+      }
+      this._lastMoveTime = currentTime;
+    }
+  }
+
+  /**
+   * Enhanced swipe end handler with restored click prevention
+   * @param {Event} e - Touch or mouse event
+   * @private
+   */
+  _handleSwipeEnd(e) {
+    logDebug("SWIPE", "Swipe End:", e.type);
+    if (!this._isDragging) {
+      logDebug("SWIPE", "Swipe End ignored (not dragging)");
+      return;
+    }
+
+    // Debug: Check if seamless jump is blocking
+    if (this.card._performingSeamlessJump) {
+      logDebug("SWIPE", "WARNING: Swipe end during seamless jump - this might indicate a stuck flag");
+    }    
+
+    // Cleanup listeners
+    if (e.type === "mouseup") {
+      logDebug("SWIPE", "Removing mousemove/mouseup listeners from window");
+      window.removeEventListener("mousemove", this._boundMouseMove);
+      window.removeEventListener("mouseup", this._boundMouseUp);
+    }
+
+    const hasSignificantMovement =
+      this._hasMovedDuringGesture &&
+      this._totalMovement > this._gestureThreshold;
+    const gestureTime = Date.now() - this._gestureStartTime;
+    const isQuickGesture = gestureTime < 200;
+
+    // Calculate velocity (use consistent logic)
+    const isHorizontal = this.card._swipeDirection === "horizontal";
+    const totalMove = isHorizontal
+      ? this._currentX - this._startX
+      : this._currentY - this._startY;
+    const timeDiff = Date.now() - this._lastMoveTime;
+    const velocity = timeDiff > 10 ? Math.abs(totalMove) / timeDiff : 0;
+    const hasHighVelocity = velocity > this._swipeVelocityThreshold;
+
+    const shouldPreventClicks =
+      hasSignificantMovement || (isQuickGesture && hasHighVelocity);
+
+    if (shouldPreventClicks) {
+      // Temporal click blocking (main mechanism for all events)
+      // No preventDefault() calls since both touch and mouse end events are passive
+      this._blockClicksTemporarily(hasHighVelocity ? 400 : 300);
+      logDebug("SWIPE", "Prevented clicks after swipe gesture", {
+        movement: this._totalMovement,
+        velocity: velocity,
+        gestureTime: gestureTime,
+        eventType: e.type,
+      });
+    }
+
+    // Reset gesture state
+    this._isGestureActive = false;
+
+    // Process swipe logic
+    Promise.resolve().then(() => {
+      if (!this.card.sliderElement) return;
+
+      const wasDragging = this._isDragging;
+      this._isDragging = false;
+
+      this.card.sliderElement.style.transition =
+        this.card._getTransitionStyle(true);
+      this.card.sliderElement.style.cursor = "";
+
+      if (!wasDragging) {
+        logDebug("SWIPE", "Swipe End: Not dragging or already processed.");
+        return;
+      }
+
+      if (this._isScrolling || e.type === "touchcancel") {
+        logDebug("SWIPE", "Swipe End: Scrolling or Cancelled - Snapping back.");
+        this.card.updateSlider();
+        this._isScrolling = false;
+        return;
+      }
+
+      // Calculate velocity and movement for swipe logic
+      const timeDiffForSwipe = Math.max(1, Date.now() - this._gestureStartTime); // Use gesture start time instead
+      const velocityForSwipe = Math.abs(totalMove) / timeDiffForSwipe;
+
+      // Use the appropriate dimension for threshold calculation
+      const slideSize = isHorizontal
+        ? this.card.slideWidth
+        : this.card.slideHeight;
+
+      // For carousel mode, use single card width instead of full slide width
+      const viewMode = this.card._config.view_mode || "single";
+      let threshold;
+
+      if (viewMode === "carousel") {
+        // In carousel mode, use card width for threshold
+        const cardsVisible = this.card._config.cards_visible || 2.5;
+        const cardSpacing =
+          Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+        const totalSpacing = (cardsVisible - 1) * cardSpacing;
+        const cardWidth = (this.card.slideWidth - totalSpacing) / cardsVisible;
+        threshold = cardWidth * 0.2; // 20% of card width
+      } else {
+        threshold = slideSize * 0.2; // Use original logic for single mode
+      }
+
+      let nextIndex = this.card.currentIndex;
+      const loopMode = this.card._config.loop_mode || "none";
+      const totalVisibleCards = this.card.visibleCardIndices.length;
+      const swipeBehavior = this.card._config.swipe_behavior || "single";
+
+      // Check if swipe threshold is crossed
+      let skipCount = 1; // Default value
+      if (
+        Math.abs(totalMove) > threshold ||
+        Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
+      ) {
+        logDebug("SWIPE", `Swipe threshold crossed:`, {
+          totalMove: totalMove,
+          threshold: threshold,
+          velocity: velocityForSwipe,
+          velocityThreshold: this._swipeVelocityThreshold,
+          currentIndex: this.card.currentIndex,
+          totalVisibleCards: totalVisibleCards,
+          loopMode: loopMode,
+          swipeBehavior: swipeBehavior,
+        });
+
+        // Calculate skip count based on swipe behavior
+        skipCount = this.card.swipeBehavior.calculateSkipCount(
+          velocityForSwipe,
+          Math.abs(totalMove),
+          totalVisibleCards,
+          swipeBehavior,
+        );
+
+        // Determine direction and apply skip count
+        const direction = totalMove > 0 ? skipCount : -skipCount;  // Fixed: removed negative sign from first part
+        nextIndex = this.card.loopMode.handleSwipeNavigation(
+          this.card.currentIndex,
+          direction,
+        );
+
+        logDebug(
+          "SWIPE",
+          `Swipe resulted in navigation: ${this.card.currentIndex} → ${nextIndex} (${loopMode} mode, ${swipeBehavior} behavior, skip: ${skipCount})`,
+        );
+      } else {
+        logDebug("SWIPE", `Swipe threshold NOT crossed:`, {
+          totalMove: totalMove,
+          threshold: threshold,
+          velocity: velocityForSwipe,
+          velocityThreshold: this._swipeVelocityThreshold,
+          viewMode: viewMode,
+          swipeBehavior: swipeBehavior,
+        });
+      }
+
+      if (nextIndex !== this.card.currentIndex) {
+        logDebug("SWIPE", `Swipe resulted in index change to ${nextIndex}`);
+        
+        // Store the starting position for pagination animation (use current wrapped index for infinite mode)
+        if (this.card._config.loop_mode === "infinite") {
+          this.card._previousIndex = this.card.loopMode.getWrappedIndexForPagination(this.card.currentIndex);
+        } else {
+          this.card._previousIndex = this.card.currentIndex;
+        }
+        
+        this.card.goToSlide(nextIndex, skipCount);
+        // Start reset-after timer for manual swipe interactions
+        setTimeout(() => {
+          if (this.card.isConnected && !this.card._autoSwipeInProgress) {
+            this.card.resetAfter?.startTimer();
+          }
+        }, 100);
+      } else {
+        logDebug(
+          "SWIPE",
+          "Swipe did not cross threshold or velocity, snapping back.",
+        );
+        this.card.updateSlider();
+      }
+    });
+  }
+
+  /**
+   * Updates pagination dots during swipe gesture based on current transform
+   * @param {number} currentTransform - Current transform value
+   * @private
+   */
+  _updatePaginationDuringSwipe(currentTransform) {
+    if (!this.card.pagination?.paginationElement || this.card.visibleCardIndices.length <= 1) {
+      return;
+    }
+
+    const isHorizontal = this.card._swipeDirection === "horizontal";
+    const viewMode = this.card._config.view_mode || "single";
+    const cardSpacing = Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    // Calculate relative movement from initial position
+    const deltaTransform = currentTransform - this._initialTransform;
+    
+    let cardsMoved;
+
+    if (viewMode === "carousel") {
+      // For carousel mode, calculate based on card width
+      const cardsVisible = this.card._config.cards_visible || 
+                          this.card._calculateCardsVisibleFromMinWidth();
+      const totalSpacing = (cardsVisible - 1) * cardSpacing;
+      const cardWidth = (this.card.slideWidth - totalSpacing) / cardsVisible;
+      const moveDistance = cardWidth + cardSpacing;
+      
+      // Simple calculation - no threshold complexity
+      cardsMoved = Math.round(-deltaTransform / moveDistance);
+    } else {
+      // For single mode
+      const slideSize = isHorizontal ? this.card.slideWidth : this.card.slideHeight;
+      const moveDistance = slideSize + cardSpacing;
+      
+      // Simple calculation - no threshold complexity
+      cardsMoved = Math.round(-deltaTransform / moveDistance);
+    }
+
+    // Calculate virtual index based on starting position + movement
+    const virtualIndex = this.card.currentIndex + cardsMoved;
+
+    // Update pagination with the calculated virtual index
+    this.card.pagination.updateDuringSwipe(virtualIndex);
+  }
+
+  /**
+   * Checks if an element is interactive or scrollable
+   * @param {Element} element - The element to check
+   * @returns {boolean} True if the element is interactive or scrollable
+   * @private
+   */
+  _isInteractiveOrScrollable(element) {
+    if (
+      !element ||
+      element === this.card.cardContainer ||
+      element === this.card.sliderElement
+    )
+      return false;
+
+    // Expanded list of interactive elements
+    const interactiveTags = [
+      "input",
+      "textarea",
+      "select",
+      "button",
+      "a",
+      "audio",
+      "video",
+      "ha-switch",
+      "ha-checkbox",
+      "mwc-checkbox",
+      "paper-checkbox",
+      "ha-textfield",
+      "ha-slider",
+      "paper-slider",
+      "ha-control-button",
+      "ha-control-select",
+      "ha-control-slider",
+      "ha-control-button-group",
+      "ha-text-input",
+      "mwc-button",
+      "paper-button",
+      "ha-icon-button",
+      "paper-icon-button",
+      "ha-select",
+      "paper-dropdown-menu",
+      "vaadin-combo-box",
+      "ha-card",
+      "hui-entity-button",
+      "more-info-content",
+    ];
+
+    const tagName = element.localName?.toLowerCase();
+    const role = element.getAttribute("role");
+
+    // Check basic interactive elements
+    if (
+      interactiveTags.includes(tagName) ||
+      (role &&
+        [
+          "button",
+          "checkbox",
+          "switch",
+          "slider",
+          "link",
+          "menuitem",
+          "textbox",
+          "combobox",
+          "option",
+        ].includes(role))
+    ) {
+      logDebug(
+        "SWIPE",
+        "_isInteractiveOrScrollable: Found interactive tag/role:",
+        tagName || role,
+      );
+      return true;
+    }
+
+    // Check for clickable elements (elements that might open more-info dialogs)
+    if (
+      element.classList.contains("clickable") ||
+      element.hasAttribute("clickable") ||
+      element.getAttribute("data-domain") ||
+      element.closest(".entity, .clickable, [data-domain]")
+    ) {
+      logDebug("SWIPE", "_isInteractiveOrScrollable: Found clickable element");
+      return true;
+    }
+
+    // Check common HA interactive components
+    if (
+      element.closest(
+        `
+            ha-control-button, ha-control-select, ha-control-slider, ha-control-button-group, 
+            ha-alert[action], ha-more-info-control, hui-buttons-base, ha-form, ha-formfield, 
+            ha-icon-button, mwc-list-item, paper-item, ha-list-item, hui-entity-button,
+            more-info-content, ha-card[clickable], .clickable
+        `
+          .replace(/\s+/g, " ")
+          .trim(),
+      )
+    ) {
+      logDebug(
+        "SWIPE",
+        "_isInteractiveOrScrollable: Found interactive ancestor component.",
+      );
+      return true;
+    }
+
+    // Check for scrollable overflow
+    let current = element;
+    let depth = 0;
+    while (
+      current &&
+      current !== this.card.sliderElement &&
+      current !== this.card.cardContainer &&
+      depth < 10
+    ) {
+      if (current.nodeType === Node.ELEMENT_NODE) {
+        try {
+          const style = window.getComputedStyle(current);
+          const hasVerticalScroll =
+            (style.overflowY === "auto" || style.overflowY === "scroll") &&
+            current.scrollHeight > current.clientHeight + 1;
+          const hasHorizontalScroll =
+            (style.overflowX === "auto" || style.overflowX === "scroll") &&
+            current.scrollWidth > current.clientWidth + 1;
+
+          if (hasVerticalScroll || hasHorizontalScroll) {
+            logDebug(
+              "SWIPE",
+              "_isInteractiveOrScrollable: Found scrollable ancestor:",
+              current,
+            );
+            return true;
+          }
+
+          // Check specific known-scrollable cards
+          if (
+            current.localName === "ha-logbook" ||
+            current.localName === "hui-logbook-card" ||
+            current.localName === "hui-history-graph-card"
+          ) {
+            logDebug(
+              "SWIPE",
+              "_isInteractiveOrScrollable: Found specific scrollable card type:",
+              current.localName,
+            );
+            return true;
+          }
+        } catch (e) {
+          logDebug(
+            "ERROR",
+            "Error accessing style/scroll properties for:",
+            current,
+            e,
+          );
+        }
+      }
+
+      // Traverse up
+      current =
+        current.assignedSlot ||
+        current.parentNode ||
+        (current.getRootNode() instanceof ShadowRoot
+          ? current.getRootNode().host
+          : null);
+      depth++;
+    }
+
+    return false;
+  }
+}
+
+/**
+ * Auto-swipe functionality for Simple Swipe Card
+ */
+
+
+/**
+ * Auto-swipe manager class
+ */
+class AutoSwipe {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+
+    // Auto-swipe state management
+    this._autoSwipeTimer = null;
+    this._autoSwipePaused = false;
+    this._autoSwipePauseTimer = null;
+    this._autoSwipeInProgress = false; // Flag to track if auto-swipe is in progress
+    this._autoSwipeDirection = 1; // 1 for forward, -1 for backward
+    this._lastLogTime = 0; // For throttling debug logs
+
+    // Bind event handlers for proper cleanup
+    this._boundAutoSwipe = this._performAutoSwipe.bind(this);
+  }
+
+  /**
+   * Manages the auto-swipe functionality based on configuration
+   */
+  manage() {
+    if (!this.card.initialized || !this.card.isConnected) return;
+
+    // Stop any existing auto-swipe
+    this.stop();
+
+    // If auto-swipe is enabled and we have multiple visible cards, start it
+    if (
+      this.card._config.enable_auto_swipe &&
+      this.card.visibleCardIndices.length > 1
+    ) {
+      logDebug(
+        "AUTO",
+        "Starting auto-swipe with interval:",
+        this.card._config.auto_swipe_interval,
+      );
+      this.start();
+    }
+  }
+
+  /**
+   * Starts the auto-swipe timer
+   */
+  start() {
+    if (this._autoSwipeTimer) this.stop();
+
+    this._autoSwipeDirection = 1; // Reset direction to forward when starting/restarting
+    this._autoSwipePaused = false; // Ensure we're not paused
+
+    this._autoSwipeTimer = setInterval(
+      this._boundAutoSwipe,
+      this.card._config.auto_swipe_interval,
+    );
+
+    // Only log start message, not repeated interval logs
+    logDebug(
+      "AUTO",
+      "Auto-swipe timer started with interval:",
+      this.card._config.auto_swipe_interval,
+    );
+  }
+
+  /**
+   * Stops the auto-swipe timer
+   */
+  stop() {
+    if (this._autoSwipeTimer) {
+      clearInterval(this._autoSwipeTimer);
+      this._autoSwipeTimer = null;
+      logDebug("AUTO", "Auto-swipe timer stopped");
+    }
+
+    // Clear any pause timer as well
+    if (this._autoSwipePauseTimer) {
+      clearTimeout(this._autoSwipePauseTimer);
+      this._autoSwipePauseTimer = null;
+    }
+  }
+
+  /**
+   * Pauses the auto-swipe for a specified duration
+   * @param {number} duration - Duration to pause in milliseconds
+   */
+  pause(duration = 5000) {
+    if (!this.card._config.enable_auto_swipe) return;
+
+    logDebug("AUTO", `Auto-swipe paused for ${duration}ms`);
+
+    // Set the pause flag
+    this._autoSwipePaused = true;
+
+    // Clear any existing pause timer
+    if (this._autoSwipePauseTimer) {
+      clearTimeout(this._autoSwipePauseTimer);
+    }
+
+    // Set a timer to unpause
+    this._autoSwipePauseTimer = setTimeout(() => {
+      this._autoSwipePaused = false;
+      logDebug("AUTO", "Auto-swipe pause ended");
+
+      // Restart auto-swipe if still connected and enabled
+      if (this.card.isConnected && this.card._config.enable_auto_swipe) {
+        this.start();
+      }
+    }, duration);
+  }
+
+  /**
+   * Performs a single auto-swipe operation
+   * @private
+   */
+  _performAutoSwipe() {
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    if (
+      !this.card.isConnected ||
+      !this.card.initialized ||
+      totalVisibleCards <= 1
+    ) {
+      if (this._autoSwipeTimer) {
+        logDebug(
+          "AUTO",
+          "Stopping auto-swipe, conditions not met or insufficient visible cards.",
+        );
+        this.stop();
+      }
+      return;
+    }
+
+    // Skip if currently paused
+    if (this._autoSwipePaused) {
+      // Only log occasionally to avoid spam
+      const now = Date.now();
+      if (now - this._lastLogTime > 5000) {
+        logDebug("AUTO", "Skipping auto-swipe: currently paused");
+        this._lastLogTime = now;
+      }
+      return;
+    }
+
+    // Skip if currently dragging
+    if (this.card.swipeGestures?._isDragging) {
+      // Only log occasionally to avoid spam
+      const now = Date.now();
+      if (now - this._lastLogTime > 5000) {
+        // Log at most every 5 seconds
+        logDebug("AUTO", "Skipping auto-swipe: currently dragging");
+        this._lastLogTime = now;
+      }
+      return;
+    }
+
+    // Throttle logging - only log every 10 seconds or on direction change
+    const now = Date.now();
+    let shouldLog = now - this._lastLogTime > 10000; // 10 seconds
+
+    const navigation = this.card.loopMode.handleAutoSwipeNavigation(
+      this.card.currentIndex,
+      this._autoSwipeDirection,
+    );
+
+    const nextIndex = navigation.nextIndex;
+    if (navigation.shouldChangeDirection) {
+      this._autoSwipeDirection = -this._autoSwipeDirection;
+      shouldLog = true; // Always log direction changes
+    }
+
+    const loopMode = this.card.loopMode.getMode();
+    if (loopMode === "infinite" && nextIndex >= totalVisibleCards) {
+      shouldLog = true; // Log when going beyond bounds
+    } else if (
+      loopMode === "loopback" &&
+      nextIndex === 0 &&
+      this.card.currentIndex === totalVisibleCards - 1
+    ) {
+      shouldLog = true; // Always log when looping back
+    }
+
+    // Only log occasionally or on important events
+    if (shouldLog) {
+      logDebug(
+        "AUTO",
+        `Auto-swipe: ${this.card.currentIndex} → ${nextIndex} (${loopMode === "none" ? (this._autoSwipeDirection > 0 ? "forward" : "backward") : loopMode} mode)`,
+      );
+      this._lastLogTime = now;
+    }
+
+    this._autoSwipeInProgress = true;
+    this.card.goToSlide(nextIndex);
+    this._autoSwipeInProgress = false;
+  }
+
+  /**
+   * Gets whether auto-swipe is currently in progress
+   * @returns {boolean} True if auto-swipe is currently executing
+   */
+  get isInProgress() {
+    return this._autoSwipeInProgress;
+  }
+}
+
+/**
+ * Reset-after timeout functionality for Simple Swipe Card
+ */
+
+
+/**
+ * Reset-after manager class
+ */
+class ResetAfter {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+
+    // Reset-after state management with preservation
+    this._resetAfterTimer = null;
+    this._lastUserInteraction = 0;
+    this._isResettingAfterTimeout = false; // Flag to distinguish auto-reset from user action
+    this._resetAfterPreservedState = null; // Preserve timer state during rebuilds
+
+    // Bind event handlers for proper cleanup
+    this._boundPerformResetAfter = this._performResetAfter.bind(this);
+  }
+
+  /**
+   * Manages the reset-after functionality based on configuration
+   */
+  manage() {
+    if (!this.card.initialized || !this.card.isConnected) return;
+
+    // Stop any existing reset-after timer
+    this.stopTimer();
+
+    // Only enable reset-after if it's configured AND auto-swipe is disabled
+    if (
+      this.card._config.enable_reset_after &&
+      !this.card._config.enable_auto_swipe &&
+      this.card.visibleCardIndices.length > 1
+    ) {
+      logDebug(
+        "RESET",
+        "Reset-after feature enabled with timeout:",
+        this.card._config.reset_after_timeout,
+      );
+      // Timer will be started after next user interaction
+    } else {
+      logDebug("RESET", "Reset-after feature disabled", {
+        enabled: this.card._config.enable_reset_after,
+        autoSwipeDisabled: !this.card._config.enable_auto_swipe,
+        multipleCards: this.card.visibleCardIndices.length > 1,
+      });
+    }
+  }
+
+  /**
+   * Starts the reset-after timer
+   */
+  startTimer() {
+    // Only start if enabled, auto-swipe is off, and we have multiple visible cards
+    if (
+      !this.card._config.enable_reset_after ||
+      this.card._config.enable_auto_swipe ||
+      this.card.visibleCardIndices.length <= 1 ||
+      !this.card.initialized ||
+      !this.card.isConnected
+    ) {
+      return;
+    }
+
+    this.stopTimer();
+    this._lastUserInteraction = Date.now();
+
+    logDebug(
+      "RESET",
+      `Starting reset-after timer: ${this.card._config.reset_after_timeout}ms`,
+    );
+
+    this._resetAfterTimer = setTimeout(
+      this._boundPerformResetAfter,
+      this.card._config.reset_after_timeout,
+    );
+  }
+
+  /**
+   * Stops the reset-after timer
+   */
+  stopTimer() {
+    if (this._resetAfterTimer) {
+      clearTimeout(this._resetAfterTimer);
+      this._resetAfterTimer = null;
+      logDebug("RESET", "Reset-after timer stopped");
+    }
+  }
+
+  /**
+   * Preserves reset-after timer state before rebuild
+   */
+  preserveState() {
+    if (
+      !this.card._config.enable_reset_after ||
+      this.card._config.enable_auto_swipe
+    ) {
+      this._resetAfterPreservedState = null;
+      return;
+    }
+
+    // Only preserve if timer was actually running
+    if (this._resetAfterTimer) {
+      const remainingTime =
+        this.card._config.reset_after_timeout -
+        (Date.now() - this._lastUserInteraction);
+
+      if (remainingTime > 1000) {
+        // Only preserve if more than 1 second left
+        this._resetAfterPreservedState = {
+          remainingTime: Math.max(1000, remainingTime), // Minimum 1 second
+          targetCard: this.card._config.reset_target_card,
+          wasActive: true,
+        };
+        logDebug(
+          "RESET",
+          "Preserved reset-after state:",
+          this._resetAfterPreservedState,
+        );
+      } else {
+        this._resetAfterPreservedState = null;
+      }
+    } else {
+      this._resetAfterPreservedState = null;
+    }
+  }
+
+  /**
+   * Restores reset-after timer state after rebuild
+   */
+  restoreState() {
+    if (
+      !this._resetAfterPreservedState ||
+      !this.card._config.enable_reset_after ||
+      this.card._config.enable_auto_swipe
+    ) {
+      this._resetAfterPreservedState = null;
+      return;
+    }
+
+    // Restore timer with remaining time
+    if (
+      this._resetAfterPreservedState.wasActive &&
+      this.card.visibleCardIndices.length > 1
+    ) {
+      logDebug(
+        "RESET",
+        "Restoring reset-after timer with remaining time:",
+        this._resetAfterPreservedState.remainingTime,
+      );
+
+      this._lastUserInteraction =
+        Date.now() -
+        (this.card._config.reset_after_timeout -
+          this._resetAfterPreservedState.remainingTime);
+
+      this._resetAfterTimer = setTimeout(
+        this._boundPerformResetAfter,
+        this._resetAfterPreservedState.remainingTime,
+      );
+    }
+
+    this._resetAfterPreservedState = null;
+  }
+
+  /**
+   * Performs the reset after timeout (improved version)
+   * @private
+   */
+  _performResetAfter() {
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    if (
+      !this.card.isConnected ||
+      !this.card.initialized ||
+      totalVisibleCards <= 1
+    ) {
+      logDebug("RESET", "Reset-after skipped: conditions not met");
+      return;
+    }
+
+    // Determine target card index (convert from 1-based YAML to 0-based internal)
+    let targetIndex = (parseInt(this.card._config.reset_target_card) || 1) - 1;
+
+    // Convert from original card index to visible card index
+    const targetOriginalIndex = targetIndex;
+    const targetVisibleIndex =
+      this.card.visibleCardIndices.indexOf(targetOriginalIndex);
+
+    if (targetVisibleIndex !== -1) {
+      targetIndex = targetVisibleIndex;
+      logDebug(
+        "RESET",
+        `Target card ${this.card._config.reset_target_card} is visible at position ${targetIndex}`,
+      );
+    } else {
+      // Target card is not visible, find the closest visible card
+      // Look for the next visible card after the target
+      let closestVisibleIndex = 0;
+      for (let i = 0; i < this.card.visibleCardIndices.length; i++) {
+        if (this.card.visibleCardIndices[i] >= targetOriginalIndex) {
+          closestVisibleIndex = i;
+          break;
+        }
+      }
+      targetIndex = closestVisibleIndex;
+      logDebug(
+        "RESET",
+        `Target card ${this.card._config.reset_target_card} not visible, using closest visible card at position ${targetIndex}`,
+      );
+    }
+
+    // Ensure target is within visible cards range
+    if (targetIndex >= totalVisibleCards) {
+      targetIndex = 0; // Default to first visible card
+      logDebug("RESET", `Target index out of range, using first visible card`);
+    }
+
+    // Only reset if we're not already at the target
+    if (this.card.currentIndex !== targetIndex) {
+      logDebug(
+        "RESET",
+        `Performing reset: current=${this.card.currentIndex}, target=${targetIndex}, timeout=${this.card._config.reset_after_timeout}ms`,
+      );
+
+      this._isResettingAfterTimeout = true;
+      this.card.goToSlide(targetIndex);
+      this._isResettingAfterTimeout = false;
+    } else {
+      logDebug("RESET", "Reset-after skipped: already at target card");
+    }
+  }
+
+  /**
+   * Gets whether reset-after is currently executing
+   * @returns {boolean} True if reset-after is currently executing
+   */
+  get isInProgress() {
+    return this._isResettingAfterTimeout;
+  }
+}
+
+/**
+ * Pagination dots management for Simple Swipe Card
+ */
+
+
+/**
+ * Pagination manager class
+ */
+class Pagination {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+    this.paginationElement = null;
+  }
+
+  /**
+   * Creates the pagination dots
+   */
+  create() {
+    this.remove();
+    const showPagination = this.card._config.show_pagination !== false;
+
+    if (showPagination && this.card.visibleCardIndices.length > 1) {
+      logDebug(
+        "INIT",
+        "Creating pagination for",
+        this.card.visibleCardIndices.length,
+        "visible cards",
+      );
+      this.paginationElement = document.createElement("div");
+      this.paginationElement.className = `pagination ${this.card._swipeDirection}`;
+
+      // Calculate and set fixed container dimensions based on configured dot sizes
+      this._setFixedPaginationDimensions();
+
+      // Use visible cards count for pagination
+      for (let i = 0; i < this.card.visibleCardIndices.length; i++) {
+        const dot = document.createElement("div");
+        dot.className = "pagination-dot";
+        if (i === this._getCurrentDotIndex()) dot.classList.add("active");
+        dot.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.card.goToSlide(i);
+        });
+        this.paginationElement.appendChild(dot);
+      }
+      this.card.shadowRoot.appendChild(this.paginationElement);
+
+      if (this.card._cardModConfig) {
+        this.card._applyCardModStyles();
+      }
+    }
+  }
+
+  /**
+   * Sets fixed pagination container dimensions to prevent layout shifts during animations
+   * @private
+   */
+  _setFixedPaginationDimensions() {
+    if (!this.paginationElement) return;
+
+    // Wait for next frame to ensure styles are applied
+    requestAnimationFrame(() => {
+      // Read CSS custom properties from multiple potential sources
+      const hostElement = this.card.shadowRoot?.host || this.card;
+      const paginationStyle = getComputedStyle(this.paginationElement);
+      const hostStyle = getComputedStyle(hostElement);
+
+      // Helper function to parse CSS values
+      const parseCSSValue = (value) => {
+        if (!value || value === "") return null;
+        const trimmed = value.trim();
+        const parsed = parseInt(trimmed.replace(/px|rem|em/, ""));
+        return isNaN(parsed) ? null : parsed;
+      };
+
+      // Try to read from pagination element first, then host
+      const getCustomProperty = (property) => {
+        return (
+          parseCSSValue(paginationStyle.getPropertyValue(property)) ||
+          parseCSSValue(hostStyle.getPropertyValue(property))
+        );
+      };
+
+      // Read dot sizes with proper fallbacks
+      const activeDotSize =
+        getCustomProperty("--simple-swipe-card-pagination-dot-active-size") ||
+        getCustomProperty("--simple-swipe-card-pagination-dot-size") ||
+        8;
+      const inactiveDotSize =
+        getCustomProperty("--simple-swipe-card-pagination-dot-size") || 8;
+
+      // Use the larger of the two sizes
+      const maxDotSize = Math.max(activeDotSize, inactiveDotSize);
+
+      // Read actual padding from CSS (default is "4px 8px")
+      const paddingValue =
+        paginationStyle
+          .getPropertyValue("--simple-swipe-card-pagination-padding")
+          .trim() || "4px 8px";
+      const paddingParts = paddingValue.split(" ");
+      const verticalPadding = parseCSSValue(paddingParts[0]) || 4;
+      const totalVerticalPadding = verticalPadding * 2; // top + bottom
+
+      const fixedDimension = maxDotSize + totalVerticalPadding;
+
+      // Set FIXED dimensions based on direction
+      if (this.card._swipeDirection === "horizontal") {
+        this.paginationElement.style.height = `${fixedDimension}px`;
+        this.paginationElement.style.minHeight = "unset";
+      } else {
+        const horizontalPadding =
+          parseCSSValue(paddingParts[1] || paddingParts[0]) || 8;
+        const totalHorizontalPadding = horizontalPadding * 2; // left + right
+        const fixedWidth = maxDotSize + totalHorizontalPadding;
+        this.paginationElement.style.width = `${fixedWidth}px`;
+        this.paginationElement.style.minWidth = "unset";
+      }
+
+      logDebug("INIT", "Set FIXED pagination dimensions:", {
+        activeDotSize,
+        inactiveDotSize,
+        maxDotSize,
+        totalVerticalPadding,
+        fixedDimension: `${fixedDimension}px`,
+        direction: this.card._swipeDirection,
+        paddingValue,
+      });
+    });
+  }
+
+  /**
+   * Gets the current dot index that should be active
+   * Handles all loop modes consistently
+   * @returns {number} The dot index (0-based)
+   * @private
+   */
+  _getCurrentDotIndex() {
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return 0;
+
+    if (this.card._config.loop_mode === "infinite") {
+      // For infinite mode, wrap the current index to the visible range
+      return ((this.card.currentIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+    } else {
+      // For other modes, clamp to valid range
+      return Math.max(0, Math.min(this.card.currentIndex, totalVisibleCards - 1));
+    }
+  }
+
+  /**
+   * Updates pagination dots to reflect current state
+   * This is the main method - simple and reliable
+   */
+  update() {
+    if (!this.paginationElement) return;
+
+    const activeDotIndex = this._getCurrentDotIndex();
+    const dots = this.paginationElement.querySelectorAll(".pagination-dot");
+    
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === activeDotIndex);
+    });
+
+    logDebug("PAGINATION", `Updated dots: active dot ${activeDotIndex}`);
+  }
+
+  /**
+   * Updates pagination dots during swipe gesture
+   * @param {number} virtualIndex - The virtual card index during swipe
+   */
+  updateDuringSwipe(virtualIndex) {
+    if (!this.paginationElement) return;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return;
+
+    // Calculate which dot should be active for this virtual position
+    let activeDotIndex;
+    if (this.card._config.loop_mode === "infinite") {
+      activeDotIndex = ((virtualIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+    } else {
+      activeDotIndex = Math.max(0, Math.min(virtualIndex, totalVisibleCards - 1));
+    }
+
+    const dots = this.paginationElement.querySelectorAll(".pagination-dot");
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === activeDotIndex);
+    });
+  }
+
+  /**
+   * Updates pagination visibility and layout
+   */
+  updateLayout() {
+    const showPagination = this.card._config.show_pagination !== false;
+
+    // Update pagination visibility - use visible cards count
+    if (showPagination && this.card.visibleCardIndices.length > 1) {
+      if (!this.paginationElement) {
+        this.create();
+      } else {
+        this.paginationElement.style.display = "flex";
+      }
+    } else if (this.paginationElement) {
+      this.paginationElement.style.display = "none";
+    }
+  }
+
+  /**
+   * Removes the pagination element
+   */
+  remove() {
+    if (this.paginationElement) {
+      this.paginationElement.remove();
+      this.paginationElement = null;
+    }
+  }
+}
+
+/**
+ * DOM manipulation utilities for Simple Swipe Card
+ */
+
+
+/**
+ * Sets up a ResizeObserver to handle container resizing
+ * @param {HTMLElement} cardContainer - Container element to observe
+ * @param {Function} callback - Callback function when resize occurs
+ * @returns {Object} Observer object with cleanup function
+ */
+function setupResizeObserver(cardContainer, callback) {
+  if (!cardContainer) return null;
+
+  logDebug("INIT", "Setting up resize observer.");
+
+  let resizeTimeout = null;
+
+  const observer = new ResizeObserver((entries) => {
+    window.requestAnimationFrame(() => {
+      if (!cardContainer.isConnected) return;
+
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        const newHeight = entry.contentRect.height;
+
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+
+        resizeTimeout = setTimeout(() => {
+          if (
+            cardContainer &&
+            ((newWidth > 0 && newWidth !== entry.previousWidth) ||
+              (newHeight > 0 && newHeight !== entry.previousHeight))
+          ) {
+            logDebug("INIT", "Resize detected, recalculating layout.", {
+              oldWidth: entry.previousWidth,
+              newWidth,
+              oldHeight: entry.previousHeight,
+              newHeight,
+            });
+            callback(newWidth, newHeight);
+          }
+        }, 50);
+
+        // Store previous dimensions for comparison
+        entry.previousWidth = newWidth;
+        entry.previousHeight = newHeight;
+      }
+    });
+  });
+
+  observer.observe(cardContainer);
+
+  return {
+    observer,
+    cleanup: () => {
+      logDebug("INIT", "Removing resize observer.");
+      if (observer) {
+        observer.disconnect();
+      }
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = null;
+      }
+    },
+  };
+}
+
+/**
+ * Creates the preview container for empty state
+ * @param {string} swipeDirection - The swipe direction (horizontal/vertical)
+ * @param {Function} editClickHandler - Handler for edit button click
+ * @returns {HTMLElement} The preview container element
+ */
+function createPreviewContainer(swipeDirection, editClickHandler) {
+  const previewContainer = document.createElement("div");
+  previewContainer.className = "preview-container";
+
+  const iconContainer = document.createElement("div");
+  iconContainer.className = "preview-icon-container";
+  const icon = document.createElement("ha-icon");
+  // Use appropriate icon based on swipe direction
+  icon.icon =
+    swipeDirection === "horizontal"
+      ? "mdi:gesture-swipe-horizontal"
+      : "mdi:gesture-swipe-vertical";
+  iconContainer.appendChild(icon);
+
+  const textContainer = document.createElement("div");
+  textContainer.className = "preview-text-container";
+  const title = document.createElement("div");
+  title.className = "preview-title";
+  title.textContent = "Simple Swipe Card";
+  const description = document.createElement("div");
+  description.className = "preview-description";
+  description.textContent = `Create a swipeable container with multiple cards. Swipe ${swipeDirection === "horizontal" ? "horizontally" : "vertically"} between cards. Open the editor to add your first card.`;
+  textContainer.appendChild(title);
+  textContainer.appendChild(description);
+
+  const actionsContainer = document.createElement("div");
+  actionsContainer.className = "preview-actions";
+  const addButton = document.createElement("ha-button");
+  addButton.raised = true;
+  addButton.textContent = "EDIT CARD";
+  addButton.setAttribute("aria-label", "Edit Card");
+  addButton.addEventListener("click", editClickHandler);
+  actionsContainer.appendChild(addButton);
+
+  previewContainer.appendChild(iconContainer);
+  previewContainer.appendChild(textContainer);
+  previewContainer.appendChild(actionsContainer);
+
+  return previewContainer;
+}
+
+/**
+ * Creates a slide element
+ * @returns {HTMLElement} The slide element
+ */
+function createSlide() {
+  const slideDiv = document.createElement("div");
+  slideDiv.className = "slide";
+  return slideDiv;
+}
+
+/**
+ * Applies border radius to slides to match container
+ * @param {Array} cards - Array of card data objects
+ * @param {HTMLElement} cardContainer - The card container element
+ */
+function applyBorderRadiusToSlides(cards, cardContainer) {
+  const cardBorderRadius = getComputedStyle(cardContainer).borderRadius;
+  cards.forEach((cardData) => {
+    if (cardData && cardData.slide) {
+      cardData.slide.style.borderRadius = cardBorderRadius;
+    }
+  });
+}
+
+/**
+ * Removes all margins from card slides to maintain transparency
+ * @param {Array} cards - Array of card data objects
+ */
+function removeCardMargins(cards) {
+  cards.forEach((cardData) => {
+    if (cardData && cardData.slide) {
+      cardData.slide.style.marginRight = "0px";
+      cardData.slide.style.marginLeft = "0px";
+      cardData.slide.style.marginTop = "0px";
+      cardData.slide.style.marginBottom = "0px";
+    }
+  });
+}
+
+/**
+ * Sets up card-mod styles application
+ * @param {Object} cardModConfig - Card-mod configuration
+ * @param {ShadowRoot} shadowRoot - Shadow root to apply styles to
+ * @param {HTMLElement} host - Host element
+ * @param {HTMLElement} sliderElement - Slider element
+ * @param {HTMLElement} paginationElement - Pagination element
+ */
+function applyCardModStyles(
+  cardModConfig,
+  shadowRoot,
+  host,
+  sliderElement,
+  paginationElement,
+) {
+  if (!cardModConfig || !shadowRoot) {
+    logDebug(
+      "CARD_MOD",
+      "No card-mod config or shadow root, skipping style application",
+    );
+    return;
+  }
+
+  // Handle card-mod style string
+  if (cardModConfig.style) {
+    logDebug("CARD_MOD", "Applying card-mod styles");
+
+    // Create a style element for card-mod styles
+    const cardModStyle = document.createElement("style");
+    cardModStyle.setAttribute("id", "card-mod-styles");
+
+    // Add the style content
+    cardModStyle.textContent = cardModConfig.style;
+
+    // Remove any existing card-mod styles first
+    const existingStyle = shadowRoot.querySelector("#card-mod-styles");
+    if (existingStyle) {
+      shadowRoot.removeChild(existingStyle);
+    }
+
+    // Add the new style element
+    shadowRoot.appendChild(cardModStyle);
+
+    // Forward CSS variables from host to shadow root for pagination styling
+    if (host) {
+      logDebug("CARD_MOD", "Forwarding CSS variables from host to shadow DOM");
+      const hostStyles = window.getComputedStyle(host);
+      const shadowElements = [
+        shadowRoot.querySelector(".card-container"),
+        sliderElement,
+        paginationElement,
+      ].filter(Boolean);
+
+      // List of specific variables we want to forward
+      const variablesToForward = [
+        "--simple-swipe-card-pagination-dot-inactive-color",
+        "--simple-swipe-card-pagination-dot-active-color",
+        "--simple-swipe-card-pagination-dot-inactive-opacity",
+        "--simple-swipe-card-pagination-dot-active-opacity",
+        "--simple-swipe-card-pagination-dot-size",
+        "--simple-swipe-card-pagination-dot-active-size",
+        "--simple-swipe-card-pagination-border-radius",
+        "--simple-swipe-card-pagination-dot-spacing",
+        "--simple-swipe-card-pagination-background",
+        "--simple-swipe-card-pagination-padding",
+        "--simple-swipe-card-pagination-bottom",
+        "--simple-swipe-card-pagination-right",
+        "--simple-swipe-card-transition-speed",
+        "--simple-swipe-card-transition-easing",
+      ];
+
+      shadowElements.forEach((element) => {
+        if (!element) return;
+
+        // Forward all matching CSS variables
+        variablesToForward.forEach((variable) => {
+          const value = hostStyles.getPropertyValue(variable);
+          if (value) {
+            logDebug("CARD_MOD", `Forwarding ${variable}: ${value}`);
+            element.style.setProperty(variable, value);
+          }
+        });
+      });
+    }
+  }
+}
+
+/**
+ * Sets up a MutationObserver for card-mod style changes
+ * @param {ShadowRoot} shadowRoot - Shadow root
+ * @param {Function} reapplyCallback - Callback to reapply styles
+ * @returns {MutationObserver} The observer instance
+ */
+function setupCardModObserver(shadowRoot, reapplyCallback) {
+  // Create observer to watch for style changes on the host element
+  const observer = new MutationObserver((mutations) => {
+    const styleChanged = mutations.some(
+      (mutation) =>
+        mutation.type === "attributes" &&
+        (mutation.attributeName === "style" ||
+          mutation.attributeName.includes("style")),
+    );
+
+    if (styleChanged) {
+      logDebug(
+        "CARD_MOD",
+        "Host style attribute changed, reapplying card-mod styles",
+      );
+      reapplyCallback();
+    }
+  });
+
+  if (shadowRoot && shadowRoot.host) {
+    observer.observe(shadowRoot.host, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+    logDebug("CARD_MOD", "Set up mutation observer for style changes");
+  }
+
+  return observer;
+}
+
+/**
+ * CSS styles for Simple Swipe Card
+ */
+
+
+/**
+ * Gets the complete CSS styles for the Simple Swipe Card
+ * @returns {string} CSS styles
+ */
+function getStyles() {
+  return `
+     :host {
+        display: block;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        border-radius: var(--ha-card-border-radius, 12px);
+        background: transparent;
+     }
+
+     /* --- START PREVIEW STYLES --- */
+     .preview-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 16px;
+        box-sizing: border-box;
+        height: 100%;
+        background: var(--ha-card-background, var(--card-background-color, white));
+        border-radius: var(--ha-card-border-radius, 12px);
+        border: none; /* Ensure no border */
+     }
+     .preview-icon-container {
+        margin-bottom: 16px;
+     }
+     .preview-icon-container ha-icon {
+        color: var(--primary-color, #03a9f4); /* Use primary color for consistency */
+        font-size: 48px; /* Match Actions Card */
+        width: 48px;
+        height: 48px;
+     }
+     .preview-text-container {
+        margin-bottom: 16px;
+     }
+     .preview-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: var(--primary-text-color);
+     }
+     .preview-description {
+        font-size: 14px;
+        color: var(--secondary-text-color);
+        max-width: 300px;
+        line-height: 1.4;
+        margin: 0 auto; /* Center description text block */
+     }
+     .preview-actions ha-button {
+       /* Rely on default raised button styles for consistency */
+     }
+     /* --- END PREVIEW STYLES --- */
+
+     .card-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: inherit;
+        background: transparent;
+     }
+     .slider {
+        position: relative;
+        display: flex;
+        height: 100%;
+        transition: transform var(--simple-swipe-card-transition-speed, 0.3s) var(--simple-swipe-card-transition-easing, ease-out);
+        will-change: transform;
+        background: transparent;
+     }
+     
+     /* Horizontal slider (default) */
+     .slider[data-swipe-direction="horizontal"] {
+        flex-direction: row;
+     }
+     
+     /* Vertical slider */
+     .slider[data-swipe-direction="vertical"] {
+        flex-direction: column;
+     }
+     
+     .slide {
+        flex: 0 0 100%;
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+        min-height: 100%;
+        box-sizing: border-box;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: transparent;
+     }
+
+    .slide.carousel-mode {
+      flex: 0 0 auto; /* Don't grow/shrink, use calculated width */
+      width: var(--carousel-card-width); /* Will be set dynamically */
+      min-width: var(--carousel-card-width);
+    }
+
+    /* Carousel container adjustments */
+    .slider[data-view-mode="carousel"] {
+      /* Allow overflow to show partial cards */
+      overflow: visible;
+    }
+
+    .card-container[data-view-mode="carousel"] {
+      /* Ensure container can handle overflow */
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pagination {
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        z-index: 1;
+        background-color: var(--simple-swipe-card-pagination-background, transparent);
+        pointer-events: auto;
+        transition: opacity 0.2s ease-in-out;
+        padding: var(--simple-swipe-card-pagination-padding, 4px 8px);
+        border-radius: 12px;
+        /* Prevent container from sizing to content during animations */
+        box-sizing: border-box;
+    }
+
+    /* Horizontal pagination (bottom) */
+    .pagination.horizontal {
+        bottom: var(--simple-swipe-card-pagination-bottom, 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        align-items: center;
+        /* Remove any height properties - will be set by JavaScript */
+    }
+
+    /* Vertical pagination (right) */
+    .pagination.vertical {
+        right: var(--simple-swipe-card-pagination-right, 8px);
+        top: 50%;
+        transform: translateY(-50%);
+        flex-direction: column;
+        align-items: center;
+        /* Remove any width properties - will be set by JavaScript */
+    }
+    
+     .pagination.hide {
+        opacity: 0;
+        pointer-events: none;
+     }
+
+    .pagination-dot {
+        width: var(--simple-swipe-card-pagination-dot-size, 8px);
+        height: var(--simple-swipe-card-pagination-dot-size, 8px);
+        border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);
+        background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
+        cursor: pointer;
+        opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);
+        
+        /* Border support */
+        border-width: var(--simple-swipe-card-pagination-dot-border-width, 0px);
+        border-color: var(--simple-swipe-card-pagination-dot-border-color, transparent);
+        border-style: var(--simple-swipe-card-pagination-dot-border-style, solid);
+        
+        /* Box shadow support */
+        box-shadow: var(--simple-swipe-card-pagination-dot-box-shadow, none);
+        
+        /* Updated transition to include new animatable properties */
+        transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    
+    /* Hover effects */
+    .pagination-dot:hover {
+        background-color: var(--simple-swipe-card-pagination-dot-hover-color, var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6)));
+        opacity: var(--simple-swipe-card-pagination-dot-hover-opacity, var(--simple-swipe-card-pagination-dot-inactive-opacity, 1));
+        border-color: var(--simple-swipe-card-pagination-dot-hover-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));
+        transform: var(--simple-swipe-card-pagination-dot-hover-transform, none);
+        box-shadow: var(--simple-swipe-card-pagination-dot-hover-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));
+    }    
+
+    /* Active hover state */
+    .pagination-dot.active:hover {
+        background-color: var(--simple-swipe-card-pagination-dot-active-hover-color, var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4)));
+        opacity: var(--simple-swipe-card-pagination-dot-active-hover-opacity, var(--simple-swipe-card-pagination-dot-active-opacity, 1));
+        border-color: var(--simple-swipe-card-pagination-dot-active-hover-border-color, var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent)));
+        transform: var(--simple-swipe-card-pagination-dot-active-hover-transform, var(--simple-swipe-card-pagination-dot-hover-transform, none));
+        box-shadow: var(--simple-swipe-card-pagination-dot-active-hover-box-shadow, var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none)));
+    }    
+
+    /* Spacing for horizontal pagination dots */
+    .pagination.horizontal .pagination-dot {
+        margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);
+    }
+    
+    /* Spacing for vertical pagination dots */
+    .pagination.vertical .pagination-dot {
+        margin: var(--simple-swipe-card-pagination-dot-spacing, 4px) 0;
+    }
+    
+    .pagination-dot.active {
+        background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
+        width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
+        height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
+        opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);
+        
+        /* Separate active border radius */
+        border-radius: var(--simple-swipe-card-pagination-dot-active-border-radius, var(--simple-swipe-card-pagination-border-radius, 50%));
+        
+        /* Active border support */
+        border-width: var(--simple-swipe-card-pagination-dot-active-border-width, var(--simple-swipe-card-pagination-dot-border-width, 0px));
+        border-color: var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));
+        border-style: var(--simple-swipe-card-pagination-dot-active-border-style, var(--simple-swipe-card-pagination-dot-border-style, solid));
+        
+        /* Active box shadow support */
+        box-shadow: var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));
+    }
+
+     ha-alert {
+        display: block;
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 0;
+        border: none;
+        background-color: transparent;
+     }
+     .slide > *:first-child {
+        flex-grow: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+     }
+     .slide > * > ha-card,
+     .slide > * > .card-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        border: none !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+     }
+   `;
+}
+
+/**
+ * Gets the editor CSS styles
+ * @returns {CSSResult} LitElement CSS styles
+ */
+const getEditorStyles = () => i$3`
   .card-config {
     /* Let HA handle padding */
   }
@@ -657,266 +3062,5326 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
     align-items: center;
     justify-content: center;
   }
-`;function St(t,i,e={}){try{((t,i,e={})=>{const s=new CustomEvent(i,{detail:e,bubbles:!0,composed:!0});t.dispatchEvent(s)})(t,i,e)}catch(s){h("ERROR","Failed to fire HA event:",i,s);const n=new CustomEvent(i,{detail:e,bubbles:!0,composed:!0});t.dispatchEvent(n)}}function Ct(t,i="Map"){return window[t]||(window[t]="Set"===i?new Set:new Map),window[t]}class Tt{constructor(t){this.card=t}async build(){if(this.card.building)return void h("INIT","Build already in progress, skipping.");if(!this.card.Qt||!this.card.Qt.cards||!this.card.isConnected)return void h("INIT","Build skipped (no config/cards or not connected).");this.card.building=!0,h("INIT","Starting build..."),this.card.resetAfter?.preserveState(),this.card.cards=[],this.card.currentIndex=0,this.card.virtualIndex=0,this.card.realIndex=0,this.card.resizeObserver?.cleanup(),this.card.swipeGestures?.removeGestures(),this.card.autoSwipe?.stop(),this.card.resetAfter?.stopTimer(),this.card.shadowRoot&&(this.card.shadowRoot.innerHTML="");const t=this.card.shadowRoot,i=await ft();if(!i)return console.error("SimpleSwipeCard: Card helpers not loaded."),t.innerHTML='<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>',this.card.building=!1,void(this.card.initialized=!1);const e=document.createElement("style");if(e.textContent='\n     :host {\n        display: block;\n        overflow: hidden;\n        width: 100%;\n        height: 100%;\n        position: relative;\n        border-radius: var(--ha-card-border-radius, 12px);\n        background: transparent;\n     }\n\n     /* --- START PREVIEW STYLES --- */\n     .preview-container {\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        text-align: center;\n        padding: 16px;\n        box-sizing: border-box;\n        height: 100%;\n        background: var(--ha-card-background, var(--card-background-color, white));\n        border-radius: var(--ha-card-border-radius, 12px);\n        border: none; /* Ensure no border */\n     }\n     .preview-icon-container {\n        margin-bottom: 16px;\n     }\n     .preview-icon-container ha-icon {\n        color: var(--primary-color, #03a9f4); /* Use primary color for consistency */\n        font-size: 48px; /* Match Actions Card */\n        width: 48px;\n        height: 48px;\n     }\n     .preview-text-container {\n        margin-bottom: 16px;\n     }\n     .preview-title {\n        font-size: 18px;\n        font-weight: bold;\n        margin-bottom: 8px;\n        color: var(--primary-text-color);\n     }\n     .preview-description {\n        font-size: 14px;\n        color: var(--secondary-text-color);\n        max-width: 300px;\n        line-height: 1.4;\n        margin: 0 auto; /* Center description text block */\n     }\n     .preview-actions ha-button {\n       /* Rely on default raised button styles for consistency */\n     }\n     /* --- END PREVIEW STYLES --- */\n\n     .card-container {\n        position: relative;\n        width: 100%;\n        height: 100%;\n        overflow: hidden;\n        border-radius: inherit;\n        background: transparent;\n     }\n     .slider {\n        position: relative;\n        display: flex;\n        height: 100%;\n        transition: transform var(--simple-swipe-card-transition-speed, 0.3s) var(--simple-swipe-card-transition-easing, ease-out);\n        will-change: transform;\n        background: transparent;\n     }\n     \n     /* Horizontal slider (default) */\n     .slider[data-swipe-direction="horizontal"] {\n        flex-direction: row;\n     }\n     \n     /* Vertical slider */\n     .slider[data-swipe-direction="vertical"] {\n        flex-direction: column;\n     }\n     \n     .slide {\n        flex: 0 0 100%;\n        width: 100%;\n        min-width: 100%;\n        height: 100%;\n        min-height: 100%;\n        box-sizing: border-box;\n        position: relative;\n        display: flex;\n        flex-direction: column;\n        overflow: hidden;\n        background: transparent;\n     }\n\n    .slide.carousel-mode {\n      flex: 0 0 auto; /* Don\'t grow/shrink, use calculated width */\n      width: var(--carousel-card-width); /* Will be set dynamically */\n      min-width: var(--carousel-card-width);\n    }\n\n    /* Carousel container adjustments */\n    .slider[data-view-mode="carousel"] {\n      /* Allow overflow to show partial cards */\n      overflow: visible;\n    }\n\n    .card-container[data-view-mode="carousel"] {\n      /* Ensure container can handle overflow */\n      overflow: hidden;\n      position: relative;\n    }\n\n    .pagination {\n        position: absolute;\n        display: flex;\n        justify-content: center;\n        z-index: 1;\n        background-color: var(--simple-swipe-card-pagination-background, transparent);\n        pointer-events: auto;\n        transition: opacity 0.2s ease-in-out;\n        padding: var(--simple-swipe-card-pagination-padding, 4px 8px);\n        border-radius: 12px;\n        /* Prevent container from sizing to content during animations */\n        box-sizing: border-box;\n    }\n\n    /* Horizontal pagination (bottom) */\n    .pagination.horizontal {\n        bottom: var(--simple-swipe-card-pagination-bottom, 8px);\n        left: 50%;\n        transform: translateX(-50%);\n        flex-direction: row;\n        align-items: center;\n        /* Remove any height properties - will be set by JavaScript */\n    }\n\n    /* Vertical pagination (right) */\n    .pagination.vertical {\n        right: var(--simple-swipe-card-pagination-right, 8px);\n        top: 50%;\n        transform: translateY(-50%);\n        flex-direction: column;\n        align-items: center;\n        /* Remove any width properties - will be set by JavaScript */\n    }\n    \n     .pagination.hide {\n        opacity: 0;\n        pointer-events: none;\n     }\n\n    .pagination-dot {\n        width: var(--simple-swipe-card-pagination-dot-size, 8px);\n        height: var(--simple-swipe-card-pagination-dot-size, 8px);\n        border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);\n        background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));\n        cursor: pointer;\n        opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);\n        \n        /* Border support */\n        border-width: var(--simple-swipe-card-pagination-dot-border-width, 0px);\n        border-color: var(--simple-swipe-card-pagination-dot-border-color, transparent);\n        border-style: var(--simple-swipe-card-pagination-dot-border-style, solid);\n        \n        /* Box shadow support */\n        box-shadow: var(--simple-swipe-card-pagination-dot-box-shadow, none);\n        \n        /* Updated transition to include new animatable properties */\n        transition: background-color 0.2s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;\n    }\n    \n    /* Hover effects */\n    .pagination-dot:hover {\n        background-color: var(--simple-swipe-card-pagination-dot-hover-color, var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6)));\n        opacity: var(--simple-swipe-card-pagination-dot-hover-opacity, var(--simple-swipe-card-pagination-dot-inactive-opacity, 1));\n        border-color: var(--simple-swipe-card-pagination-dot-hover-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));\n        transform: var(--simple-swipe-card-pagination-dot-hover-transform, none);\n        box-shadow: var(--simple-swipe-card-pagination-dot-hover-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));\n    }    \n\n    /* Active hover state */\n    .pagination-dot.active:hover {\n        background-color: var(--simple-swipe-card-pagination-dot-active-hover-color, var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4)));\n        opacity: var(--simple-swipe-card-pagination-dot-active-hover-opacity, var(--simple-swipe-card-pagination-dot-active-opacity, 1));\n        border-color: var(--simple-swipe-card-pagination-dot-active-hover-border-color, var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent)));\n        transform: var(--simple-swipe-card-pagination-dot-active-hover-transform, var(--simple-swipe-card-pagination-dot-hover-transform, none));\n        box-shadow: var(--simple-swipe-card-pagination-dot-active-hover-box-shadow, var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none)));\n    }    \n\n    /* Spacing for horizontal pagination dots */\n    .pagination.horizontal .pagination-dot {\n        margin: 0 var(--simple-swipe-card-pagination-dot-spacing, 4px);\n    }\n    \n    /* Spacing for vertical pagination dots */\n    .pagination.vertical .pagination-dot {\n        margin: var(--simple-swipe-card-pagination-dot-spacing, 4px) 0;\n    }\n    \n    .pagination-dot.active {\n        background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));\n        width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));\n        height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));\n        opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);\n        \n        /* Separate active border radius */\n        border-radius: var(--simple-swipe-card-pagination-dot-active-border-radius, var(--simple-swipe-card-pagination-border-radius, 50%));\n        \n        /* Active border support */\n        border-width: var(--simple-swipe-card-pagination-dot-active-border-width, var(--simple-swipe-card-pagination-dot-border-width, 0px));\n        border-color: var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));\n        border-style: var(--simple-swipe-card-pagination-dot-active-border-style, var(--simple-swipe-card-pagination-dot-border-style, solid));\n        \n        /* Active box shadow support */\n        box-shadow: var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));\n    }\n\n     ha-alert {\n        display: block;\n        margin: 0;\n        width: 100%;\n        box-sizing: border-box;\n        border-radius: 0;\n        border: none;\n        background-color: transparent;\n     }\n     .slide > *:first-child {\n        flex-grow: 1;\n        width: 100%;\n        display: flex;\n        flex-direction: column;\n        min-height: 0;\n     }\n     .slide > * > ha-card,\n     .slide > * > .card-content {\n        margin: 0 !important;\n        padding: 0 !important;\n        box-shadow: none !important;\n        border-radius: 0 !important;\n        border: none !important;\n        height: 100%;\n        display: flex;\n        flex-direction: column;\n     }\n   ',t.appendChild(e),this.card.cardContainer=document.createElement("div"),this.card.cardContainer.className="card-container",this.card.sliderElement=document.createElement("div"),this.card.sliderElement.className="slider",this.card.sliderElement.setAttribute("data-swipe-direction",this.card.Zt),this.card.cardContainer.appendChild(this.card.sliderElement),t.appendChild(this.card.cardContainer),this.card.wi(),0===this.card.Qt.cards.length){h("INIT","Building preview state.");const i=function(t,i){const e=document.createElement("div");e.className="preview-container";const s=document.createElement("div");s.className="preview-icon-container";const n=document.createElement("ha-icon");n.icon="horizontal"===t?"mdi:gesture-swipe-horizontal":"mdi:gesture-swipe-vertical",s.appendChild(n);const o=document.createElement("div");o.className="preview-text-container";const r=document.createElement("div");r.className="preview-title",r.textContent="Simple Swipe Card";const a=document.createElement("div");a.className="preview-description",a.textContent=`Create a swipeable container with multiple cards. Swipe ${"horizontal"===t?"horizontally":"vertically"} between cards. Open the editor to add your first card.`,o.appendChild(r),o.appendChild(a);const d=document.createElement("div");d.className="preview-actions";const h=document.createElement("ha-button");return h.raised=!0,h.textContent="EDIT CARD",h.setAttribute("aria-label","Edit Card"),h.addEventListener("click",i),d.appendChild(h),e.appendChild(s),e.appendChild(o),e.appendChild(d),e}(this.card.Zt,t=>function(t,i){t.stopPropagation(),h("EDITOR","Edit button clicked, firing show-edit-card event"),St(i,"show-edit-card",{element:i})}(t,this.card));return t.innerHTML="",t.appendChild(e),t.appendChild(i),this.card.initialized=!0,void(this.card.building=!1)}if(0===this.card.visibleCardIndices.length)return h("INIT","No visible cards, hiding entire card."),this.card.style.display="none",t.innerHTML="",this.card.initialized=!0,void(this.card.building=!1);this.card.style.display="block",this.card.loopMode.initialize();const s=this.card.loopMode.prepareCardsForLoading(this.card.visibleCardIndices,this.card.Qt.cards);h("INIT","Building cards:",{totalVisible:this.card.visibleCardIndices.length,totalToLoad:s.length,infiniteMode:this.card.isInfiniteMode});const n=s.map(t=>this.createCard(t.config,t.visibleIndex,t.originalIndex,i,t.isDuplicate));await Promise.allSettled(n),this.card.cards.filter(Boolean).sort((t,i)=>t.visibleIndex-i.visibleIndex).forEach(t=>{t.slide&&(t.slide.setAttribute("data-index",t.originalIndex),t.slide.setAttribute("data-visible-index",t.visibleIndex),t.isDuplicate&&t.slide.setAttribute("data-duplicate","true"),t.config&&t.config.type&&t.slide.setAttribute("data-card-type",t.config.type),this.card.sliderElement.appendChild(t.slide))}),this.card.pagination?.create(),this.card.fi(),requestAnimationFrame(()=>this.finishBuildLayout()),this.card.initialized=!0,this.card.building=!1,h("INIT","Build finished - all cards loaded."),this.card.resetAfter?.restoreState()}preloadAdjacentCards(){h("INIT","preloadAdjacentCards called but all cards already loaded")}async createCard(t,i,e,s,n=!1){const o=function(){const t=document.createElement("div");return t.className="slide",t}();let r;const a={visibleIndex:i,originalIndex:e,slide:o,config:JSON.parse(JSON.stringify(t)),error:!1,isDuplicate:n};try{r=await s.createCardElement(t),this.card.bi&&(r.hass=this.card.bi),a.element=r,"picture-elements"===t.type&&(r.setAttribute("data-swipe-card-picture-elements","true"),o.setAttribute("data-has-picture-elements","true")),requestAnimationFrame(()=>{try{if("todo-list"===t.type){const t=r.shadowRoot?.querySelector("ha-textfield"),i=t?.shadowRoot?.querySelector("input");i&&(i.enterKeyHint="done")}}catch(t){console.warn("Error applying post-creation logic:",t)}}),o.appendChild(r)}catch(n){h("ERROR",`Error creating card ${i} (original ${e}):`,t,n),a.error=!0;const r=await s.createErrorCardElement({type:"error",error:`Failed to create card: ${n.message}`,origConfig:t},this.card.bi);a.element=r,o.appendChild(r)}this.card.cards.push(a)}xi(t,i){h("VISIBILITY",`Conditional card ${t} visibility changed to: ${i}`);const e=this.card.cards.find(i=>i.originalIndex===t);e&&(e.conditionallyVisible=i),this.card.Ei()}finishBuildLayout(){if(!this.card.cardContainer||!this.card.isConnected||this.card.building)return void h("INIT","_finishBuildLayout skipped",{container:!!this.card.cardContainer,connected:this.card.isConnected,building:this.card.building});h("INIT","Finishing build layout...");const t=this.card.cardContainer.offsetWidth,i=this.card.cardContainer.offsetHeight;if(t<=0||i<=0)return null===this.card.offsetParent?void h("INIT","Layout calculation skipped, element is hidden."):(h("INIT","Container dimensions are 0, retrying layout..."),this.card.yi=(this.card.yi||0)+1,void(this.card.yi<5?setTimeout(()=>requestAnimationFrame(()=>this.finishBuildLayout()),100):(console.error("SimpleSwipeCard: Failed to get container dimensions."),this.card.yi=0)));this.card.yi=0,this.card.slideWidth=t,this.card.slideHeight=i;const e=this.card.Qt.view_mode||"single";"carousel"===e&&this.Ii(t,i);const s=this.card.visibleCardIndices.length;this.card.currentIndex=Math.max(0,Math.min(this.card.currentIndex,s-1)),function(t,i){const e=getComputedStyle(i).borderRadius;t.forEach(t=>{t&&t.slide&&(t.slide.style.borderRadius=e)})}(this.card.cards,this.card.cardContainer),this.card.updateSlider(!1),this.card.Si(),s>1?this.card.swipeGestures?.addGestures():this.card.swipeGestures?.removeGestures(),h("INIT","Layout finished, slideWidth:",this.card.slideWidth,"slideHeight:",this.card.slideHeight,"currentIndex:",this.card.currentIndex,"visible cards:",s,"view mode:",e),this.card.autoSwipe?.manage(),this.card.resetAfter?.manage(),this.card.stateSynchronization?.manage()}Ii(t){let i;const e=Math.max(0,parseInt(this.card.Qt.card_spacing))||0;if(void 0!==this.card.Qt.cards_visible)i=this.card.Qt.cards_visible,h("INIT","Carousel layout using legacy cards_visible approach:",i);else{const s=this.card.Qt.card_min_width||200,n=(t+e)/(s+e);i=Math.max(1.1,Math.round(10*n)/10),h("INIT","Carousel layout using responsive approach:",{minWidth:s,containerWidth:t,cardSpacing:e,rawCardsVisible:n.toFixed(2),finalCardsVisible:i})}const s=(i-1)*e,n=(t-s)/i;h("INIT","Carousel layout setup:",{containerWidth:t,cardsVisible:i.toFixed(2),cardSpacing:e,totalSpacing:s,cardWidth:n.toFixed(2)}),this.card.style.setProperty("--carousel-card-width",`${n}px`),this.card.sliderElement.setAttribute("data-view-mode","carousel"),this.card.cardContainer.setAttribute("data-view-mode","carousel"),this.card.cards.forEach(t=>{t&&t.slide&&t.slide.classList.add("carousel-mode")})}}class $t{constructor(t){this.card=t,this.Ci=null,this.Ti=null,this.$i=null,this._i=!1,this.Ni=null,this.ki=this.Di.bind(this)}manage(){this.card.initialized&&this.card.isConnected&&(this.stop(),this.card.Qt.state_entity&&this.card.bi?(this.Ci=this.card.Qt.state_entity,this.Oi()?(h("STATE","State synchronization enabled for entity:",this.Ci),this.Ri()):(h("STATE","Invalid or missing entity:",this.Ci),this.Ci=null)):h("STATE","State synchronization disabled",{hasEntity:!!this.card.Qt.state_entity,hasHass:!!this.card.bi}))}stop(){this.Ni&&(clearTimeout(this.Ni),this.Ni=null),this.Ci=null,this.Ti=null,this.$i=null,this._i=!1}onCardNavigate(t){if(!this.Ci||!this.card.bi||this._i)return;const i=this.Mi(t);if(null===i)return;const e=this.card.bi.states[this.Ci];if(e&&e.state===i)h("STATE","Entity already at correct state:",i);else{h("STATE",`Updating entity ${this.Ci} to:`,i),this._i=!0;try{"input_select"===this.Ti?this.card.bi.callService("input_select","select_option",{entity_id:this.Ci,option:i}):"input_number"===this.Ti&&this.card.bi.callService("input_number","set_value",{entity_id:this.Ci,value:i}),this.$i=i,setTimeout(()=>{this._i=!1},500)}catch(t){h("ERROR","Failed to update entity:",t),this._i=!1}}}Oi(){if(!this.card.bi||!this.Ci)return!1;const t=this.card.bi.states[this.Ci];if(!t)return h("STATE","Entity not found:",this.Ci),!1;if(this.Ci.startsWith("input_select.")){if(this.Ti="input_select",!t.attributes.options||!Array.isArray(t.attributes.options))return h("STATE","input_select entity has no options:",this.Ci),!1}else{if(!this.Ci.startsWith("input_number."))return h("STATE","Entity is not input_select or input_number:",this.Ci),!1;this.Ti="input_number"}return!0}Ri(){if(!this.card.bi||!this.Ci)return;const t=this.card.bi.states[this.Ci];if(!t)return;this.$i=t.state;const i=this.Ai(t.state);null!==i&&i!==this.card.currentIndex&&(h("STATE",`Initial sync: setting card to index ${i} from entity state:`,t.state),this.card.Qt.enable_auto_swipe&&this.card.autoSwipe?.pause(2e3),this.card.goToSlide(i))}Di(){if(!this.card.bi||!this.Ci||this._i)return;const t=this.card.bi.states[this.Ci];if(!t)return;const i=t.state;if(i===this.$i)return;h("STATE",`Entity ${this.Ci} changed from "${this.$i}" to "${i}"`),this.$i=i;const e=this.Ai(i);null!==e&&e!==this.card.currentIndex&&(h("STATE",`Navigating to card index ${e} from entity change`),this.card.Qt.enable_auto_swipe&&this.card.autoSwipe?.pause(5e3),this.card.goToSlide(e))}Ai(t){if("input_select"===this.Ti){const i=this.card.bi.states[this.Ci];if(!i||!i.attributes.options)return null;const e=i.attributes.options,s=e.indexOf(t);return-1===s?(h("STATE",`Option "${t}" not found in input_select options:`,e),null):s>=this.card.visibleCardIndices.length?(h("STATE",`Option index ${s} exceeds visible cards count ${this.card.visibleCardIndices.length}`),null):s}if("input_number"===this.Ti){const i=parseInt(t);if(isNaN(i))return null;const e=i-1;return e<0||e>=this.card.visibleCardIndices.length?(h("STATE",`Index ${e} is outside visible cards range [0, ${this.card.visibleCardIndices.length-1}]`),null):e}return null}Mi(t){if(t<0||t>=this.card.visibleCardIndices.length)return null;if("input_select"===this.Ti){const i=this.card.bi.states[this.Ci];if(!i||!i.attributes.options)return null;const e=i.attributes.options;return t>=e.length?(h("STATE",`Card index ${t} exceeds input_select options count ${e.length}`),null):e[t]}return"input_number"===this.Ti?t+1:null}onHassChange(t,i){if(!this.Ci||!i)return;const e=t?.states[this.Ci],s=i.states[this.Ci];if(!s)return h("STATE","Configured entity no longer exists:",this.Ci),void this.stop();e&&e.state===s.state||(this.Ni&&clearTimeout(this.Ni),this.Ni=setTimeout(()=>{this.Di(),this.Ni=null},100))}}class _t{constructor(t){this.card=t}calculateTransform(t){if(!this.card.cards||0===this.card.cards.length)return 0;let i;const e=this.card.cardContainer.offsetWidth,s=Math.max(0,parseInt(this.card.Qt.card_spacing))||0;if(void 0!==this.card.Qt.cards_visible)i=this.card.Qt.cards_visible,h("SWIPE","Using legacy cards_visible approach:",i);else{const t=this.card.Qt.card_min_width||200,n=(e+s)/(t+s);i=Math.max(1.1,Math.round(10*n)/10),h("SWIPE","Using responsive approach:",{minWidth:t,containerWidth:e,cardSpacing:s,rawCardsVisible:n.toFixed(2),finalCardsVisible:i})}const n=this.card.visibleCardIndices.length,o=this.card.Qt.loop_mode||"none";if(n<=Math.floor(i))return h("SWIPE","Insufficient cards for carousel transform, staying at position 0"),0;let r,a;if("infinite"===o){r=t+this.card.loopMode.getDuplicateCount(),a="infinite",h("SWIPE","Carousel infinite mode: logical index",t,"-> DOM position",r)}else a=Math.max(0,n-1),r=Math.min(t,a);const d=(e-(i-1)*s)/i,c=d+s,l=r*c;return h("SWIPE","Carousel transform calculation:",{targetIndex:t,domPosition:r,totalCards:n,maxScrollableIndex:a,cardsVisible:i.toFixed(2),cardWidth:d.toFixed(2),cardSpacing:s,moveDistance:c.toFixed(2),transform:l.toFixed(2),loopMode:o}),l}updateSliderPosition(t,i=!0){if(!this.card.sliderElement)return;const e=this.calculateTransform(t);this.card.sliderElement.style.transition=this.card.Kt(i),this.card.sliderElement.style.transform=`translateX(-${e}px)`,h("SWIPE",`Carousel slider updated to index ${t}, transform: -${e.toFixed(2)}px`)}handleLoopback(t){return this.card.loopMode.handleNavigation(t,!0)}Li(t){const i=this.card.visibleCardIndices.length;return t<0?i-1:t>=i?0:t}}class Nt{constructor(t){this.card=t,this.isInfiniteMode=!1,this.virtualIndex=0,this.realIndex=0,this.totalRealCards=0}getMode(){return this.card.Qt.loop_mode||"none"}isInfinite(){return"infinite"===this.getMode()&&this.card.visibleCardIndices.length>1}initialize(){this.isInfiniteMode=this.isInfinite(),this.isInfiniteMode?h("LOOP","Infinite loop mode initialized"):(this.virtualIndex=0,this.realIndex=0,this.totalRealCards=0)}getDuplicateCount(){if("single"===(this.card.Qt.view_mode||"single"))return 1;{const t=this.card.Qt.cards_visible||this.card.zi();return Math.ceil(t)+1}}prepareCardsForLoading(t,i){const e=[];if(!this.isInfiniteMode)return t.forEach((t,s)=>{e.push({config:i[t],visibleIndex:s,originalIndex:t,isDuplicate:!1})}),e;const s=this.getDuplicateCount(),n=t.length;for(let o=0;o<s;o++){const r=t[n-s+o];e.push({config:i[r],visibleIndex:o-s,originalIndex:r,isDuplicate:!0})}t.forEach((t,s)=>{e.push({config:i[t],visibleIndex:s,originalIndex:t,isDuplicate:!1})});for(let o=0;o<s;o++){const s=t[o];e.push({config:i[s],visibleIndex:n+o,originalIndex:s,isDuplicate:!0})}return this.totalRealCards=e.length,e}virtualToRealIndex(t){if(!this.isInfiniteMode)return t;const i=this.card.visibleCardIndices.length;if(0===i)return 0;return this.getDuplicateCount()+(t%i+i)%i}realToVirtualIndex(t){if(!this.isInfiniteMode)return t;if(0===this.card.visibleCardIndices.length)return 0;return t-this.getDuplicateCount()}isOnDuplicateCard(t=this.card.currentIndex){if(!this.isInfiniteMode)return!1;const i=this.card.visibleCardIndices.length,e=this.getDuplicateCount();return t<e||t>=e+i}getCorrespondingRealIndex(t=this.card.currentIndex){if(!this.isInfiniteMode||!this.isOnDuplicateCard(t))return t;const i=this.card.visibleCardIndices.length,e=this.getDuplicateCount();if(t<e){return e+i-(e-t)}return e+(t-(e+i))}shouldPerformSeamlessJump(t=this.card.currentIndex){if(!this.isInfiniteMode)return!1;const i=this.card.visibleCardIndices.length;return t<0||t>=i}scheduleSeamlessJump(t=this.card.currentIndex){if(!this.shouldPerformSeamlessJump(t))return;setTimeout(()=>{if(!this.card.isConnected||this.card.building)return;const i=this.card.visibleCardIndices.length;let e;if(t<0)e=i-1;else{if(!(t>=i))return;e=0}h("LOOP",`Seamless jump: virtual ${t} → real ${e}`),this.card.sliderElement&&(this.card.sliderElement.style.transition="none"),this.card.currentIndex=e,this.card.updateSlider(!1),setTimeout(()=>{this.card.sliderElement&&(this.card.sliderElement.style.transition=this.card.Kt(!0)),h("LOOP",`Jump completed - now at real position ${e}, ready for continued scrolling`)},50)},400)}handleNavigation(t,i=!1){const e=this.getMode(),s=this.card.visibleCardIndices.length;if("infinite"===e)return t;if(!("loopback"===e&&s>1))return Math.max(0,Math.min(t,s-1));if(i){if(t<0)return s-1;if(t>=s)return 0}else{if(t<0)return s-1;if(t>=s)return 0}return t}getWrappedIndexForPagination(t=this.card.currentIndex){if(!this.isInfiniteMode)return t;const i=this.card.visibleCardIndices.length;return(t%i+i)%i}handleAutoSwipeNavigation(t,i){const e=this.getMode(),s=this.card.visibleCardIndices.length;if("infinite"===e)return{nextIndex:t+1,shouldChangeDirection:!1};if("loopback"===e){let i=t+1;return i>=s&&(i=0),{nextIndex:i,shouldChangeDirection:!1}}{let e=t,n=!1;return 1===i?t>=s-1?(n=!0,e=t-1):e=t+1:t<=0?(n=!0,e=t+1):e=t-1,e=Math.max(0,Math.min(e,s-1)),{nextIndex:e,shouldChangeDirection:n}}}handleSwipeNavigation(t,i){const e=this.getMode(),s=this.card.visibleCardIndices.length;let n=t;return i>0?t>0?n--:"none"!==e&&s>1&&(n="infinite"===e?-1:s-1):i<0&&(t<s-1?n++:"none"!==e&&s>1&&(n="infinite"===e?s:0)),n}}class SimpleSwipeCard extends mt{constructor(){super(),this.shadowRoot||(this.attachShadow({mode:"open"}),h("INIT","Created shadowRoot for manual DOM manipulation")),h("INIT","SimpleSwipeCard Constructor invoked."),this.Qt={},this.bi=null,this.cards=[],this.visibleCardIndices=[],this.currentIndex=0,this.slideWidth=0,this.slideHeight=0,this.cardContainer=null,this.sliderElement=null,this.initialized=!1,this.building=!1,this.resizeObserver=null,this.Zt="horizontal",this.mi=null,this.Pi=null,this.swipeGestures=new bt(this),this.autoSwipe=new xt(this),this.resetAfter=new Et(this),this.pagination=new yt(this),this.cardBuilder=new Tt(this),this.stateSynchronization=new $t(this),this.carouselView=new _t(this),this.loopMode=new Nt(this),this.Vi=null,this.Wi=this.Ui.bind(this),this.Fi=Math.random().toString(36).substring(2,15),window._simpleSwipeDialogStack||(window._simpleSwipeDialogStack=[])}static async getConfigElement(){return h("SYSTEM","SimpleSwipeCard.getConfigElement called"),await customElements.whenDefined("simple-swipe-card-editor"),document.createElement("simple-swipe-card-editor")}static getStubConfig(){return h("SYSTEM","SimpleSwipeCard.getStubConfig called"),{type:"custom:simple-swipe-card",cards:[]}}setConfig(t){if(!t)throw new Error("Invalid configuration");if(h("EDITOR","Editor setConfig received:",JSON.stringify(t)),this.Qt=JSON.parse(JSON.stringify(t)),Array.isArray(this.Qt.cards)||(this.Qt.cards=[]),void 0===this.Qt.show_pagination&&(this.Qt.show_pagination=!0),void 0===this.Qt.card_spacing)this.Qt.card_spacing=15;else{const t=parseInt(this.Qt.card_spacing);this.Qt.card_spacing=isNaN(t)||t<0?15:t}if(void 0!==this.Qt.enable_loopback&&void 0===this.Qt.loop_mode&&(this.Qt.loop_mode=this.Qt.enable_loopback?"loopback":"none",delete this.Qt.enable_loopback,h("CONFIG","Migrated enable_loopback to loop_mode:",this.Qt.loop_mode)),void 0===this.Qt.loop_mode&&(this.Qt.loop_mode="none"),["none","loopback","infinite"].includes(this.Qt.loop_mode)||(h("CONFIG","Invalid loop_mode, defaulting to 'none':",this.Qt.loop_mode),this.Qt.loop_mode="none"),this.loopMode?.initialize(),void 0!==this.Qt.swipe_direction&&["horizontal","vertical"].includes(this.Qt.swipe_direction)||(this.Qt.swipe_direction="horizontal"),void 0===this.Qt.enable_auto_swipe&&(this.Qt.enable_auto_swipe=!1),void 0===this.Qt.auto_swipe_interval?this.Qt.auto_swipe_interval=2e3:(this.Qt.auto_swipe_interval=parseInt(this.Qt.auto_swipe_interval),(isNaN(this.Qt.auto_swipe_interval)||this.Qt.auto_swipe_interval<500)&&(this.Qt.auto_swipe_interval=2e3)),void 0===this.Qt.enable_reset_after&&(this.Qt.enable_reset_after=!1),void 0===this.Qt.reset_after_timeout?this.Qt.reset_after_timeout=3e4:(this.Qt.reset_after_timeout=parseInt(this.Qt.reset_after_timeout),(isNaN(this.Qt.reset_after_timeout)||this.Qt.reset_after_timeout<5e3)&&(this.Qt.reset_after_timeout=3e4)),void 0===this.Qt.reset_target_card?this.Qt.reset_target_card=1:this.Qt.reset_target_card=Math.max(1,parseInt(this.Qt.reset_target_card)),void 0===this.Qt.view_mode&&(this.Qt.view_mode="single"),["single","carousel"].includes(this.Qt.view_mode)||(this.Qt.view_mode="single"),"carousel"===this.Qt.view_mode){if(void 0===this.Qt.card_min_width)this.Qt.card_min_width=200;else{const t=parseInt(this.Qt.card_min_width);(isNaN(t)||t<50||t>500)&&(this.Qt.card_min_width=200)}if(void 0!==this.Qt.cards_visible){const t=parseFloat(this.Qt.cards_visible);isNaN(t)||t<1.1||t>8?this.Qt.cards_visible=2.5:this.Qt.cards_visible=Math.round(10*t)/10}}t.card_mod?(h("CARD_MOD","Card-mod configuration detected",t.card_mod),this.mi=JSON.parse(JSON.stringify(t.card_mod))):this.mi=null,this.Zt=this.Qt.swipe_direction,this.Hi=this.Qt.view_mode||"single",delete this.Qt.title}zi(){if(!this.cardContainer)return 2.5;const t=this.cardContainer.offsetWidth,i=this.Qt.card_min_width||200,e=Math.max(0,parseInt(this.Qt.card_spacing))||0,s=(t+e)/(i+e);return Math.max(1.1,Math.round(10*s)/10)}Ei(){h("VISIBILITY","Handling conditional card visibility change"),this.Yi&&clearTimeout(this.Yi),this.Yi=setTimeout(()=>{this.Bi(),this.Yi=null},50)}Bi(){if(!this.Qt?.cards||!this.bi){const t=0===this.visibleCardIndices.length;return this.visibleCardIndices=[],void(t||h("VISIBILITY","No cards or hass available, cleared visible indices"))}const t=[...this.visibleCardIndices];this.visibleCardIndices=[],this.Qt.cards.forEach((t,i)=>{const e=wt(t.visibility,this.bi);let s=!0;if("conditional"===t.type&&this.cards){const t=this.cards.find(t=>t&&t.originalIndex===i);t&&(s=t.conditionallyVisible)}e&&s&&this.visibleCardIndices.push(i)});JSON.stringify(t)!==JSON.stringify(this.visibleCardIndices)&&(h("VISIBILITY",`Visible cards changed: ${this.visibleCardIndices.length}/${this.Qt.cards.length} visible`,this.visibleCardIndices),this.Ji(t),this.initialized&&this.isConnected&&this.cardBuilder.build())}wi(){if(!this.Qt?.cards||!this.bi){const t=0===this.visibleCardIndices.length;return this.visibleCardIndices=[],void(t||h("VISIBILITY","No cards or hass available, cleared visible indices"))}const t=[...this.visibleCardIndices];this.visibleCardIndices=[],this.Qt.cards.forEach((t,i)=>{const e=wt(t.visibility,this.bi);let s=!0;"conditional"===t.type&&t.conditions&&(s=this.ji(t.conditions));e&&s&&this.visibleCardIndices.push(i)});JSON.stringify(t)!==JSON.stringify(this.visibleCardIndices)&&(h("VISIBILITY",`Visible cards changed: ${this.visibleCardIndices.length}/${this.Qt.cards.length} visible`,this.visibleCardIndices),this.Ji(t),this.initialized&&this.isConnected&&(h("VISIBILITY","Triggering rebuild due to visibility changes"),this.cardBuilder.build()))}ji(t){return!t||!Array.isArray(t)||0===t.length||(!this.bi||t.every(t=>{try{return this.Xi(t)}catch(i){return h("VISIBILITY","Error evaluating conditional card condition:",t,i),!0}}))}Xi(t){if(!t||"object"!=typeof t)return!0;const{condition:i,entity:e,state:s,state_not:n,above:o,below:r}=t,a=i||(!e||void 0===s&&void 0===n?null:"state")||(!e||void 0===o&&void 0===r?null:"numeric_state");switch(a){case"state":{if(!e||!this.bi.states[e])return h("VISIBILITY",`Entity ${e} not found for conditional card state condition`),!1;const t=this.bi.states[e].state;if(void 0!==s){const i=String(s),n=String(t),o=n===i;return h("VISIBILITY",`Conditional card state condition: ${e} = ${n}, expected: ${i}, result: ${o}`),o}if(void 0!==n){const i=String(n),s=String(t),o=s!==i;return h("VISIBILITY",`Conditional card state not condition: ${e} = ${s}, not expected: ${i}, result: ${o}`),o}return!0}case"numeric_state":{if(!e||!this.bi.states[e])return h("VISIBILITY",`Entity ${e} not found for conditional card numeric_state condition`),!1;const t=parseFloat(this.bi.states[e].state);if(isNaN(t))return!1;let i=!0;return void 0!==o&&(i=i&&t>parseFloat(o)),void 0!==r&&(i=i&&t<parseFloat(r)),h("VISIBILITY",`Conditional card numeric state condition: ${e} = ${t}, result: ${i}`),i}case"screen":{const i=t.media_query;if(i&&window.matchMedia){const t=window.matchMedia(i).matches;return h("VISIBILITY",`Screen condition: ${i}, result: ${t}`),t}return!0}case"user":if(t.users&&Array.isArray(t.users)){const i=this.bi.user;if(i&&i.id){const e=t.users.includes(i.id);return h("VISIBILITY",`User condition: current user ${i.id}, allowed users: ${t.users}, result: ${e}`),e}}return!0;default:return e?(h("VISIBILITY","Unknown or invalid conditional card condition:",t),!1):(h("VISIBILITY",`Unknown condition type: ${a}`),!0)}}Ji(t){if(0===this.visibleCardIndices.length)return void(this.currentIndex=0);const i=t[this.currentIndex],e=this.visibleCardIndices.indexOf(i);if(-1!==e)this.currentIndex=e,h("VISIBILITY",`Current card still visible, adjusted index to ${this.currentIndex}`);else{const t=this.visibleCardIndices.length;this.currentIndex>=t?(this.currentIndex=t-1,h("VISIBILITY",`Adjusted to last visible card: ${this.currentIndex}`)):(this.currentIndex=Math.min(this.currentIndex,t-1),this.currentIndex=Math.max(0,this.currentIndex),h("VISIBILITY",`Adjusted to maintain relative position: ${this.currentIndex}`))}}Ui(){this.Vi&&clearTimeout(this.Vi),this.Vi=setTimeout(()=>{this.wi(),this.Vi=null},50)}Gi(t){h("ERROR",`${t}`),this.Qt={...i},this.visibleCardIndices=[],this.isConnected&&this.cardBuilder.build()}qi(){h("CONFIG","Updating child card configs"),this.cards&&this.cards.length===this.visibleCardIndices.length&&this.visibleCardIndices.forEach((t,i)=>{const e=this.Qt.cards[t],s=this.cards[i];if(s&&!s.error&&s.element?.setConfig&&JSON.stringify(s.config)!==JSON.stringify(e)){h("CONFIG","Updating config for visible card",i,"original index",t);try{s.element.setConfig(e),s.config=JSON.parse(JSON.stringify(e))}catch(t){console.error(`Error setting config on child card ${i}:`,t)}}})}Zi(){if(h("CONFIG","Updating layout options (pagination, spacing, direction)"),this.Zt!==this.Qt.swipe_direction)return this.Zt=this.Qt.swipe_direction,void this.cardBuilder.build();this.pagination.updateLayout(),this.updateSlider(!1),this.mi&&this.fi()}set hass(t){if(!t)return;const i=this.bi;i===t||i&&t&&i.states===t.states&&i.user===t.user&&JSON.stringify(i.config)===JSON.stringify(t.config)?this.cards&&this.cards.forEach(i=>{if(i.element&&!i.error)try{i.element.hass=t}catch(t){console.error("Error setting hass on child card:",t)}}):(h("INIT","Setting hass (changed)"),this.bi=t,this.stateSynchronization?.onHassChange(i,t),i!==t&&(this.Vi&&(clearTimeout(this.Vi),this.Vi=null),this.wi()),this.cards&&this.cards.forEach(i=>{if(i.element&&!i.error)try{i.element.hass=t}catch(t){console.error("Error setting hass on child card:",t)}}))}connectedCallback(){h("INIT","connectedCallback"),this.addEventListener("config-changed",this.Ki.bind(this)),!this.initialized&&this.Qt?.cards?(h("INIT","connectedCallback: Initializing build."),this.cardBuilder.build()):this.initialized&&this.cardContainer&&(h("INIT","connectedCallback: Re-initializing observers and gestures."),this.Si(),this.visibleCardIndices.length>1&&(this.swipeGestures.removeGestures(),setTimeout(()=>{this.isConnected&&this.swipeGestures.addGestures()},50)),this.mi&&(this.fi(),this.Qi()),this.autoSwipe.manage(),this.resetAfter.manage(),this.stateSynchronization.manage())}disconnectedCallback(){h("INIT","disconnectedCallback"),this.removeEventListener("config-changed",this.Ki.bind(this));try{this.resizeObserver?.cleanup(),this.swipeGestures?.removeGestures(),this.autoSwipe?.stop(),this.resetAfter?.stopTimer(),this.stateSynchronization?.stop(),this.te&&(clearTimeout(this.te),this.te=null),this.Yi&&(clearTimeout(this.Yi),this.Yi=null),this.Vi&&(clearTimeout(this.Vi),this.Vi=null),this.Pi&&(this.Pi.disconnect(),this.Pi=null,h("CARD_MOD","Disconnected card-mod observer"))}catch(t){console.warn("Error during cleanup:",t)}this.initialized=!1}Ki(t){t.detail?.fromSwipeCardEditor&&t.detail?.editorId===this.ie||(h("EVENT","Root element received config-changed event:",t.detail),(t.detail?.fromElementEditor||t.detail?.elementConfig||t.detail?.element)&&h("ELEMENT","Caught element editor event, allowing normal propagation"))}Si(){!this.resizeObserver&&this.cardContainer&&(this.resizeObserver=function(t,i){if(!t)return null;h("INIT","Setting up resize observer.");let e=null;const s=new ResizeObserver(s=>{window.requestAnimationFrame(()=>{if(t.isConnected)for(const n of s){const s=n.contentRect.width,o=n.contentRect.height;e&&clearTimeout(e),e=setTimeout(()=>{t&&(s>0&&s!==n.previousWidth||o>0&&o!==n.previousHeight)&&(h("INIT","Resize detected, recalculating layout.",{oldWidth:n.previousWidth,newWidth:s,oldHeight:n.previousHeight,newHeight:o}),i(s,o))},50),n.previousWidth=s,n.previousHeight=o}})});return s.observe(t),{observer:s,cleanup:()=>{h("INIT","Removing resize observer."),s&&s.disconnect(),e&&(clearTimeout(e),e=null)}}}(this.cardContainer,(t,i)=>{(t>0&&Math.abs(t-this.slideWidth)>1||i>0&&Math.abs(i-this.slideHeight)>1)&&(h("INIT","Resize detected, recalculating layout.",{oldWidth:this.slideWidth,newWidth:t,oldHeight:this.slideHeight,newHeight:i}),this.cardBuilder.finishBuildLayout())}))}Kt(t){return function(t,i=null){if(!t)return"none";let e="0.3s",s="ease-out";if(i&&i.isConnected){const t=getComputedStyle(i),n=t.getPropertyValue("--simple-swipe-card-transition-speed").trim(),o=t.getPropertyValue("--simple-swipe-card-transition-easing").trim();n&&(e=n),o&&(s=o)}return`transform ${e} ${s}`}(t,this)}fi(){!function(t,i,e,s,n){if(t&&i){if(t.style){h("CARD_MOD","Applying card-mod styles");const o=document.createElement("style");o.setAttribute("id","card-mod-styles"),o.textContent=t.style;const r=i.querySelector("#card-mod-styles");if(r&&i.removeChild(r),i.appendChild(o),e){h("CARD_MOD","Forwarding CSS variables from host to shadow DOM");const t=window.getComputedStyle(e),o=[i.querySelector(".card-container"),s,n].filter(Boolean),r=["--simple-swipe-card-pagination-dot-inactive-color","--simple-swipe-card-pagination-dot-active-color","--simple-swipe-card-pagination-dot-inactive-opacity","--simple-swipe-card-pagination-dot-active-opacity","--simple-swipe-card-pagination-dot-size","--simple-swipe-card-pagination-dot-active-size","--simple-swipe-card-pagination-border-radius","--simple-swipe-card-pagination-dot-spacing","--simple-swipe-card-pagination-background","--simple-swipe-card-pagination-padding","--simple-swipe-card-pagination-bottom","--simple-swipe-card-pagination-right","--simple-swipe-card-transition-speed","--simple-swipe-card-transition-easing"];o.forEach(i=>{i&&r.forEach(e=>{const s=t.getPropertyValue(e);s&&(h("CARD_MOD",`Forwarding ${e}: ${s}`),i.style.setProperty(e,s))})})}}}else h("CARD_MOD","No card-mod config or shadow root, skipping style application")}(this.mi,this.shadowRoot,this.shadowRoot?.host,this.sliderElement,this.pagination.paginationElement)}Qi(){this.Pi&&(this.Pi.disconnect(),this.Pi=null),this.Pi=function(t,i){const e=new MutationObserver(t=>{t.some(t=>"attributes"===t.type&&("style"===t.attributeName||t.attributeName.includes("style")))&&(h("CARD_MOD","Host style attribute changed, reapplying card-mod styles"),i())});return t&&t.host&&(e.observe(t.host,{attributes:!0,attributeFilter:["style"]}),h("CARD_MOD","Set up mutation observer for style changes")),e}(this.shadowRoot,()=>{this.fi()})}goToSlide(t){const i=this.visibleCardIndices.length;if(!this.visibleCardIndices||0===i||!this.initialized||this.building)return void h("SWIPE","goToSlide skipped",{totalVisible:i,initialized:this.initialized,building:this.building});const e=this.Qt.view_mode||"single",s=this.Qt.loop_mode||"none";t=this.loopMode.handleNavigation(t,"carousel"===e),this.currentIndex=t,h("SWIPE",`Going to visible slide ${this.currentIndex} (${e} mode)`);const n="infinite"===s?(this.currentIndex%i+i)%i:this.currentIndex;this.stateSynchronization?.onCardNavigate(n),this.updateSlider(),this.autoSwipe.isInProgress||this.resetAfter.isInProgress||this.resetAfter.startTimer(),!this.Qt.enable_auto_swipe||this.autoSwipe.isInProgress||this.resetAfter.isInProgress||this.autoSwipe.pause(5e3)}updateSlider(t=!0){this.cardContainer&&(this.slideWidth=this.cardContainer.offsetWidth,this.slideHeight=this.cardContainer.offsetHeight);const i=this.visibleCardIndices.length;if(h("SWIPE",`Updating slider to visible index ${this.currentIndex}`,{animate:t,totalVisible:i,viewMode:this.Qt.view_mode}),!this.sliderElement||0===i||!this.initialized||this.building)return void h("SWIPE","updateSlider skipped",{slider:!!this.sliderElement,totalVisible:i,init:this.initialized,building:this.building});const e=Math.max(0,parseInt(this.Qt.card_spacing))||0,s=this.Qt.view_mode||"single",n=this.Qt.loop_mode||"none";if("carousel"===s&&this.carouselView){if(this.sliderElement.style.gap=`${e}px`,this.carouselView.updateSliderPosition(this.currentIndex,t),"infinite"===n){const t=this.loopMode.getWrappedIndexForPagination(this.currentIndex);this.ee(t)}else this.pagination.update();return void this.loopMode.scheduleSeamlessJump(this.currentIndex)}const o="horizontal"===this.Zt;let r=this.currentIndex;if("infinite"===n){const t=this.loopMode.getDuplicateCount();r=this.currentIndex+t,h("SWIPE",`Infinite mode: logical index ${this.currentIndex} -> DOM position ${r}`)}else"none"!==n&&i>1?this.currentIndex<0?this.currentIndex=i-1:this.currentIndex>=i&&(this.currentIndex=0):this.currentIndex=Math.max(0,Math.min(this.currentIndex,i-1)),r=this.currentIndex;this.sliderElement.style.gap=`${e}px`;let a=0;if(a=o?r*(this.slideWidth+e):r*(this.slideHeight+e),this.sliderElement.style.transition=this.Kt(t),this.sliderElement.style.transform=o?`translateX(-${a}px)`:`translateY(-${a}px)`,this.cards.forEach(t=>{t&&t.slide&&(t.slide.style.marginRight="0px",t.slide.style.marginLeft="0px",t.slide.style.marginTop="0px",t.slide.style.marginBottom="0px")}),"infinite"===n){const t=this.loopMode.getWrappedIndexForPagination(this.currentIndex);this.ee(t)}else this.pagination.update();h("SWIPE",`Slider updated, DOM position: ${r}, transform: -${a}px along ${o?"X":"Y"} axis`),this.loopMode.scheduleSeamlessJump(this.currentIndex)}ee(t){if(this.pagination.paginationElement){this.pagination.paginationElement.querySelectorAll(".pagination-dot").forEach((i,e)=>{i.classList.toggle("active",e===t)})}}getCardSize(){if(0===this.visibleCardIndices.length)return 3;let t=3;if(this.cards&&this.cards.length>0){const i=this.cards[this.currentIndex];if(i?.element&&!i.error&&"function"==typeof i.element.getCardSize)try{t=i.element.getCardSize()}catch(i){console.warn("Error getting card size from current element:",i),t=3}else i?.element&&i.element.offsetHeight&&(t=Math.max(1,Math.ceil(i.element.offsetHeight/50)))}return h("CONFIG","Calculated card size:",t),Math.max(3,t)}}class kt{constructor(t){this.editor=t,this.collapsibleState={advanced:!1,cards:!0}}async initializeEditor(){this.editor.ie=`swipe-card-editor-${Math.random().toString(36).substring(2,15)}`,this.editor.se=this.editor.cardManagement.handleCardPicked.bind(this.editor.cardManagement),this.editor.ne=this.editor.eventHandling.oe.bind(this.editor.eventHandling),this.editor.re=new Set,this.editor.ae=null,this.editor.de=!1,this.editor.he={active:!1,parentDialogId:null,elementId:null,timestamp:null,savedState:null};Ct(o).set(this.editor.ie,this)}toggleSection(t){this.collapsibleState[t]=!this.collapsibleState[t],this.editor.requestUpdate()}getCollapsibleState(){return this.collapsibleState}async ensureComponentsLoaded(){let t=0;for(;!customElements.get("hui-card-picker")&&t<50;)await this.loadCustomElements(),customElements.get("hui-card-picker")||(await new Promise(t=>setTimeout(t,100)),t++);customElements.get("hui-card-picker")||console.error("Failed to load hui-card-picker after multiple attempts")}async loadCustomElements(){if(!customElements.get("hui-card-picker"))try{const t=[()=>customElements.get("hui-entities-card")?.getConfigElement?.(),()=>customElements.get("hui-conditional-card")?.getConfigElement?.(),()=>customElements.get("hui-vertical-stack-card")?.getConfigElement?.(),()=>customElements.get("hui-horizontal-stack-card")?.getConfigElement?.()];for(const i of t)try{if(await i(),customElements.get("hui-card-picker"))break}catch(t){}}catch(t){console.warn("Could not load hui-card-picker",t)}}ensureCardPickerLoaded(){if(!this.editor.shadowRoot)return void h("EDITOR","_ensureCardPickerLoaded: No shadowRoot, returning.");h("EDITOR","_ensureCardPickerLoaded called");const t=this.editor.shadowRoot.querySelector("#card-picker-container");if(t){t.style.display="block",t.hasAttribute("event-barrier-applied")||(t.setAttribute("event-barrier-applied","true"),t.addEventListener("config-changed",t=>{if(h("EDITOR","Intercepted config-changed at container level:",t.detail?.config?.type),t.target&&t.target.tagName&&"hui-card-picker"===t.target.tagName.toLowerCase()&&t.detail&&t.detail.config){const i=t.detail.config;if(h("EDITOR","Processing card selection:",i.type),this.editor.Qt){const t=Array.isArray(this.editor.Qt.cards)?[...this.editor.Qt.cards]:[];t.push(i),this.editor.Qt={...this.editor.Qt,cards:t},this.editor.configManager.fireConfigChanged({cardAdded:!0,cardType:i.type}),this.editor.requestUpdate()}}return t.stopPropagation(),t.stopImmediatePropagation&&t.stopImmediatePropagation(),!1},{capture:!0}));const i=t.querySelector("hui-card-picker");i&&(i.style.display="block",i.requestUpdate&&i.requestUpdate())}this.editor.requestUpdate()}}class Dt{constructor(t){this.editor=t}setConfig(t){if(!t)throw new Error("Invalid configuration");if(h("EDITOR","Editor setConfig received:",JSON.stringify(t)),this.editor.Qt=JSON.parse(JSON.stringify(t)),Array.isArray(this.editor.Qt.cards)||(this.editor.Qt.cards=[]),void 0===this.editor.Qt.show_pagination&&(this.editor.Qt.show_pagination=!0),void 0===this.editor.Qt.card_spacing)this.editor.Qt.card_spacing=15;else{const t=parseInt(this.editor.Qt.card_spacing);this.editor.Qt.card_spacing=isNaN(t)||t<0?15:t}if(void 0!==this.editor.Qt.enable_loopback&&void 0===this.editor.Qt.loop_mode&&(this.editor.Qt.loop_mode=this.editor.Qt.enable_loopback?"loopback":"none",delete this.editor.Qt.enable_loopback,h("CONFIG","Migrated enable_loopback to loop_mode:",this.editor.Qt.loop_mode)),void 0===this.editor.Qt.loop_mode&&(this.editor.Qt.loop_mode="none"),["none","loopback","infinite"].includes(this.editor.Qt.loop_mode)||(h("CONFIG","Invalid loop_mode, defaulting to 'none':",this.editor.Qt.loop_mode),this.editor.Qt.loop_mode="none"),void 0!==this.editor.Qt.swipe_direction&&["horizontal","vertical"].includes(this.editor.Qt.swipe_direction)||(this.editor.Qt.swipe_direction="horizontal"),void 0===this.editor.Qt.enable_auto_swipe&&(this.editor.Qt.enable_auto_swipe=!1),void 0===this.editor.Qt.auto_swipe_interval?this.editor.Qt.auto_swipe_interval=2e3:(this.editor.Qt.auto_swipe_interval=parseInt(this.editor.Qt.auto_swipe_interval),(isNaN(this.editor.Qt.auto_swipe_interval)||this.editor.Qt.auto_swipe_interval<500)&&(this.editor.Qt.auto_swipe_interval=2e3)),void 0===this.editor.Qt.enable_reset_after&&(this.editor.Qt.enable_reset_after=!1),void 0===this.editor.Qt.reset_after_timeout?this.editor.Qt.reset_after_timeout=3e4:(this.editor.Qt.reset_after_timeout=parseInt(this.editor.Qt.reset_after_timeout),(isNaN(this.editor.Qt.reset_after_timeout)||this.editor.Qt.reset_after_timeout<5e3)&&(this.editor.Qt.reset_after_timeout=3e4)),void 0===this.editor.Qt.reset_target_card?this.editor.Qt.reset_target_card=1:this.editor.Qt.reset_target_card=Math.max(1,parseInt(this.editor.Qt.reset_target_card)),void 0===this.editor.Qt.view_mode&&(this.editor.Qt.view_mode="single"),["single","carousel"].includes(this.editor.Qt.view_mode)||(this.editor.Qt.view_mode="single"),"carousel"===this.editor.Qt.view_mode){if(void 0===this.editor.Qt.card_min_width)this.editor.Qt.card_min_width=200;else{const t=parseInt(this.editor.Qt.card_min_width);(isNaN(t)||t<50||t>500)&&(this.editor.Qt.card_min_width=200)}if(void 0!==this.editor.Qt.cards_visible){const t=parseFloat(this.editor.Qt.cards_visible);isNaN(t)||t<1.1||t>8?this.editor.Qt.cards_visible=2.5:this.editor.Qt.cards_visible=Math.round(10*t)/10}}delete this.editor.Qt.title,setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),50)}handleValueChanged(t){if(!this.editor.Qt||!t.target)return;const i=t.target,e=i.configValue||i.getAttribute("data-option"),s=i.parentElement?.configValue||i.parentElement?.getAttribute("data-option"),n=e||s;if(!n)return;let o;if("ha-entity-picker"===i.localName&&"value-changed"===t.type?o=t.detail.value||null:"ha-switch"===i.localName?o=i.checked:"ha-textfield"===i.localName&&"number"===i.type?(o=parseFloat(i.value),(isNaN(o)||o<0)&&(o="card_spacing"===n?15:"auto_swipe_interval"===n?2e3:"reset_after_timeout"===n?3e4:"cards_visible"===n?2.5:0)):o=i.value,"view_mode"===n&&this.editor.Qt[n]!==o){h("EDITOR",`View mode changing from ${this.editor.Qt[n]} to ${o}`);const t={...this.editor.Qt,[n]:o};return"carousel"===o?(delete t.swipe_direction,t.cards_visible||t.card_min_width||(t.card_min_width=200),h("EDITOR","Cleaned config for carousel mode:",Object.keys(t))):"single"===o&&(delete t.cards_visible,delete t.card_min_width,t.swipe_direction||(t.swipe_direction="horizontal"),h("EDITOR","Cleaned config for single mode:",Object.keys(t))),this.editor.Qt=t,this.fireConfigChanged(),void this.editor.requestUpdate()}if("card_min_width"===n&&this.editor.Qt[n]!==o){if(h("EDITOR",`User changed card_min_width to ${o}, migrating from legacy mode`),void 0!==this.editor.Qt.cards_visible){const t={...this.editor.Qt};delete t.cards_visible,t.card_min_width=o,this.editor.Qt=t,h("EDITOR","Migrated from cards_visible to card_min_width")}else this.editor.Qt={...this.editor.Qt,[n]:o};return this.fireConfigChanged(),void this.editor.requestUpdate()}this.editor.Qt[n]!==o&&(h("EDITOR",`Value changed for ${n}:`,o),this.editor.Qt={...this.editor.Qt,[n]:o},this.fireConfigChanged())}handleTimeoutChange(t){const i=parseInt(t.target.value);if(!isNaN(i)&&i>=5){const t=1e3*i;this.editor.Qt={...this.editor.Qt,reset_after_timeout:t},this.fireConfigChanged()}}handleTargetChange(t){const i=parseInt(t.target.value);!isNaN(i)&&i>=1&&(this.editor.Qt={...this.editor.Qt,reset_target_card:i},this.fireConfigChanged())}getCleanConfig(t){if(!t)return{};const i={type:t.type};t.view_mode&&"single"!==t.view_mode&&(i.view_mode=t.view_mode),"carousel"===t.view_mode&&(void 0!==t.cards_visible?i.cards_visible=t.cards_visible:void 0!==t.card_min_width&&200!==t.card_min_width&&(i.card_min_width=t.card_min_width));const e={show_pagination:!0,card_spacing:15,loop_mode:"none",swipe_direction:"horizontal",enable_auto_swipe:!1,auto_swipe_interval:2e3,enable_reset_after:!1,reset_after_timeout:3e4,reset_target_card:1};["card_spacing","swipe_direction","show_pagination"].forEach(s=>{void 0!==t[s]&&t[s]!==e[s]&&(i[s]=t[s])}),["loop_mode","enable_auto_swipe","auto_swipe_interval","enable_reset_after","reset_after_timeout","reset_target_card","state_entity"].forEach(s=>{"state_entity"===s?t.state_entity&&null!==t.state_entity&&""!==t.state_entity&&(i.state_entity=t.state_entity):void 0!==t[s]&&t[s]!==e[s]&&(i[s]=t[s])}),Array.isArray(t.cards)&&(i.cards=t.cards);return["grid_options","layout_options","view_layout"].forEach(e=>{void 0!==t[e]&&(i[e]=t[e])}),void 0!==t.card_mod&&(i.card_mod=t.card_mod),i}fireConfigChanged(t={}){const i=this.getCleanConfig(this.editor.Qt);!function(t,i,e={}){if(!i)return;const s=!e.maintainEditorState,n=new CustomEvent("config-changed",{detail:{config:i,...e},bubbles:s,composed:!0});h("EVENT","Firing config-changed event",{bubble:s,...e}),t.dispatchEvent(n)}(this.editor,i,{editorId:this.editor.ie,fromSwipeCardEditor:!0,...t})}}class Ot{constructor(t){this.editor=t}getCardDescriptor(t){if(!t?.type)return{typeName:"Unknown",name:"",isPictureElements:!1};const i=t.type.startsWith("custom:")?t.type.substring(7):t.type,e=i.split(/[-_]/).map(t=>t.charAt(0).toUpperCase()+t.slice(1)).join(" ");return{typeName:e,name:t.title||t.name||"",isPictureElements:"picture-elements"===i}}hasNestedCards(t){return!("custom:actions-card"!==t.type||!t.card)&&(Array.isArray(t.card)?t.card.length>0:!!t.card)}getNestedCards(t){return this.hasNestedCards(t)?Array.isArray(t.card)?t.card:[t.card]:[]}hasVisibilityConditions(t){return t&&Array.isArray(t.visibility)&&t.visibility.length>0}isPictureElementsCard(t){return t&&"picture-elements"===t.type}moveCard(t,i){if(!this.editor.Qt?.cards)return;const e=[...this.editor.Qt.cards],s=t+i;s<0||s>=e.length||(h("EDITOR",`Moving card ${t} to position ${s}`),[e[t],e[s]]=[e[s],e[t]],this.editor.Qt={...this.editor.Qt,cards:e},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate())}removeCard(t){if(!this.editor.Qt?.cards||t<0||t>=this.editor.Qt.cards.length)return;h("EDITOR",`Removing card at index ${t}`);const i=this.editor.Qt.cards.filter((i,e)=>e!==t);this.editor.Qt={...this.editor.Qt,cards:i},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate()}moveNestedCard(t,i,e){if(!this.editor.Qt?.cards||!this.editor.Qt.cards[t])return;const s=this.editor.Qt.cards[t];if(!this.hasNestedCards(s))return;const n=this.getNestedCards(s),o=i+e;if(o<0||o>=n.length)return;h("EDITOR",`Moving nested card ${t}.${i} to position ${t}.${o}`),[n[i],n[o]]=[n[o],n[i]];const r=[...this.editor.Qt.cards];r[t]={...s,card:n},this.editor.Qt={...this.editor.Qt,cards:r},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate()}removeNestedCard(t,i){if(!this.editor.Qt?.cards||!this.editor.Qt.cards[t])return;const e=this.editor.Qt.cards[t];if(!this.hasNestedCards(e))return;let s=this.getNestedCards(e);if(i<0||i>=s.length)return;h("EDITOR",`Removing nested card ${t}.${i}`),s=s.filter((t,e)=>e!==i);const n=[...this.editor.Qt.cards];n[t]={...e,card:s},this.editor.Qt={...this.editor.Qt,cards:n},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate()}async editCard(t){if(h("EDITOR",`_editCard called for index ${t}`),!this.editor.Qt||!this.editor.Qt.cards||t<0||t>=this.editor.Qt.cards.length)return void h("ERROR","SimpleSwipeCardEditor: Invalid index for card editing:",t);const i=this.editor.Qt.cards[t],e=this.editor.hass,s=document.querySelector("home-assistant");if(e&&s)try{await customElements.whenDefined("hui-dialog-edit-card");const n=document.createElement("hui-dialog-edit-card");n.hass=e,document.body.appendChild(n),this.editor.re.add(n),n.ce=this.editor.ie,this.isPictureElementsCard(i)&&(n.setAttribute("data-editing-picture-elements","true"),n.le=!0),h("EDITOR",`[CARD INDEX ${t}] hui-dialog-edit-card created and added to body. Tracking it.`);const o=this.editor.eventHandling.handleDialogConfigChanged.bind(this.editor.eventHandling,t,n),r=this.editor.eventHandling.handleDialogShowDialog.bind(this.editor.eventHandling,t);n.addEventListener("config-changed",o,{capture:!0}),n.addEventListener("show-dialog",r,{capture:!0}),n.addEventListener("ll-show-dialog",r,{capture:!0}),this.isPictureElementsCard(i)&&(n.addEventListener("element-updated",t=>{h("ELEMENT","Element updated event on dialog",t.detail),n.pe=!0,this.editor.eventHandling.he.active=!0,this.editor.eventHandling.he.timestamp=Date.now()},{capture:!0}),n.addEventListener("show-edit-element",t=>{h("ELEMENT","Show edit element event on dialog",t.detail),n.pe=!0,this.editor.eventHandling.he.active=!0,this.editor.eventHandling.he.timestamp=Date.now()},{capture:!0})),"custom:actions-card"===i.type&&(n.ue=!0);const a=()=>{if(h("EDITOR",`[CARD INDEX ${t}] hui-dialog-edit-card closed event received.`),n.removeEventListener("dialog-closed",a),n.removeEventListener("config-changed",o,{capture:!0}),n.removeEventListener("show-dialog",r,{capture:!0}),n.removeEventListener("ll-show-dialog",r,{capture:!0}),this.isPictureElementsCard(i)&&(n.removeEventListener("element-updated",d,{capture:!0}),n.removeEventListener("show-edit-element",c,{capture:!0})),this.editor.re.delete(n),h("EDITOR",`[CARD INDEX ${t}] hui-dialog-edit-card removed from tracking. Active child editors: ${this.editor.re.size}`),n.pe&&(h("ELEMENT","Element edit session reset due to dialog close"),setTimeout(()=>{this.editor.eventHandling.he.active&&Date.now()-this.editor.eventHandling.he.timestamp>500&&(this.editor.eventHandling.he.active=!1)},500)),n.parentNode===document.body)try{document.body.removeChild(n),h("EDITOR",`[CARD INDEX ${t}] hui-dialog-edit-card removed from body.`)}catch(i){console.warn(`[CARD INDEX ${t}] Error removing dialog from body:`,i)}setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)};n.addEventListener("dialog-closed",a);const d=t=>{h("ELEMENT","Element updated event on dialog",t.detail),n.pe=!0,this.editor.eventHandling.he.active=!0,this.editor.eventHandling.he.timestamp=Date.now()},c=t=>{h("ELEMENT","Show edit element event on dialog",t.detail),n.pe=!0,this.editor.eventHandling.he.active=!0,this.editor.eventHandling.he.timestamp=Date.now()};this.isPictureElementsCard(i)&&(n.addEventListener("element-updated",d,{capture:!0}),n.addEventListener("show-edit-element",c,{capture:!0}));const l={cardConfig:i,lovelaceConfig:this.editor.lovelace||s.lovelace,saveCardConfig:async i=>{if(h("EDITOR",`[CARD INDEX ${t}] saveCardConfig callback in hui-dialog-edit-card invoked.`),n.ge||n.pe){if(h("ELEMENT",`[CARD INDEX ${t}] Save detected from element editor, preserving dialog state`),n.ge=!1,this.editor.eventHandling.he.timestamp=Date.now(),i){h("ELEMENT","Silently updating config with element changes");const e=[...this.editor.Qt.cards];e[t]=i,this.editor.Qt={...this.editor.Qt,cards:e},this.editor.configManager.fireConfigChanged({maintainEditorState:!0,fromElementEditor:!0,updatedCardIndex:t})}return i}if(n.me&&!i)return h("ELEMENT",`[CARD INDEX ${t}] Element editor cancel detected, restoring previous config`),void(n.me=null);if(!i)return;const e=[...this.editor.Qt.cards];e[t]=i,this.editor.Qt={...this.editor.Qt,cards:e},this.editor.configManager.fireConfigChanged({reason:"child_dialog_saved"}),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)}};h("EDITOR",`[CARD INDEX ${t}] About to call dialog.showDialog()`),await n.showDialog(l),h("EDITOR",`[CARD INDEX ${t}] dialog.showDialog() finished.`)}catch(e){h("ERROR","SimpleSwipeCardEditor: Error opening edit dialog:",e),St(this.editor,"ll-show-dialog",{dialogTag:"hui-dialog-edit-card",dialogImport:()=>import("hui-dialog-edit-card"),dialogParams:{cardConfig:i,lovelaceConfig:this.editor.lovelace||s.lovelace,saveCardConfig:async i=>{if(!i)return;const e=[...this.editor.Qt.cards];e[t]=i,this.editor.Qt={...this.editor.Qt,cards:e},this.editor.configManager.fireConfigChanged({reason:"child_dialog_saved_fallback"}),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)}}})}else h("ERROR","SimpleSwipeCardEditor: Cannot find Home Assistant instance")}async editNestedCard(t,i){if(h("EDITOR",`_editNestedCard called for parent ${t}, nested ${i}`),!this.editor.Qt?.cards||!this.editor.Qt.cards[t]||!this.hasNestedCards(this.editor.Qt.cards[t]))return void h("ERROR","SimpleSwipeCardEditor: Invalid indices for nested card editing:",t,i);const e=this.editor.Qt.cards[t],s=this.getNestedCards(e);if(i<0||i>=s.length)return;const n=s[i],o=this.editor.hass,r=document.querySelector("home-assistant");if(o&&r)try{await customElements.whenDefined("hui-dialog-edit-card");const a=document.createElement("hui-dialog-edit-card");a.hass=o,document.body.appendChild(a),this.editor.re.add(a),a.ce=this.editor.ie,this.isPictureElementsCard(n)&&(a.setAttribute("data-editing-picture-elements","true"),a.le=!0),a.addEventListener("config-changed",t=>{if(this.editor.eventHandling.ve(t))return h("ELEMENT","Nested card: Detected element editor event, allowing natural propagation"),a.pe=!0,this.editor.eventHandling.he.active=!0,this.editor.eventHandling.he.timestamp=Date.now(),void(t.detail&&t.detail.config&&(a.me=JSON.parse(JSON.stringify(t.detail.config)),a.ge=!0));(t.detail?.fromExternalEditor||t.detail?.fromActionCardEditor||t.detail?.fromSwipeCardEditor)&&(h("EDITOR","Marking nested event as already handled in _editNestedCard's dialog"),t.fe=!0)},!0);const d=()=>{if(a.removeEventListener("dialog-closed",d),a.pe&&(h("ELEMENT","Dialog handling element edit is closing, ending element edit session"),this.editor.eventHandling.he.active=!1),this.editor.re.delete(a),a.parentNode===document.body)try{document.body.removeChild(a)}catch(t){console.warn("Error removing nested card dialog:",t)}setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)};a.addEventListener("dialog-closed",d);const c={cardConfig:n,lovelaceConfig:this.editor.lovelace||r.lovelace,saveCardConfig:async n=>{if(a.ge||a.pe){if(h("ELEMENT","Nested card: Save detected from element editor, preserving dialog state"),a.ge=!1,this.editor.eventHandling.he.timestamp=Date.now(),n){h("ELEMENT","Silently updating nested card config with element changes");const o=[...s];o[i]=n;const r={...e,card:o},a=[...this.editor.Qt.cards];a[t]=r,this.editor.Qt={...this.editor.Qt,cards:a},this.editor.configManager.fireConfigChanged({maintainEditorState:!0,fromElementEditor:!0,updatedCardIndex:t,nestedCardIndex:i})}return n}if(a.me&&!n)return h("ELEMENT","Nested card: Element editor cancel detected, restoring previous config"),void(a.me=null);if(!n)return;h("EDITOR",`Saving nested card ${t}.${i} with new config`);const o=[...s];o[i]=n;const r={...e,card:o},d=[...this.editor.Qt.cards];d[t]=r,this.editor.Qt={...this.editor.Qt,cards:d},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)}};await a.showDialog(c)}catch(o){h("ERROR","SimpleSwipeCardEditor: Error opening edit dialog for nested card:",o),St(this.editor,"ll-show-dialog",{dialogTag:"hui-dialog-edit-card",dialogImport:()=>import("hui-dialog-edit-card"),dialogParams:{cardConfig:n,lovelaceConfig:this.editor.lovelace||r.lovelace,saveCardConfig:async n=>{if(!n)return;const o=[...s];o[i]=n;const r={...e,card:o},a=[...this.editor.Qt.cards];a[t]=r,this.editor.Qt={...this.editor.Qt,cards:a},this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100)}}})}else h("ERROR","SimpleSwipeCardEditor: Cannot find Home Assistant instance")}safelyAddCard(t){if(t&&this.editor.Qt)try{const i=Array.isArray(this.editor.Qt.cards)?[...this.editor.Qt.cards]:[],e={...this.editor.Qt,cards:[...i,t]};this.editor.Qt=e,this.editor.configManager.fireConfigChanged({isSafeCardAddition:!0,addedCardType:t.type}),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),50),h("EDITOR","Safely added card:",t.type)}catch(t){h("ERROR","Failed to safely add card:",t)}}handleCardPicked(t){if(h("EDITOR","Fallback _handleCardPicked called:",t.detail?.config?.type),t.stopPropagation(),t.stopImmediatePropagation&&t.stopImmediatePropagation(),!t.detail?.config)return;const i=t.detail.config;h("EDITOR","Adding card in fallback handler:",i.type);const e=Array.isArray(this.editor.Qt.cards)?[...this.editor.Qt.cards]:[],s={...this.editor.Qt,cards:[...e,i]};this.editor.Qt=s,this.editor.configManager.fireConfigChanged(),this.editor.requestUpdate()}}class Rt{constructor(t){this.editor=t,this.ne=this.oe.bind(this),this.he={active:!1,parentDialogId:null,elementId:null,timestamp:null,savedState:null}}setupEventListeners(){document.addEventListener("config-changed",this.ne,{capture:!0}),this.we=t=>{if(this.ve(t)){if(h("ELEMENT","Config-changed event from element editor, allowing propagation"),t.target&&t.target.closest("hui-dialog-edit-card")){const i=t.target.closest("hui-dialog-edit-card");i&&(i.pe=!0,this.he.active=!0,this.he.parentDialogId=i.ce||null,this.he.timestamp=Date.now())}}else if("config-changed"===t.type&&t.detail?.config){const i="custom:actions-card"===t.detail?.config?.type;if("hui-card-picker"===t.target?.tagName?.toLowerCase()){if((t.composedPath?t.composedPath():[]).some(t=>t===this.editor||t.shadowRoot&&t.shadowRoot.contains(this.editor)||this.editor.shadowRoot&&this.editor.shadowRoot.contains(t))&&(h("EDITOR","Card picker selection captured by global handler:",t.detail.config.type),i&&!this.editor.de))return this.editor.ae={time:Date.now(),config:t.detail.config},this.editor.de=!0,this.editor.be(t.detail.config),t.stopImmediatePropagation&&t.stopImmediatePropagation(),void t.stopPropagation()}}},document.addEventListener("config-changed",this.we,{capture:!0}),this.xe=t=>{if(t.Ee)return h("EVENT","Intercepted iron-select event already processed by actions card editor"),void t.stopPropagation()},document.addEventListener("iron-select",this.xe,{capture:!0}),this.ye=t=>{if(t.target&&"HUI-DIALOG-EDIT-CARD"===t.target.tagName){const i=t.target;h("EDITOR","A HUI-DIALOG-EDIT-CARD closed",{tracked:this.editor.re.has(i),isActions:this.Ie(i),handlingElementEdit:i.pe}),i.pe&&(h("ELEMENT","Dialog handling element edit is closing, ending element edit session"),this.he.active=!1,i.me&&(h("ELEMENT","Preserving element config on dialog close"),this.he.savedState=i.me,i.me=null)),this.editor.re.has(i)&&(this.editor.re.delete(i),this.editor.requestUpdate(),setTimeout(()=>this.editor.uiManager.ensureCardPickerLoaded(),100))}t.target&&("HUI-DIALOG-EDIT-ELEMENT"===t.target.tagName||"HUI-DIALOG"===t.target.tagName&&this.ve(t))&&(h("ELEMENT","Element editor dialog closed"),setTimeout(()=>{this.he.active&&Date.now()-this.he.timestamp>500&&(h("ELEMENT","Resetting element edit session after timeout"),this.he.active=!1)},500))},document.addEventListener("dialog-closed",this.ye,{capture:!0}),this.Se=t=>{"element-updated"!==t.type&&"show-edit-element"!==t.type||this.he.active||(h("ELEMENT",`Capturing ${t.type} event, starting element edit session`),this.he.active=!0,this.he.timestamp=Date.now(),t.detail&&t.detail.elementId&&(this.he.elementId=t.detail.elementId))},document.addEventListener("element-updated",this.Se,{capture:!0}),document.addEventListener("show-edit-element",this.Se,{capture:!0})}removeEventListeners(){document.removeEventListener("config-changed",this.we,{capture:!0}),document.removeEventListener("iron-select",this.xe,{capture:!0}),document.removeEventListener("config-changed",this.ne,{capture:!0}),document.removeEventListener("dialog-closed",this.ye,{capture:!0}),document.removeEventListener("element-updated",this.Se,{capture:!0}),document.removeEventListener("show-edit-element",this.Se,{capture:!0})}ve(t){if(t.detail&&(t.detail.fromElementEditor||t.detail.elementConfig||t.detail.elementToEdit||t.detail.element))return h("ELEMENT","Element editor detected through event detail"),!0;const i=t.composedPath?t.composedPath():[];for(const t of i)if(t&&t.localName){if("hui-element-editor"===t.localName||"hui-dialog-edit-element"===t.localName||t.localName.includes("element-editor"))return h("ELEMENT","Element editor detected through path node localName:",t.localName),!0;if(t.Ce||t.Te||t.getAttribute&&(t.getAttribute("element-id")||t.getAttribute("data-element-id"))||t.classList&&t.classList.contains("element-editor"))return h("ELEMENT","Element editor detected through specialized attributes"),!0;if("HUI-DIALOG"===t.tagName&&(t.querySelector(".element-editor")||t.$e&&"string"==typeof t.$e&&t.$e.toLowerCase().includes("element")))return h("ELEMENT","Element editor detected through hui-dialog with element editor content"),!0}return"element-updated"===t.type||"config-changed"===t.type&&t.target&&("hui-element-editor"===t.target.localName||t.target.closest("hui-element-editor"))?(h("ELEMENT","Element editor detected through event characteristics"),!0):!!(this.he.active&&Date.now()-this.he.timestamp<5e3)&&(h("ELEMENT","Element editor event detected through active editing session"),!0)}Ie(t){if(!t)return!1;if(t.ue)return!0;try{const i=t.cardConfig;return i&&"custom:actions-card"===i.type}catch(t){return!1}}oe(t){if(this.ve(t)){h("ELEMENT","Detected element editor event in _handleNestedCardEvents");if(t.composedPath&&t.composedPath().some(t=>this.editor.re.has(t)||t.ce&&t.ce===this.editor.ie))return void h("ELEMENT","Element editor event is related to our dialog stack, handling specially")}if(t._e||!t.detail?.fromActionCardEditor)return;const i=t.target.closest("[data-index]");if(!i||!this.editor.Qt?.cards)return;const e=parseInt(i.getAttribute("data-index"));if(!(isNaN(e)||e<0||e>=this.editor.Qt.cards.length)){if(h("EVENT",`Handling nested card event from actions card at index ${e}`,t.detail),t.stopPropagation(),t.preventDefault&&t.preventDefault(),t.detail.maintainEditorState){h("EVENT","Event marked to maintain editor state, preventing propagation");const i=[...this.editor.Qt.cards];i[e]=t.detail.config,this.editor.Qt={...this.editor.Qt,cards:i},this.editor.configManager.fireConfigChanged({nestedCardUpdate:!0,updatedCardIndex:e,nestedCardType:t.detail.config.type,maintainEditorState:!0})}else{const i=[...this.editor.Qt.cards];i[e]=t.detail.config,this.editor.Qt={...this.editor.Qt,cards:i},this.editor.configManager.fireConfigChanged({nestedCardUpdate:!0,updatedCardIndex:e,nestedCardType:t.detail.config.type})}t._e=!0,this.editor.requestUpdate()}}handleDialogConfigChanged(t,i,e){{const t=e.composedPath?e.composedPath().map(t=>t.localName||t.nodeName).join(" > "):"No path",i=e.detail?JSON.stringify(e.detail,null,2):"{}";h("EVENT","Config change event details:",{target:e.target.localName,path:t,detail:JSON.parse(i),rawDetail:i,currentTarget:e.currentTarget.localName})}if(this.ve(e)){if(h("ELEMENT",`[CARD INDEX ${t}] Element editor event detected, preserving and allowing propagation`),i.pe=!0,this.he.active=!0,this.he.timestamp=Date.now(),e.detail&&e.detail.config&&(i.me=JSON.parse(JSON.stringify(e.detail.config)),i.ge=!0,i.le))try{h("ELEMENT","Silently updating picture-elements config");const i=[...this.editor.Qt.cards];i[t]=e.detail.config,this.editor.Qt={...this.editor.Qt,cards:i},this.editor.configManager.fireConfigChanged({maintainEditorState:!0,fromElementEditor:!0,elementEditorEvent:!0,updatedCardIndex:t})}catch(t){h("ERROR","Error silently updating config:",t)}}else if(e.target!==i&&e.detail&&e.detail.config){e.stopPropagation();const i=e.detail.config;h("EDITOR",`[CARD INDEX ${t}] Config received in handler: ${JSON.stringify(i.type)}`);const s=[...this.editor.Qt.cards];s[t]=i,this.editor.Qt={...this.editor.Qt,cards:s},this.editor.configManager.fireConfigChanged({maintainEditorState:!0,updatedCardIndex:t,reason:"child_dialog_update_"+(e.detail.fromActionCardEditor?"action_card":"generic")}),this.editor.requestUpdate(),h("EDITOR",`[CARD INDEX ${t}] Processed config-changed from content, stopped propagation OUTSIDE dialog.`)}else h("EDITOR",`[CARD INDEX ${t}] config-changed ignored or allowed to bubble (no config or event target is the dialog itself)`)}handleDialogShowDialog(t,i){if(i.detail&&(i.detail.dialogTag&&("hui-dialog-edit-element"===i.detail.dialogTag||i.detail.dialogTag.includes("element-editor"))||i.detail.elementToEdit)){h("ELEMENT",`[CARD INDEX ${t}] Element editor dialog detected, allowing normal event flow`);const e=i.currentTarget;return e&&(e.pe=!0),this.he.active=!0,this.he.timestamp=Date.now(),void(i.detail&&i.detail.elementId&&(this.he.elementId=i.detail.elementId))}const e=i.detail?JSON.stringify(i.detail):"{}";h("EDITOR",`[CARD INDEX ${t}] INTERCEPTED "${i.type}" event from hui-dialog-edit-card OR ITS CONTENT`,{detail:JSON.parse(e),target:i.target.localName}),i.stopPropagation(),i.stopImmediatePropagation&&i.stopImmediatePropagation(),i.cancelable&&i.preventDefault(),h("EDITOR",`[CARD INDEX ${t}] Re-firing "${i.type}" event from SimpleSwipeCardEditor.`),St(this.editor,i.type,i.detail)}}function Mt(t,i,e,s,n,o,r,a){const d=t.loop_mode||"none",h=!0===t.enable_auto_swipe,c=t.auto_swipe_interval??2e3,l=!0===t.enable_reset_after,p=t.reset_after_timeout??3e4,u=t.reset_target_card??1,g=t.state_entity||"";let m=0,v=0;"none"!==d&&m++,h&&m++,l&&!h&&m++,l&&h&&v++,g&&m++;let f="",w="";return m>0&&(f=`${m} active`),v>0&&(w=`${v} blocked`),Z`
-    <div class="collapsible-section">
-      <div
-        class="section-toggle ${i.advanced?"expanded":""}"
-        @click=${()=>s("advanced")}
-      >
-        <ha-icon
-          class="section-toggle-icon ${i.advanced?"expanded":""}"
-          icon="mdi:chevron-right"
-        ></ha-icon>
-        <div class="section-toggle-title">Advanced Options</div>
-        ${f?Z`<div class="section-toggle-badge">${f}</div>`:""}
-        ${w?Z`<div class="section-toggle-badge blocked-only">
-              ${w}
-            </div>`:""}
-      </div>
+`;
 
-      <div
-        class="section-content compact-options ${i.advanced?"expanded":"collapsed"}"
-      >
-        ${function(t,i){return Z`
-    <div class="option-row">
-      <div class="option-left">
-        <div class="option-label">Loop behavior</div>
-        <div class="option-help">
-          ${"none"===t?"Stop at first/last card (no looping)":"loopback"===t?"Jump back to first/last card":"Continuous loop navigation"}
-        </div>
-      </div>
-      <div class="option-control">
-        <ha-select
-          .value=${t}
-          data-option="loop_mode"
-          @change=${i}
-          @closed=${t=>t.stopPropagation()}
-        >
-          <ha-list-item .value=${"none"}> No looping </ha-list-item>
-          <ha-list-item .value=${"loopback"}> Jump to start/end </ha-list-item>
-          <ha-list-item .value=${"infinite"}> Continuous loop </ha-list-item>
-        </ha-select>
-      </div>
-    </div>
-  `}(d,e)}
-        ${function(t,i,e){return Z`
-    <div class="option-row">
-      <div class="option-label">Enable auto-swipe</div>
-      <div class="option-control">
-        <ha-switch
-          .checked=${t}
-          data-option="enable_auto_swipe"
-          @change=${e}
-        ></ha-switch>
-      </div>
-    </div>
-    <div class="help-text">Automatically cycle through cards</div>
+/**
+ * Event handling utilities for Simple Swipe Card
+ */
 
-    ${t?Z`
-          <ha-textfield
-            label="Auto-swipe interval (ms)"
-            .value=${i.toString()}
-            data-option="auto_swipe_interval"
-            type="number"
-            min="500"
-            suffix="ms"
-            @change=${e}
-            autoValidate
-            pattern="[0-9]+"
-            required
-          ></ha-textfield>
-          <div class="help-text">Time between swipes (min. 500ms).</div>
-        `:""}
-  `}(h,c,e)}
-        ${function(t,i,e,s,n,o,r,a){return Z`
-    <div class="option-row">
-      <div class="option-label">Enable reset after timeout</div>
-      <div class="option-control">
-        <ha-switch
-          .checked=${t}
-          data-option="enable_reset_after"
-          @change=${o}
-          ?disabled=${i}
-        ></ha-switch>
-      </div>
-    </div>
-    <div class="help-text">
-      ${i?"Disabled when auto-swipe is on":"Auto-return after inactivity"}
-    </div>
 
-    ${t&&!i?Z`
-          <ha-textfield
-            label="Reset timeout (seconds)"
-            .value=${Math.round(e/1e3).toString()}
-            type="number"
-            min="5"
-            max="3600"
-            suffix="sec"
-            @change=${r}
-            autoValidate
-            pattern="[0-9]+"
-            required
-          ></ha-textfield>
-          <div class="help-text">
-            Time of inactivity before resetting (5s to 1h)
-          </div>
+/**
+ * Fires a config-changed event with proper identification
+ * @param {HTMLElement} element - Element to fire event from
+ * @param {Object} config - Configuration object
+ * @param {Object} [extraData] - Additional data to include in the event
+ */
+function fireConfigChanged(element, config, extraData = {}) {
+  if (!config) return;
 
-          <ha-textfield
-            label="Target card (1-based)"
-            .value=${s.toString()}
-            type="number"
-            min="1"
-            max=${(Math.max(0,n.length-1)+1).toString()}
-            @change=${a}
-            ?disabled=${0===n.length}
-            autoValidate
-            pattern="[0-9]+"
-            required
-          ></ha-textfield>
-          <div class="help-text">
-            Which card to return to
-            ${0===n.length?"Add cards first to set a target.":`(current range: 1-${n.length})`}
-          </div>
-        `:""}
-  `}(l,h,p,u,n,e,o,r)}
-        ${function(t,i,e){const s=Object.keys(i.states||{}).filter(t=>t.startsWith("input_select.")||t.startsWith("input_number.")).sort().map(t=>({entityId:t,friendlyName:i.states[t].attributes.friendly_name||t.replace(/^(input_select\.|input_number\.)/,"").replace(/_/g," ")}));return Z`
-    <div class="option-row">
-      <div class="option-left">
-        <div class="option-label">State synchronization entity</div>
-        <div class="option-help">
-          Two-way sync with input_select/input_number entity
-        </div>
-      </div>
-      <div class="option-control">
-        <ha-select
-          .value=${t||""}
-          data-option="state_entity"
-          @change=${e}
-          @closed=${t=>t.stopPropagation()}
-        >
-          <ha-list-item .value=${""}>
-            <span style="color: var(--secondary-text-color);"
-              >Select an entity</span
-            >
-          </ha-list-item>
-          ${s.map(t=>Z`
-              <ha-list-item .value=${t.entityId}>
-                ${t.friendlyName}
-                <span
-                  style="color: var(--secondary-text-color); font-size: 0.9em; margin-left: 8px;"
-                >
-                  (${t.entityId})
-                </span>
-              </ha-list-item>
-            `)}
-        </ha-select>
-      </div>
-    </div>
-  `}(g,a,e)}
-      </div>
-    </div>
-  `}function At(t,i,e,s,n,o,r,a,d,h,c,l){return Z`
-    <div class="section cards-section">
-      <div class="section-header">Cards</div>
+  // Determine if the event should bubble based on maintainEditorState
+  const shouldBubble = !extraData.maintainEditorState;
 
-      <div class="card-list">
-        ${0===t.length?Z`<div class="no-cards">
-              No cards added yet. Select a card type below to add your first
-              card.
-            </div>`:t.map((p,u)=>function(t,i,e,s,n,o,r,a,d,h,c,l,p,u){const g=a(t),m=d(t),v=m?h(t):[],f=c(t),w=!s||wt(t.visibility,s);return Z`
-    <div
-      class="card-row ${w?"":"hidden-card"}"
-      data-index=${i}
-    >
-      <div class="card-info">
-        <span class="card-index">${i+1}</span>
-        <span class="card-type">${g.typeName}</span>
-        ${g.isPictureElements?Z`<span class="picture-elements-badge">Elements</span>`:""}
-        ${f&&w?Z`<span class="visibility-badge">Conditional</span>`:""}
-        ${g.name?Z`<span class="card-name">(${g.name})</span>`:""}
-      </div>
-      <div class="card-actions">
-        ${f&&!w?Z`<ha-icon class="hidden-icon" icon="mdi:eye-off"></ha-icon>`:""}
-        <ha-icon-button
-          label="Move Up"
-          ?disabled=${0===i}
-          path="M7,15L12,10L17,15H7Z"
-          @click=${()=>n(i,-1)}
-        ></ha-icon-button>
-        <ha-icon-button
-          label="Move Down"
-          ?disabled=${i===e-1}
-          path="M7,9L12,14L17,9H7Z"
-          @click=${()=>n(i,1)}
-        ></ha-icon-button>
-        <ha-icon-button
-          label="Edit Card"
-          path="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
-          @click=${()=>o(i)}
-        ></ha-icon-button>
-        <ha-icon-button
-          path="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-          @click=${()=>r(i)}
-          style="color: var(--error-color);"
-        ></ha-icon-button>
-      </div>
-    </div>
-    ${m?function(t,i,e,s,n,o){return Z`
-    <div class="nested-cards-container">
-      ${t.map((r,a)=>{const d=e(r);return Z`
-          <div
-            class="nested-card-row"
-            data-parent-index=${i}
-            data-nested-index=${a}
-          >
-            <div class="nested-card-info">
-              <span class="nested-card-index"
-                >${i+1}.${a+1}</span
-              >
-              <span class="nested-card-type">${d.typeName}</span>
-              ${d.isPictureElements?Z`<span class="picture-elements-badge">Elements</span>`:""}
-              ${d.name?Z`<span class="nested-card-name"
-                    >(${d.name})</span
-                  >`:""}
-            </div>
-            <div class="nested-card-actions">
-              <ha-icon-button
-                label="Move Up"
-                ?disabled=${0===a}
-                path="M7,15L12,10L17,15H7Z"
-                @click=${()=>s(i,a,-1)}
-              ></ha-icon-button>
-              <ha-icon-button
-                label="Move Down"
-                ?disabled=${a===t.length-1}
-                path="M7,9L12,14L17,9H7Z"
-                @click=${()=>s(i,a,1)}
-              ></ha-icon-button>
-              <ha-icon-button
-                label="Edit Card"
-                path="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
-                @click=${()=>n(i,a)}
-              ></ha-icon-button>
-              <ha-icon-button
-                label="Delete Card"
-                path="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                @click=${()=>o(i,a)}
-                style="color: var(--error-color);"
-              ></ha-icon-button>
-            </div>
-          </div>
-        `})}
-    </div>
-  `}(v,i,a,l,p,u):""}
-  `}(p,u,t.length,i,e,s,n,o,r,a,d,h,c,l))}
-      </div>
-    </div>
-  `}class SimpleSwipeCardEditor extends mt{static get properties(){return{hass:{type:Object},Qt:{type:Object,state:!0},lovelace:{type:Object}}}static get styles(){return It()}constructor(){super(),h("EDITOR","SimpleSwipeCardEditor Constructor invoked."),h("EDITOR","Editor styles method available:",!!this.constructor.styles),this.uiManager=new kt(this),this.configManager=new Dt(this),this.cardManagement=new Ot(this),this.eventHandling=new Rt(this),this.uiManager.initializeEditor()}ve(t){return this.eventHandling.ve(t)}Ie(t){return this.eventHandling.Ie(t)}Ne(t){return this.cardManagement.isPictureElementsCard(t)}ke(t){return this.cardManagement.hasVisibilityConditions(t)}De(t){this.uiManager.toggleSection(t)}Oe(t){return this.cardManagement.hasNestedCards(t)}Re(t){return this.cardManagement.getNestedCards(t)}Me(t,i,e){this.cardManagement.moveNestedCard(t,i,e)}Ae(t,i){this.cardManagement.removeNestedCard(t,i)}async Le(t,i){await this.cardManagement.editNestedCard(t,i)}async ze(t){await this.cardManagement.editCard(t)}Pe(t){this.cardManagement.handleCardPicked(t)}Ve(t){return this.cardManagement.getCardDescriptor(t)}We(t,i){this.cardManagement.moveCard(t,i)}Ue(t){this.cardManagement.removeCard(t)}be(t){this.cardManagement.safelyAddCard(t)}Fe(){this.uiManager.ensureCardPickerLoaded()}setConfig(t){this.configManager.setConfig(t)}He(t){this.configManager.handleValueChanged(t)}Ye(t={}){this.configManager.fireConfigChanged(t)}render(){if(!this.hass||!this.Qt)return Z`<ha-circular-progress
-        active
-        alt="Loading editor"
-      ></ha-circular-progress>`;const i=this.Qt.cards||[];return Z`
-      <div class="card-config">
-        ${Z`
+  // Create a custom event
+  const event = new CustomEvent("config-changed", {
+    detail: {
+      config: config,
+      ...extraData,
+    },
+    bubbles: shouldBubble, // Set bubbles based on maintainEditorState
+    composed: true, // Cross shadow DOM boundary
+  });
+
+  logDebug("EVENT", "Firing config-changed event", {
+    bubble: shouldBubble,
+    ...extraData,
+  });
+  element.dispatchEvent(event);
+}
+
+/**
+ * Safely fires a Home Assistant event using fireEvent
+ * @param {HTMLElement} element - Element to fire event from
+ * @param {string} type - Event type
+ * @param {Object} detail - Event detail object
+ */
+function fireHAEvent(element, type, detail = {}) {
+  try {
+    fireEvent(element, type, detail);
+  } catch (error) {
+    logDebug("ERROR", "Failed to fire HA event:", type, error);
+    // Fallback to standard CustomEvent
+    const event = new CustomEvent(type, {
+      detail,
+      bubbles: true,
+      composed: true,
+    });
+    element.dispatchEvent(event);
+  }
+}
+
+/**
+ * Gets transition CSS properties with fallbacks
+ * @param {boolean} animate - Whether to apply animation
+ * @param {HTMLElement} [element] - Element to get computed styles from
+ * @returns {string} - Transition style value
+ */
+function getTransitionStyle(animate, element = null) {
+  if (!animate) return "none";
+
+  // Get computed values if connected to DOM
+  let speed = "0.3s";
+  let easing = "ease-out";
+
+  if (element && element.isConnected) {
+    const computedStyle = getComputedStyle(element);
+    const speedValue = computedStyle
+      .getPropertyValue("--simple-swipe-card-transition-speed")
+      .trim();
+    const easingValue = computedStyle
+      .getPropertyValue("--simple-swipe-card-transition-easing")
+      .trim();
+
+    if (speedValue) speed = speedValue;
+    if (easingValue) easing = easingValue;
+  }
+
+  return `transform ${speed} ${easing}`;
+}
+
+/**
+ * Handles edit button click in preview mode
+ * @param {Event} e - Click event
+ * @param {HTMLElement} element - Element to fire event from
+ */
+function handleEditClick(e, element) {
+  e.stopPropagation();
+  logDebug("EDITOR", "Edit button clicked, firing show-edit-card event");
+  fireHAEvent(element, "show-edit-card", { element: element });
+}
+
+/**
+ * Sets up global dialog stack if not exists
+ */
+function initializeGlobalDialogStack() {
+  if (!window._simpleSwipeDialogStack) {
+    window._simpleSwipeDialogStack = [];
+  }
+}
+
+/**
+ * Gets or creates a global registry
+ * @param {string} registryName - Name of the registry
+ * @returns {Map|Set} The registry object
+ */
+function getGlobalRegistry(registryName, type = "Map") {
+  if (!window[registryName]) {
+    window[registryName] = type === "Set" ? new Set() : new Map();
+  }
+  return window[registryName];
+}
+
+/**
+ * Card creation and DOM building for Simple Swipe Card
+ */
+
+
+/**
+ * Card builder class for managing card creation and layout
+ */
+class CardBuilder {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+  }
+
+  /**
+   * Builds or rebuilds the entire card
+   */
+  async build() {
+    if (this.card.building) {
+      logDebug("INIT", "Build already in progress, skipping.");
+      return;
+    }
+    if (
+      !this.card._config ||
+      !this.card._config.cards ||
+      !this.card.isConnected
+    ) {
+      logDebug("INIT", "Build skipped (no config/cards or not connected).");
+      return;
+    }
+
+    this.card.building = true;
+    logDebug("INIT", "Starting build...");
+
+    // Preserve reset-after state before rebuild
+    this.card.resetAfter?.preserveState();
+
+    // Reset state
+    this.card.cards = [];
+    this.card.currentIndex = 0;
+    this.card.virtualIndex = 0;
+    this.card.realIndex = 0;
+    this.card.resizeObserver?.cleanup();
+    this.card.swipeGestures?.removeGestures();
+    this.card.autoSwipe?.stop();
+    this.card.resetAfter?.stopTimer();
+    if (this.card.shadowRoot) this.card.shadowRoot.innerHTML = "";
+
+    const root = this.card.shadowRoot;
+
+    const helpers = await getHelpers();
+    if (!helpers) {
+      console.error("SimpleSwipeCard: Card helpers not loaded.");
+      root.innerHTML = `<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>`;
+      this.card.building = false;
+      this.card.initialized = false;
+      return;
+    }
+
+    // Add styles
+    const style = document.createElement("style");
+    style.textContent = getStyles();
+    root.appendChild(style);
+
+    // Create container structure
+    this.card.cardContainer = document.createElement("div");
+    this.card.cardContainer.className = "card-container";
+
+    this.card.sliderElement = document.createElement("div");
+    this.card.sliderElement.className = "slider";
+    // Add swipe direction as a data attribute
+    this.card.sliderElement.setAttribute(
+      "data-swipe-direction",
+      this.card._swipeDirection,
+    );
+    this.card.cardContainer.appendChild(this.card.sliderElement);
+    root.appendChild(this.card.cardContainer);
+
+    // Update visible card indices
+    this.card._updateVisibleCardIndices();
+
+    // Handle empty state (PREVIEW) - only for completely empty config
+    if (this.card._config.cards.length === 0) {
+      logDebug("INIT", "Building preview state.");
+      const previewContainer = createPreviewContainer(
+        this.card._swipeDirection,
+        (e) => handleEditClick(e, this.card),
+      );
+
+      // Append the preview directly to the shadow root, not inside the slider
+      root.innerHTML = ""; // Clear previous content (including styles)
+      root.appendChild(style); // Re-add styles
+      root.appendChild(previewContainer);
+
+      this.card.initialized = true;
+      this.card.building = false;
+      // No layout finish needed for preview
+      return;
+    }
+
+    // Handle case where no cards are visible - COMPLETELY HIDE THE CARD
+    if (this.card.visibleCardIndices.length === 0) {
+      logDebug("INIT", "No visible cards, hiding entire card.");
+
+      // Make the entire card invisible
+      this.card.style.display = "none";
+
+      // Clear the shadow root content
+      root.innerHTML = "";
+
+      this.card.initialized = true;
+      this.card.building = false;
+      return;
+    }
+
+    // If we reach here, we have visible cards - ensure card is visible
+    this.card.style.display = "block";
+
+    // Initialize loop mode
+    this.card.loopMode.initialize();
+
+    // Build cards with duplication for infinite loop
+    const cardsToLoad = this.card.loopMode.prepareCardsForLoading(
+      this.card.visibleCardIndices,
+      this.card._config.cards,
+    );
+
+    if (this.card.loopMode.isInfiniteMode) {
+      console.log("=== CARDBUILDER INFINITE MODE DEBUG ===");
+      console.log("Visible card indices:", this.card.visibleCardIndices);
+      console.log("Cards to load:", cardsToLoad.map(card => ({
+        visibleIndex: card.visibleIndex,
+        originalIndex: card.originalIndex,
+        isDuplicate: card.isDuplicate,
+        cardType: card.config?.type
+      })));
+      console.log("=== END CARDBUILDER DEBUG ===");
+    }
+
+    logDebug("INIT", `Building cards:`, {
+      totalVisible: this.card.visibleCardIndices.length,
+      totalToLoad: cardsToLoad.length,
+      infiniteMode: this.card.isInfiniteMode,
+    });
+
+    const cardPromises = cardsToLoad.map((cardInfo) => {
+      return this.createCard(
+        cardInfo.config,
+        cardInfo.visibleIndex,
+        cardInfo.originalIndex,
+        helpers,
+        cardInfo.isDuplicate,
+      );
+    });
+
+    await Promise.allSettled(cardPromises);
+
+    // Sort and append cards
+    this.card.cards
+      .filter(Boolean)
+      .sort((a, b) => a.visibleIndex - b.visibleIndex)
+      .forEach((cardData) => {
+        if (cardData.slide) {
+          // Add data attributes for debugging
+          cardData.slide.setAttribute("data-index", cardData.originalIndex);
+          cardData.slide.setAttribute(
+            "data-visible-index",
+            cardData.visibleIndex,
+          );
+          if (cardData.isDuplicate) {
+            cardData.slide.setAttribute("data-duplicate", "true");
+          }
+          if (cardData.config && cardData.config.type) {
+            cardData.slide.setAttribute("data-card-type", cardData.config.type);
+          }
+          this.card.sliderElement.appendChild(cardData.slide);
+        }
+      });
+
+    this.card.pagination?.create();
+    this.card._applyCardModStyles();
+
+    // Defer layout and gestures until next frame
+    requestAnimationFrame(() => this.finishBuildLayout());
+
+    this.card.initialized = true;
+    this.card.building = false;
+    logDebug("INIT", "Build finished - all cards loaded.");
+
+    // Restore reset-after state after rebuild
+    this.card.resetAfter?.restoreState();
+  }
+
+  /**
+   * Preloads adjacent cards when needed (now a no-op since all cards are loaded upfront)
+   * @param {number} currentVisibleIndex - The current visible card index
+   */
+  preloadAdjacentCards() {
+    // No-op: All cards are now loaded upfront, so no additional preloading needed
+    logDebug(
+      "INIT",
+      "preloadAdjacentCards called but all cards already loaded",
+    );
+    return;
+  }
+
+  /**
+   * Creates a card element and adds it to the slider
+   * @param {Object} cardConfig - Configuration for the card
+   * @param {number} visibleIndex - Index in the visible cards array (can be negative for infinite mode leading duplicates)
+   * @param {number} originalIndex - Original index in the full cards array
+   * @param {Object} helpers - Home Assistant card helpers
+   * @param {boolean} isDuplicate - Whether this is a duplicate card for infinite scrolling
+   */
+  async createCard(
+    cardConfig,
+    visibleIndex,
+    originalIndex,
+    helpers,
+    isDuplicate = false,
+  ) {
+    const slideDiv = createSlide();
+    let cardElement;
+    const cardData = {
+      visibleIndex,
+      originalIndex,
+      slide: slideDiv,
+      config: JSON.parse(JSON.stringify(cardConfig)),
+      error: false,
+      isDuplicate: isDuplicate,
+    };
+
+    try {
+      cardElement = await helpers.createCardElement(cardConfig);
+      if (this.card._hass) cardElement.hass = this.card._hass;
+      cardData.element = cardElement;
+
+      // Add special attribute for picture-elements cards to enhance tracking
+      if (cardConfig.type === "picture-elements") {
+        cardElement.setAttribute("data-swipe-card-picture-elements", "true");
+        slideDiv.setAttribute("data-has-picture-elements", "true");
+      }
+
+      // Special handling for specific card types
+      requestAnimationFrame(() => {
+        try {
+          if (cardConfig.type === "todo-list") {
+            const textField =
+              cardElement.shadowRoot?.querySelector("ha-textfield");
+            const inputElement = textField?.shadowRoot?.querySelector("input");
+            if (inputElement) inputElement.enterKeyHint = "done";
+          }
+        } catch (e) {
+          console.warn("Error applying post-creation logic:", e);
+        }
+      });
+      slideDiv.appendChild(cardElement);
+    } catch (e) {
+      logDebug(
+        "ERROR",
+        `Error creating card ${visibleIndex} (original ${originalIndex}):`,
+        cardConfig,
+        e,
+      );
+      cardData.error = true;
+      // Create error card with user-friendly message
+      const errorCard = await helpers.createErrorCardElement(
+        {
+          type: "error",
+          error: `Failed to create card: ${e.message}`,
+          origConfig: cardConfig,
+        },
+        this.card._hass,
+      );
+      cardData.element = errorCard;
+      slideDiv.appendChild(errorCard);
+    }
+
+    // Use push instead of array index assignment to handle negative visibleIndex values
+    this.card.cards.push(cardData);
+  }
+
+  /**
+   * Handles visibility changes from conditional cards
+   * @param {number} originalIndex - Original index of the conditional card
+   * @param {boolean} visible - Whether the card is now visible
+   * @private
+   */
+  _handleConditionalCardVisibilityChange(originalIndex, visible) {
+    logDebug(
+      "VISIBILITY",
+      `Conditional card ${originalIndex} visibility changed to: ${visible}`,
+    );
+
+    // Find the card data
+    const cardData = this.card.cards.find(
+      (card) => card.originalIndex === originalIndex,
+    );
+    if (cardData) {
+      cardData.conditionallyVisible = visible;
+    }
+
+    // Update the card's visibility and rebuild if necessary
+    this.card._handleConditionalVisibilityChange();
+  }
+
+  /**
+   * Finishes the build process by setting up layout and observers
+   */
+  finishBuildLayout() {
+    if (
+      !this.card.cardContainer ||
+      !this.card.isConnected ||
+      this.card.building
+    ) {
+      logDebug("INIT", "_finishBuildLayout skipped", {
+        container: !!this.card.cardContainer,
+        connected: this.card.isConnected,
+        building: this.card.building,
+      });
+      return;
+    }
+    logDebug("INIT", "Finishing build layout...");
+
+    const containerWidth = this.card.cardContainer.offsetWidth;
+    const containerHeight = this.card.cardContainer.offsetHeight;
+
+    if (containerWidth <= 0 || containerHeight <= 0) {
+      if (this.card.offsetParent === null) {
+        logDebug("INIT", "Layout calculation skipped, element is hidden.");
+        return;
+      }
+      logDebug("INIT", "Container dimensions are 0, retrying layout...");
+      this.card._layoutRetryCount = (this.card._layoutRetryCount || 0) + 1;
+      if (this.card._layoutRetryCount < 5) {
+        setTimeout(
+          () => requestAnimationFrame(() => this.finishBuildLayout()),
+          100,
+        );
+      } else {
+        console.error("SimpleSwipeCard: Failed to get container dimensions.");
+        this.card._layoutRetryCount = 0;
+      }
+      return;
+    }
+    this.card._layoutRetryCount = 0;
+
+    // Set basic dimensions
+    this.card.slideWidth = containerWidth;
+    this.card.slideHeight = containerHeight;
+
+    // Handle carousel mode layout
+    const viewMode = this.card._config.view_mode || "single";
+    if (viewMode === "carousel") {
+      this._setupCarouselLayout(containerWidth, containerHeight);
+    }
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    // Adjust index if out of bounds
+    this.card.currentIndex = Math.max(
+      0,
+      Math.min(this.card.currentIndex, totalVisibleCards - 1),
+    );
+
+    // Apply matching border radius to all loaded slides
+    applyBorderRadiusToSlides(this.card.cards, this.card.cardContainer);
+
+    this.card.updateSlider(false);
+
+    this.card._setupResizeObserver();
+
+    // Add swipe gestures if needed (based on visible cards)
+    if (totalVisibleCards > 1) {
+      this.card.swipeGestures?.addGestures();
+    } else {
+      this.card.swipeGestures?.removeGestures();
+    }
+
+    logDebug(
+      "INIT",
+      "Layout finished, slideWidth:",
+      this.card.slideWidth,
+      "slideHeight:",
+      this.card.slideHeight,
+      "currentIndex:",
+      this.card.currentIndex,
+      "visible cards:",
+      totalVisibleCards,
+      "view mode:",
+      viewMode,
+    );
+
+    // All cards are already loaded - no preloading needed
+
+    // Setup auto-swipe and reset-after if enabled
+    this.card.autoSwipe?.manage();
+    this.card.resetAfter?.manage();
+    this.card.stateSynchronization?.manage();
+  }
+
+  /**
+   * Sets up carousel mode layout and sizing
+   * @param {number} containerWidth - Container width
+   * @private
+   */
+  _setupCarouselLayout(containerWidth) {
+    // Support both responsive and legacy approaches
+    let cardsVisible;
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    if (this.card._config.cards_visible !== undefined) {
+      // Legacy approach - use fixed cards_visible (backwards compatibility)
+      cardsVisible = this.card._config.cards_visible;
+      logDebug(
+        "INIT",
+        "Carousel layout using legacy cards_visible approach:",
+        cardsVisible,
+      );
+    } else {
+      // Responsive approach - calculate fractional cards_visible from card_min_width
+      const minWidth = this.card._config.card_min_width || 200;
+      const rawCardsVisible =
+        (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
+      logDebug("INIT", "Carousel layout using responsive approach:", {
+        minWidth,
+        containerWidth,
+        cardSpacing,
+        rawCardsVisible: rawCardsVisible.toFixed(2),
+        finalCardsVisible: cardsVisible,
+      });
+    }
+
+    // Calculate individual card width
+    // Total spacing = (cards_visible - 1) * cardSpacing (spacing between visible cards)
+    const totalSpacing = (cardsVisible - 1) * cardSpacing;
+    const cardWidth = (containerWidth - totalSpacing) / cardsVisible;
+
+    logDebug("INIT", "Carousel layout setup:", {
+      containerWidth,
+      cardsVisible: cardsVisible.toFixed(2),
+      cardSpacing,
+      totalSpacing,
+      cardWidth: cardWidth.toFixed(2),
+    });
+
+    // Set CSS custom property for card width
+    this.card.style.setProperty("--carousel-card-width", `${cardWidth}px`);
+
+    // Add carousel data attribute to slider and container
+    this.card.sliderElement.setAttribute("data-view-mode", "carousel");
+    this.card.cardContainer.setAttribute("data-view-mode", "carousel");
+
+    // Apply carousel class to all card slides
+    this.card.cards.forEach((cardData) => {
+      if (cardData && cardData.slide) {
+        cardData.slide.classList.add("carousel-mode");
+      }
+    });
+  }
+}
+
+/**
+ * State synchronization functionality for Simple Swipe Card
+ * Provides two-way binding with Home Assistant input_select and input_number entities
+ */
+
+
+/**
+ * State synchronization manager class
+ */
+class StateSynchronization {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+
+    // State management
+    this._stateEntity = null;
+    this._entityType = null; // 'input_select' or 'input_number'
+    this._lastEntityState = null;
+    this._updatingFromCard = false; // Prevent infinite loops
+    this._updateTimeout = null;
+
+    // Bind event handlers for proper cleanup
+    this._boundHandleEntityChange = this._handleEntityChange.bind(this);
+  }
+
+  /**
+   * Manages the state synchronization based on configuration
+   */
+  manage() {
+    if (!this.card.initialized || !this.card.isConnected) return;
+
+    // Stop any existing synchronization
+    this.stop();
+
+    // Only enable if state_entity is configured and we have a valid hass object
+    if (this.card._config.state_entity && this.card._hass) {
+      this._stateEntity = this.card._config.state_entity;
+
+      // Validate entity exists and get its type
+      if (this._validateEntity()) {
+        logDebug(
+          "STATE",
+          "State synchronization enabled for entity:",
+          this._stateEntity,
+        );
+        this._initializeSync();
+      } else {
+        logDebug("STATE", "Invalid or missing entity:", this._stateEntity);
+        this._stateEntity = null;
+      }
+    } else {
+      logDebug("STATE", "State synchronization disabled", {
+        hasEntity: !!this.card._config.state_entity,
+        hasHass: !!this.card._hass,
+      });
+    }
+  }
+
+  /**
+   * Stops state synchronization
+   */
+  stop() {
+    if (this._updateTimeout) {
+      clearTimeout(this._updateTimeout);
+      this._updateTimeout = null;
+    }
+    this._stateEntity = null;
+    this._entityType = null;
+    this._lastEntityState = null;
+    this._updatingFromCard = false;
+  }
+
+  /**
+   * Called when the card navigates to a new slide
+   * Updates the entity state to match the card position
+   * @param {number} visibleIndex - The visible card index (0-based)
+   */
+  onCardNavigate(visibleIndex) {
+    if (!this._stateEntity || !this.card._hass || this._updatingFromCard) {
+      return;
+    }
+
+    // Convert visible index to entity value
+    const entityValue = this._mapCardIndexToEntityValue(visibleIndex);
+    if (entityValue === null) return;
+
+    // Check if the entity state is already correct
+    const currentEntity = this.card._hass.states[this._stateEntity];
+    if (currentEntity && currentEntity.state === entityValue) {
+      logDebug("STATE", "Entity already at correct state:", entityValue);
+      return;
+    }
+
+    logDebug("STATE", `Updating entity ${this._stateEntity} to:`, entityValue);
+
+    // Set flag to prevent loop
+    this._updatingFromCard = true;
+
+    // Update the entity
+    try {
+      if (this._entityType === "input_select") {
+        this.card._hass.callService("input_select", "select_option", {
+          entity_id: this._stateEntity,
+          option: entityValue,
+        });
+      } else if (this._entityType === "input_number") {
+        this.card._hass.callService("input_number", "set_value", {
+          entity_id: this._stateEntity,
+          value: entityValue,
+        });
+      }
+
+      // Store the expected state
+      this._lastEntityState = entityValue;
+
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        this._updatingFromCard = false;
+      }, 500);
+    } catch (error) {
+      logDebug("ERROR", "Failed to update entity:", error);
+      this._updatingFromCard = false;
+    }
+  }
+
+  /**
+   * Validates that the configured entity exists and is compatible
+   * @returns {boolean} True if entity is valid
+   * @private
+   */
+  _validateEntity() {
+    if (!this.card._hass || !this._stateEntity) return false;
+
+    const entity = this.card._hass.states[this._stateEntity];
+    if (!entity) {
+      logDebug("STATE", "Entity not found:", this._stateEntity);
+      return false;
+    }
+
+    // Determine entity type
+    if (this._stateEntity.startsWith("input_select.")) {
+      this._entityType = "input_select";
+
+      // Validate that it has options
+      if (
+        !entity.attributes.options ||
+        !Array.isArray(entity.attributes.options)
+      ) {
+        logDebug(
+          "STATE",
+          "input_select entity has no options:",
+          this._stateEntity,
+        );
+        return false;
+      }
+    } else if (this._stateEntity.startsWith("input_number.")) {
+      this._entityType = "input_number";
+    } else {
+      logDebug(
+        "STATE",
+        "Entity is not input_select or input_number:",
+        this._stateEntity,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Initializes synchronization by setting initial state
+   * @private
+   */
+  _initializeSync() {
+    if (!this.card._hass || !this._stateEntity) return;
+
+    const entity = this.card._hass.states[this._stateEntity];
+    if (!entity) return;
+
+    // Store initial state
+    this._lastEntityState = entity.state;
+
+    // Sync card to entity's current state (gives external control priority)
+    const cardIndex = this._mapEntityValueToCardIndex(entity.state);
+    if (cardIndex !== null && cardIndex !== this.card.currentIndex) {
+      logDebug(
+        "STATE",
+        `Initial sync: setting card to index ${cardIndex} from entity state:`,
+        entity.state,
+      );
+
+      // Temporarily pause auto-swipe during initial sync
+      if (this.card._config.enable_auto_swipe) {
+        this.card.autoSwipe?.pause(2000);
+      }
+
+      this.card.goToSlide(cardIndex);
+    }
+  }
+
+  /**
+   * Handles entity state changes from Home Assistant
+   * @private
+   */
+  _handleEntityChange() {
+    if (!this.card._hass || !this._stateEntity || this._updatingFromCard) {
+      return;
+    }
+
+    const entity = this.card._hass.states[this._stateEntity];
+    if (!entity) return;
+
+    const newState = entity.state;
+
+    // Only process if state actually changed
+    if (newState === this._lastEntityState) {
+      return;
+    }
+
+    logDebug(
+      "STATE",
+      `Entity ${this._stateEntity} changed from "${this._lastEntityState}" to "${newState}"`,
+    );
+    this._lastEntityState = newState;
+
+    // Convert entity state to card index
+    const targetIndex = this._mapEntityValueToCardIndex(newState);
+    if (targetIndex !== null && targetIndex !== this.card.currentIndex) {
+      logDebug(
+        "STATE",
+        `Navigating to card index ${targetIndex} from entity change`,
+      );
+
+      // Pause auto-swipe during external navigation
+      if (this.card._config.enable_auto_swipe) {
+        this.card.autoSwipe?.pause(5000);
+      }
+
+      this.card.goToSlide(targetIndex);
+    }
+  }
+
+  /**
+   * Maps entity value to visible card index
+   * @param {string|number} entityValue - The entity's current state
+   * @returns {number|null} Visible card index (0-based) or null if invalid
+   * @private
+   */
+  _mapEntityValueToCardIndex(entityValue) {
+    if (this._entityType === "input_select") {
+      const entity = this.card._hass.states[this._stateEntity];
+      if (!entity || !entity.attributes.options) return null;
+
+      const options = entity.attributes.options;
+      const optionIndex = options.indexOf(entityValue);
+
+      if (optionIndex === -1) {
+        logDebug(
+          "STATE",
+          `Option "${entityValue}" not found in input_select options:`,
+          options,
+        );
+        return null;
+      }
+
+      // Check if this index is within visible cards range
+      if (optionIndex >= this.card.visibleCardIndices.length) {
+        logDebug(
+          "STATE",
+          `Option index ${optionIndex} exceeds visible cards count ${this.card.visibleCardIndices.length}`,
+        );
+        return null;
+      }
+
+      return optionIndex;
+    } else if (this._entityType === "input_number") {
+      const numValue = parseInt(entityValue);
+      if (isNaN(numValue)) return null;
+
+      // Convert from 1-based to 0-based index
+      const cardIndex = numValue - 1;
+
+      // Check if index is within visible cards range
+      if (cardIndex < 0 || cardIndex >= this.card.visibleCardIndices.length) {
+        logDebug(
+          "STATE",
+          `Index ${cardIndex} is outside visible cards range [0, ${this.card.visibleCardIndices.length - 1}]`,
+        );
+        return null;
+      }
+
+      return cardIndex;
+    }
+
+    return null;
+  }
+
+  /**
+   * Maps visible card index to entity value
+   * @param {number} visibleIndex - Visible card index (0-based)
+   * @returns {string|number|null} Entity value or null if invalid
+   * @private
+   */
+  _mapCardIndexToEntityValue(visibleIndex) {
+    if (
+      visibleIndex < 0 ||
+      visibleIndex >= this.card.visibleCardIndices.length
+    ) {
+      return null;
+    }
+
+    if (this._entityType === "input_select") {
+      const entity = this.card._hass.states[this._stateEntity];
+      if (!entity || !entity.attributes.options) return null;
+
+      const options = entity.attributes.options;
+
+      // Check if we have enough options
+      if (visibleIndex >= options.length) {
+        logDebug(
+          "STATE",
+          `Card index ${visibleIndex} exceeds input_select options count ${options.length}`,
+        );
+        return null;
+      }
+
+      return options[visibleIndex];
+    } else if (this._entityType === "input_number") {
+      // Convert from 0-based to 1-based index
+      return visibleIndex + 1;
+    }
+
+    return null;
+  }
+
+  /**
+   * Called when hass object changes to detect entity state changes
+   * @param {Object} oldHass - Previous hass object
+   * @param {Object} newHass - New hass object
+   */
+  onHassChange(oldHass, newHass) {
+    if (!this._stateEntity || !newHass) return;
+
+    // Check if our entity's state changed
+    const oldEntity = oldHass?.states[this._stateEntity];
+    const newEntity = newHass.states[this._stateEntity];
+
+    if (!newEntity) {
+      logDebug(
+        "STATE",
+        "Configured entity no longer exists:",
+        this._stateEntity,
+      );
+      this.stop();
+      return;
+    }
+
+    // If entity state changed, handle it
+    if (!oldEntity || oldEntity.state !== newEntity.state) {
+      // Use a small delay to debounce rapid changes
+      if (this._updateTimeout) {
+        clearTimeout(this._updateTimeout);
+      }
+
+      this._updateTimeout = setTimeout(() => {
+        this._handleEntityChange();
+        this._updateTimeout = null;
+      }, 100);
+    }
+  }
+}
+
+/**
+ * Carousel view logic for Simple Swipe Card
+ */
+
+
+/**
+ * Carousel view manager class
+ */
+class CarouselView {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+  }
+
+  /**
+   * Calculates the transform value for carousel positioning
+   * @param {number} targetIndex - The target card index
+   * @returns {number} Transform value in pixels
+   */
+  calculateTransform(targetIndex) {
+    if (!this.card.cards || this.card.cards.length === 0) return 0;
+
+    // Support both responsive and legacy approaches
+    let cardsVisible;
+    const containerWidth = this.card.cardContainer.offsetWidth;
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    if (this.card._config.cards_visible !== undefined) {
+      // Legacy approach - use fixed cards_visible for backwards compatibility
+      cardsVisible = this.card._config.cards_visible;
+      logDebug("SWIPE", "Using legacy cards_visible approach:", cardsVisible);
+    } else {
+      // Responsive approach - calculate fractional cards_visible from card_min_width
+      const minWidth = this.card._config.card_min_width || 200;
+      const rawCardsVisible =
+        (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
+      logDebug("SWIPE", "Using responsive approach:", {
+        minWidth,
+        containerWidth,
+        cardSpacing,
+        rawCardsVisible: rawCardsVisible.toFixed(2),
+        finalCardsVisible: cardsVisible,
+      });
+    }
+
+    const totalCards = this.card.visibleCardIndices.length;
+    const loopMode = this.card._config.loop_mode || "none";
+
+    // Edge case: If we have fewer cards than cards_visible, don't transform at all
+    if (totalCards <= Math.floor(cardsVisible)) {
+      logDebug(
+        "SWIPE",
+        "Insufficient cards for carousel transform, staying at position 0",
+      );
+      return 0;
+    }
+
+    // FIXED: Handle infinite mode properly for carousel - use real DOM positioning
+    let domPosition;
+
+    if (loopMode === "infinite") {
+      // FIXED: For carousel infinite mode, also use real DOM positioning like single mode
+      const duplicateCount = this.card.loopMode.getDuplicateCount();
+      domPosition = targetIndex + duplicateCount;
+      logDebug(
+        "SWIPE",
+        "Carousel infinite mode: logical index",
+        targetIndex,
+        "-> DOM position",
+        domPosition,
+        "duplicateCount:",
+        duplicateCount,
+      );
+    } else {
+      // Original logic for non-infinite modes
+      domPosition = Math.min(targetIndex, Math.max(0, totalCards - 1));
+    }
+
+    // Calculate individual card width (same logic as in CardBuilder)
+    const totalSpacing = (cardsVisible - 1) * cardSpacing;
+    const cardWidth = (containerWidth - totalSpacing) / cardsVisible;
+
+    // In carousel mode, we move by single card width + spacing
+    const moveDistance = cardWidth + cardSpacing;
+    const transform = domPosition * moveDistance;
+
+    logDebug("SWIPE", "Carousel transform calculation:", {
+      targetIndex,
+      domPosition,
+      totalCards,
+      cardsVisible: cardsVisible.toFixed(2),
+      cardWidth: cardWidth.toFixed(2),
+      cardSpacing,
+      moveDistance: moveDistance.toFixed(2),
+      transform: transform.toFixed(2),
+      loopMode,
+    });
+
+    return transform;
+  }
+
+  /**
+   * Updates the slider position for carousel mode
+   * @param {number} targetIndex - The target visible card index
+   * @param {boolean} animate - Whether to animate the transition
+   */
+  updateSliderPosition(targetIndex, animate = true) {
+    if (!this.card.sliderElement) return;
+
+    const transform = this.calculateTransform(targetIndex);
+
+    // Handle custom animation duration for multi-card swipes (like single mode)
+    if (animate && this.card._config.swipe_behavior === "free" && this.card._lastSkipCount > 1) {
+      const animationDuration = this.card.swipeBehavior.calculateAnimationDuration(this.card._lastSkipCount);
+      const easingFunction = this.card.swipeBehavior.getEasingFunction(this.card._lastSkipCount);
+      this.card.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+      logDebug("SWIPE", `Carousel multi-card animation: ${this.card._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+    } else {
+      // Use default transition
+      this.card.sliderElement.style.transition = this.card._getTransitionStyle(animate);
+    }
+
+    // Apply transform (carousel only supports horizontal)
+    this.card.sliderElement.style.transform = `translateX(-${transform}px)`;
+
+    logDebug(
+      "SWIPE",
+      `Carousel slider updated to index ${targetIndex}, transform: -${transform.toFixed(2)}px`,
+    );
+  }
+
+  /**
+   * Handles loopback logic for carousel mode
+   * @param {number} proposedIndex - The proposed new index
+   * @returns {number} The actual index after loopback logic
+   */
+  handleLoopback(proposedIndex) {
+    return this.card.loopMode.handleNavigation(proposedIndex, true);
+  }
+
+  /**
+   * Helper method for infinite loop virtual index calculation
+   * @param {number} index - Proposed index that may be out of bounds
+   * @returns {number} Virtual index for infinite loop
+   * @private
+   */
+  _getVirtualIndex(index) {
+    const totalCards = this.card.visibleCardIndices.length;
+    // For now, return wrapped index - will enhance for true infinite loop
+    if (index < 0) return totalCards - 1;
+    if (index >= totalCards) return 0;
+    return index;
+  }
+}
+
+/**
+ * Loop mode functionality for Simple Swipe Card
+ * Handles infinite loop, loopback, and none modes
+ */
+
+
+/**
+ * Loop mode manager class
+ */
+class LoopMode {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+
+    // Infinite mode state
+    this.isInfiniteMode = false;
+    this.virtualIndex = 0; // User-perceived position (0-based)
+    this.realIndex = 0; // Actual DOM position (0-based)
+    this.totalRealCards = 0; // Total cards in DOM (including duplicates)
+    
+    // Seamless jump state management
+    this._pendingSeamlessJump = null; // Track pending jumps to prevent duplicates
+    this._activeTransitionHandler = null; // Store reference to active transition handler
+  }
+
+  /**
+   * Gets the current loop mode from configuration
+   * @returns {string} Loop mode: 'none', 'loopback', or 'infinite'
+   */
+  getMode() {
+    return this.card._config.loop_mode || "none";
+  }
+
+  /**
+   * Checks if infinite mode is active
+   * @returns {boolean} True if infinite mode is enabled and conditions are met
+   */
+  isInfinite() {
+    const mode = this.getMode();
+    return mode === "infinite" && this.card.visibleCardIndices.length > 1;
+  }
+
+  /**
+   * Initializes loop mode state based on current configuration
+   */
+  initialize() {
+    this.isInfiniteMode = this.isInfinite();
+
+    if (this.isInfiniteMode) {
+      logDebug("LOOP", "Infinite loop mode initialized");
+    } else {
+      // Reset infinite mode state for other modes
+      this.virtualIndex = 0;
+      this.realIndex = 0;
+      this.totalRealCards = 0;
+    }
+  }
+
+  /**
+   * Gets the number of cards to duplicate for infinite loop
+   * @returns {number} Number of cards to duplicate at each end
+   */
+  getDuplicateCount() {
+    const viewMode = this.card._config.view_mode || "single";
+    const swipeBehavior = this.card._config.swipe_behavior || "single";
+
+    if (viewMode === "single") {
+      // For single mode with free swipe, need more duplicates for hard swipes
+      return swipeBehavior === "free" ? 6 : 1;
+    } else {
+      // For carousel mode, we need significantly more duplicates
+      const cardsVisible =
+        this.card._config.cards_visible ||
+        this.card._calculateCardsVisibleFromMinWidth();
+      
+      // Base count: at least 2x the visible cards to handle wide screens
+      const baseCount = Math.max(6, Math.ceil(cardsVisible * 2));
+      
+      if (swipeBehavior === "free") {
+        // For free swipe in carousel: base count + extra buffer for multi-card swipes
+        // Add up to 8 extra duplicates to handle fast swipes on wide screens
+        const extraBuffer = Math.min(8, Math.ceil(cardsVisible));
+        return baseCount + extraBuffer;
+      } else {
+        // For single swipe in carousel: base count is usually sufficient
+        return baseCount;
+      }
+    }
+  }
+
+  /**
+   * Prepares the list of cards to load, including duplicates for infinite loop
+   * @param {Array} visibleCardIndices - Array of visible card indices
+   * @param {Array} configCards - Array of card configurations
+   * @returns {Array} Array of card info objects to load
+   */
+  prepareCardsForLoading(visibleCardIndices, configCards) {
+    const cardsToLoad = [];
+
+    if (!this.isInfiniteMode) {
+      // Normal mode - load only visible cards
+      visibleCardIndices.forEach((originalIndex, visibleIndex) => {
+        cardsToLoad.push({
+          config: configCards[originalIndex],
+          visibleIndex: visibleIndex,
+          originalIndex: originalIndex,
+          isDuplicate: false,
+        });
+      });
+      return cardsToLoad;
+    }
+
+    // Infinite loop mode - add duplicates
+    const duplicateCount = this.getDuplicateCount();
+    const totalVisibleCards = visibleCardIndices.length;
+
+    // FIXED: Add leading duplicates (copies of last cards) with proper wrapping
+    for (let i = 0; i < duplicateCount; i++) {
+      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      const sourceVisibleIndex = (totalVisibleCards - duplicateCount + i + totalVisibleCards) % totalVisibleCards;
+      const originalIndex = visibleCardIndices[sourceVisibleIndex];
+      cardsToLoad.push({
+        config: configCards[originalIndex],
+        visibleIndex: i - duplicateCount, // Negative index for leading duplicates
+        originalIndex: originalIndex,
+        isDuplicate: true,
+      });
+    }
+
+    // Add real cards
+    visibleCardIndices.forEach((originalIndex, visibleIndex) => {
+      cardsToLoad.push({
+        config: configCards[originalIndex],
+        visibleIndex: visibleIndex,
+        originalIndex: originalIndex,
+        isDuplicate: false,
+      });
+    });
+
+    // FIXED: Add trailing duplicates (copies of first cards) with proper wrapping  
+    for (let i = 0; i < duplicateCount; i++) {
+      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      const sourceVisibleIndex = i % totalVisibleCards;
+      const originalIndex = visibleCardIndices[sourceVisibleIndex];
+      cardsToLoad.push({
+        config: configCards[originalIndex],
+        visibleIndex: totalVisibleCards + i, // Index after real cards
+        originalIndex: originalIndex,
+        isDuplicate: true,
+      });
+    }
+
+    // Store total real cards count for reference
+    this.totalRealCards = cardsToLoad.length;
+
+    return cardsToLoad;
+  }
+
+  /**
+   * Converts virtual index to real DOM index
+   * @param {number} virtualIndex - User-perceived index
+   * @returns {number} Real DOM index
+   */
+  virtualToRealIndex(virtualIndex) {
+    if (!this.isInfiniteMode) return virtualIndex;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return 0;
+
+    const duplicateCount = this.getDuplicateCount();
+
+    // Normalize virtual index to 0-based within visible cards
+    const normalizedVirtual =
+      ((virtualIndex % totalVisibleCards) + totalVisibleCards) %
+      totalVisibleCards;
+
+    // Real index starts after the leading duplicates
+    return duplicateCount + normalizedVirtual;
+  }
+
+  /**
+   * Converts real DOM index to virtual index
+   * @param {number} realIndex - Real DOM index
+   * @returns {number} Virtual index
+   */
+  realToVirtualIndex(realIndex) {
+    if (!this.isInfiniteMode) return realIndex;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return 0;
+
+    const duplicateCount = this.getDuplicateCount();
+
+    // Convert real index back to virtual index
+    return realIndex - duplicateCount;
+  }
+
+  /**
+   * Checks if current real index is on a duplicate card
+   * @param {number} realIndex - Real DOM index to check
+   * @returns {boolean} True if on a duplicate card
+   */
+  isOnDuplicateCard(realIndex = this.card.currentIndex) {
+    if (!this.isInfiniteMode) return false;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    const duplicateCount = this.getDuplicateCount();
+
+    // Check if we're in the leading or trailing duplicate zones
+    return (
+      realIndex < duplicateCount ||
+      realIndex >= duplicateCount + totalVisibleCards
+    );
+  }
+
+  /**
+   * Gets the corresponding real card index for a duplicate
+   * @param {number} realIndex - Real DOM index
+   * @returns {number} Corresponding real card index
+   */
+  getCorrespondingRealIndex(realIndex = this.card.currentIndex) {
+    if (!this.isInfiniteMode || !this.isOnDuplicateCard(realIndex)) {
+      return realIndex;
+    }
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    const duplicateCount = this.getDuplicateCount();
+
+    if (realIndex < duplicateCount) {
+      // We're in leading duplicates, jump to trailing real cards
+      const offset = duplicateCount - realIndex;
+      return duplicateCount + totalVisibleCards - offset;
+    } else {
+      // We're in trailing duplicates, jump to leading real cards
+      const offset = realIndex - (duplicateCount + totalVisibleCards);
+      return duplicateCount + offset;
+    }
+  }
+
+  /**
+   * Determines if we should perform a seamless jump
+   * @param {number} currentIndex - Current card index
+   * @returns {boolean} True if we should jump
+   */
+  shouldPerformSeamlessJump(currentIndex = this.card.currentIndex) {
+    if (!this.isInfiniteMode) return false;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    // Only trigger jump when we've moved to virtual positions
+    // This allows the transition to complete first
+    return currentIndex < 0 || currentIndex >= totalVisibleCards;
+  }
+
+  /**
+   * Schedules a seamless jump to reset position for continued infinite scrolling
+   * @param {number} targetIndex - The target index that the animation is moving to
+   * @param {number} [customDuration] - Custom animation duration to wait for
+   */
+  scheduleSeamlessJump(targetIndex, customDuration = null) {
+    // Cancel any existing pending jump first
+    this._cancelPendingSeamlessJump();
+    
+    if (!this.shouldPerformSeamlessJump(targetIndex)) {
+      logDebug("LOOP", `Seamless jump not needed for target index ${targetIndex}`);
+      return;
+    }
+
+    // Use custom duration if provided, otherwise use default
+    let transitionDuration = customDuration || 400;
+    
+    logDebug("LOOP", `Scheduling seamless jump for target index ${targetIndex} after ${transitionDuration}ms animation`);
+
+    // Use transitionend event for more precise timing, with timeout as fallback
+    let jumpExecuted = false;
+    
+    const executeJump = () => {
+      if (jumpExecuted) return; // Prevent double execution
+      jumpExecuted = true;
+      
+      // Clear any pending timeout
+      if (this._pendingSeamlessJump) {
+        clearTimeout(this._pendingSeamlessJump);
+        this._pendingSeamlessJump = null;
+      }
+      
+      if (!this.card.isConnected || this.card.building) {
+        logDebug("LOOP", "Seamless jump cancelled - card disconnected or building");
+        // Ensure flag is cleared even if jump is cancelled
+        this.card._performingSeamlessJump = false;
+        return;
+      }
+
+      // Wait for next animation frame to ensure rendering is complete
+      requestAnimationFrame(() => {
+        try {
+          // Use the actual current index at the time of execution
+          const actualCurrentIndex = this.card.currentIndex;
+          
+          logDebug("LOOP", `Seamless jump executing: target was ${targetIndex}, actual current is ${actualCurrentIndex}`);
+          
+          // Double-check we still need to jump using the actual current index
+          if (!this.shouldPerformSeamlessJump(actualCurrentIndex)) {
+            logDebug("LOOP", `Seamless jump cancelled - conditions changed (target: ${targetIndex}, actual: ${actualCurrentIndex})`);
+            this.card._performingSeamlessJump = false;
+            return;
+          }
+
+          const totalVisibleCards = this.card.visibleCardIndices.length;
+          let newIndex;
+
+          if (actualCurrentIndex < 0) {
+            // We're showing last card from virtual position
+            newIndex = totalVisibleCards + (actualCurrentIndex % totalVisibleCards);
+            if (newIndex >= totalVisibleCards) newIndex = totalVisibleCards - 1;
+          } else if (actualCurrentIndex >= totalVisibleCards) {
+            // We're showing a duplicate card, jump to equivalent real position
+            newIndex = actualCurrentIndex % totalVisibleCards;
+          } else {
+            // We're not in a virtual position, no jump needed
+            logDebug("LOOP", `Seamless jump not needed - already in valid position (${actualCurrentIndex})`);
+            this.card._performingSeamlessJump = false;
+            return;
+          }
+
+          logDebug(
+            "LOOP",
+            `Performing seamless jump: virtual ${actualCurrentIndex} → real ${newIndex}`,
+          );
+
+          // Set flag to prevent interference
+          this.card._performingSeamlessJump = true;
+
+          // Disable transitions temporarily with extra safety
+          if (this.card.sliderElement) {
+            this.card.sliderElement.style.transition = "none";
+            
+            // Force a reflow to ensure the transition: none is applied
+            this.card.sliderElement.offsetHeight;
+          }
+
+          // Jump to real position
+          this.card.currentIndex = newIndex;
+          this.card.updateSlider(false);
+
+          // Re-enable transitions after ensuring the jump has been processed
+          requestAnimationFrame(() => {
+            try {
+              if (this.card.sliderElement) {
+                this.card.sliderElement.style.transition =
+                  this.card._getTransitionStyle(true);
+              }
+              
+              logDebug(
+                "LOOP",
+                `Seamless jump completed - now at real position ${newIndex}, ready for continued scrolling`,
+              );
+            } catch (error) {
+              logDebug("ERROR", "Error in seamless jump transition restoration:", error);
+            } finally {
+              // CRITICAL: Always clear the flag, even if there's an error
+              this.card._performingSeamlessJump = false;
+            }
+          });
+        } catch (error) {
+          // CRITICAL: Always clear the flag if an error occurs
+          logDebug("ERROR", "Error during seamless jump execution:", error);
+          this.card._performingSeamlessJump = false;
+        }
+      });
+    };
+
+    // Listen for transitionend event for precise timing
+    const transitionEndHandler = (event) => {
+      // Only handle transform transitions on the slider element
+      if (event.target === this.card.sliderElement && 
+          event.propertyName === 'transform' && 
+          !jumpExecuted) {
+        
+        logDebug("LOOP", "Transform transition ended, executing seamless jump");
+        this.card.sliderElement.removeEventListener('transitionend', transitionEndHandler);
+        this._activeTransitionHandler = null;
+        
+        // Add a small delay to ensure all rendering is complete
+        setTimeout(executeJump, 50);
+      }
+    };
+
+    if (this.card.sliderElement && transitionDuration > 0) {
+      this._activeTransitionHandler = transitionEndHandler;
+      this.card.sliderElement.addEventListener('transitionend', transitionEndHandler);
+    }
+
+    // Fallback timeout in case transitionend doesn't fire
+    const bufferTime = Math.max(150, Math.min(transitionDuration * 0.2, 300));
+    const totalWaitTime = transitionDuration + bufferTime;
+    
+    this._pendingSeamlessJump = setTimeout(() => {
+      if (this._activeTransitionHandler && this.card.sliderElement) {
+        this.card.sliderElement.removeEventListener('transitionend', this._activeTransitionHandler);
+        this._activeTransitionHandler = null;
+      }
+      
+      if (!jumpExecuted) {
+        logDebug("LOOP", "Executing seamless jump via timeout fallback");
+        executeJump();
+      }
+    }, totalWaitTime);
+  }
+
+  /**
+   * Cancels any pending seamless jump
+   * @private
+   */
+  _cancelPendingSeamlessJump() {
+    if (this._pendingSeamlessJump) {
+      clearTimeout(this._pendingSeamlessJump);
+      this._pendingSeamlessJump = null;
+      
+      // Clear the flag if we're cancelling a pending jump
+      if (this.card._performingSeamlessJump) {
+        logDebug("LOOP", "Clearing seamless jump flag during cancellation");
+        this.card._performingSeamlessJump = false;
+      }
+      
+      // Clean up any active transition handler
+      if (this._activeTransitionHandler && this.card.sliderElement) {
+        this.card.sliderElement.removeEventListener('transitionend', this._activeTransitionHandler);
+        this._activeTransitionHandler = null;
+      }
+      
+      logDebug("LOOP", "Cancelled pending seamless jump and cleaned up event listeners");
+    }
+  }
+
+  /**
+   * Handles index navigation with loop mode logic
+   * @param {number} proposedIndex - The proposed new index
+   * @param {boolean} isCarouselMode - Whether we're in carousel mode
+   * @returns {number} The actual index after loop mode processing
+   */
+  handleNavigation(proposedIndex, isCarouselMode = false) {
+    const mode = this.getMode();
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    if (mode === "infinite") {
+      // For infinite mode, allow any index - seamless jump will handle bounds
+      return proposedIndex;
+    } else if (mode === "loopback" && totalVisibleCards > 1) {
+      if (isCarouselMode) {
+        // Carousel mode loopback
+        if (proposedIndex < 0) {
+          return totalVisibleCards - 1;
+        } else if (proposedIndex >= totalVisibleCards) {
+          return 0;
+        }
+      } else {
+        // Single mode loopback
+        if (proposedIndex < 0) {
+          return totalVisibleCards - 1;
+        } else if (proposedIndex >= totalVisibleCards) {
+          return 0;
+        }
+      }
+    } else {
+      // No looping - clamp to valid range
+      return Math.max(0, Math.min(proposedIndex, totalVisibleCards - 1));
+    }
+
+    return proposedIndex;
+  }
+
+  /**
+   * Gets the wrapped index for pagination display in infinite mode
+   * @param {number} currentIndex - Current card index
+   * @returns {number} Wrapped index for pagination
+   */
+  getWrappedIndexForPagination(currentIndex = this.card.currentIndex) {
+    if (!this.isInfiniteMode) return currentIndex;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    return (
+      ((currentIndex % totalVisibleCards) + totalVisibleCards) %
+      totalVisibleCards
+    );
+  }
+
+  /**
+   * Handles auto-swipe navigation with loop mode logic
+   * @param {number} currentIndex - Current card index
+   * @param {number} direction - Direction of auto-swipe (1 for forward, -1 for backward)
+   * @returns {Object} Object with nextIndex and shouldChangeDirection
+   */
+  handleAutoSwipeNavigation(currentIndex, direction) {
+    const mode = this.getMode();
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    if (mode === "infinite") {
+      // For infinite mode, always move forward, allowing beyond bounds
+      return {
+        nextIndex: currentIndex + 1,
+        shouldChangeDirection: false,
+      };
+    } else if (mode === "loopback") {
+      // For loopback mode, jump back to 0 when reaching the end
+      let nextIndex = currentIndex + 1;
+      if (nextIndex >= totalVisibleCards) {
+        nextIndex = 0;
+      }
+      return {
+        nextIndex: nextIndex,
+        shouldChangeDirection: false,
+      };
+    } else {
+      // Ping-pong logic for no looping
+      let nextIndex = currentIndex;
+      let shouldChangeDirection = false;
+
+      if (direction === 1) {
+        // Moving forward
+        if (currentIndex >= totalVisibleCards - 1) {
+          // At the last visible card
+          shouldChangeDirection = true;
+          nextIndex = currentIndex - 1;
+        } else {
+          nextIndex = currentIndex + 1;
+        }
+      } else {
+        // Moving backward
+        if (currentIndex <= 0) {
+          // At the first visible card
+          shouldChangeDirection = true;
+          nextIndex = currentIndex + 1;
+        } else {
+          nextIndex = currentIndex - 1;
+        }
+      }
+
+      nextIndex = Math.max(0, Math.min(nextIndex, totalVisibleCards - 1));
+
+      return {
+        nextIndex: nextIndex,
+        shouldChangeDirection: shouldChangeDirection,
+      };
+    }
+  }
+
+  /**
+   * Handles swipe gesture navigation with loop mode logic
+   * @param {number} currentIndex - Current card index (0-based)
+   * @param {number} direction - Direction of swipe (positive for right/down, negative for left/up)
+   * @returns {number} The new index after applying loop mode logic
+   * @throws {Error} When currentIndex is out of bounds
+   * @example
+   * // Navigate from first card with left swipe in loopback mode
+   * const newIndex = handleSwipeNavigation(0, -1); // Returns last card index
+   */
+  handleSwipeNavigation(currentIndex, skipCount) {
+    const mode = this.getMode();
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    let nextIndex = currentIndex;
+
+    if (skipCount > 0) {
+      // Swiping right/down - go to previous visible cards
+      nextIndex = currentIndex - Math.abs(skipCount);
+      
+      if (nextIndex < 0) {
+        if (mode !== "none" && totalVisibleCards > 1) {
+          if (mode === "infinite") ; else {
+            // Loopback mode - wrap around
+            nextIndex = totalVisibleCards + nextIndex; // nextIndex is negative, so this subtracts
+            if (nextIndex < 0) nextIndex = totalVisibleCards - 1; // Safety fallback
+          }
+        } else {
+          // No looping - clamp to first card
+          nextIndex = 0;
+        }
+      }
+    } else if (skipCount < 0) {
+      // Swiping left/up - go to next visible cards
+      nextIndex = currentIndex + Math.abs(skipCount);
+      
+      if (nextIndex >= totalVisibleCards) {
+        if (mode !== "none" && totalVisibleCards > 1) {
+          if (mode === "infinite") ; else {
+            // Loopback mode - wrap around
+            nextIndex = nextIndex - totalVisibleCards; // Wrap to beginning
+            if (nextIndex >= totalVisibleCards) nextIndex = 0; // Safety fallback
+          }
+        } else {
+          // No looping - clamp to last card
+          nextIndex = totalVisibleCards - 1;
+        }
+      }
+    }
+
+    logDebug("LOOP", "Swipe navigation:", {
+      currentIndex,
+      skipCount,
+      mode,
+      totalVisibleCards,
+      nextIndex,
+    });
+
+    return nextIndex;
+  }
+}
+
+/**
+ * Swipe behavior functionality for Simple Swipe Card
+ * Handles single vs free swipe modes
+ */
+
+
+/**
+ * Swipe behavior manager class
+ */
+class SwipeBehavior {
+  constructor(cardInstance) {
+    this.card = cardInstance;
+  }
+
+  /**
+   * Gets the current swipe behavior from configuration
+   * @returns {string} Swipe behavior: 'single' or 'free'
+   */
+  getBehavior() {
+    return this.card._config.swipe_behavior || "single";
+  }
+
+  /**
+   * Calculates how many cards to skip based on swipe velocity and distance
+   * @param {number} velocity - Swipe velocity (pixels per millisecond)
+   * @param {number} distance - Total swipe distance (pixels)
+   * @param {number} totalCards - Total number of visible cards
+   * @param {string} behavior - 'single' or 'free'
+   * @returns {number} Number of cards to skip (1 for single mode)
+   */
+  calculateSkipCount(velocity, distance, totalCards, behavior) {
+    if (behavior === "single") return 1;
+
+    // Calculate the correct unit size based on view mode
+    const viewMode = this.card._config.view_mode || "single";
+    let unitSize;
+
+    if (viewMode === "carousel") {
+      // In carousel mode, use individual card width
+      const cardsVisible = this.card._config.cards_visible || 
+                          this.card._calculateCardsVisibleFromMinWidth();
+      const cardSpacing = Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+      const totalSpacing = (cardsVisible - 1) * cardSpacing;
+      unitSize = (this.card.slideWidth - totalSpacing) / cardsVisible;
+    } else {
+      // In single mode, use full slide size
+      unitSize = this.card._swipeDirection === "horizontal"
+        ? this.card.slideWidth
+        : this.card.slideHeight;
+    }
+
+    // Distance-based skip count (50% threshold)
+    const distanceBasedSkip = Math.max(1, Math.round(distance / unitSize));
+
+    // Two different approaches based on swipe characteristics
+    if (velocity > 0.8) {
+      // QUICK SWIPE: Use velocity-dominant calculation with lower thresholds
+      let velocityBasedSkip = 1;
+      if (velocity > 0.8) velocityBasedSkip = 2;   // Much lower threshold - easy to trigger
+      if (velocity > 1.5) velocityBasedSkip = 3;   // Medium speed gets 3 cards
+      if (velocity > 2.5) velocityBasedSkip = 4;   // High speed gets 4 cards
+      
+      // For quick swipes, take the higher of velocity-based or distance-based
+      const quickSwipeResult = Math.max(velocityBasedSkip, distanceBasedSkip);
+      
+      logDebug("SWIPE", "Quick swipe detected:", {
+        velocity: velocity.toFixed(3),
+        distance: distance.toFixed(0),
+        unitSize: unitSize.toFixed(0),
+        velocityBasedSkip,
+        distanceBasedSkip,
+        result: quickSwipeResult,
+      });
+      
+      return Math.min(quickSwipeResult, Math.min(4, totalCards - 1));
+      
+    } else {
+      // CONTROLLED DRAG: Use pure distance-based calculation
+      logDebug("SWIPE", "Controlled drag detected:", {
+        velocity: velocity.toFixed(3),
+        distance: distance.toFixed(0),
+        unitSize: unitSize.toFixed(0),
+        distanceBasedSkip,
+      });
+      
+      return Math.min(distanceBasedSkip, totalCards - 1);
+    }
+  }
+
+  /**
+   * Calculates appropriate animation speed with dynamic timing based on card count
+   * @param {number} skipCount - Number of cards being skipped
+   * @returns {number} Animation duration in milliseconds
+   */
+  calculateAnimationDuration(skipCount) {
+    const totalCards = this.card.visibleCardIndices.length;
+    
+    // For few cards (1-3), use the current longer, more deliberate timing
+    if (totalCards <= 3) {
+      const baseDuration = 800;
+      const extraDuration = (skipCount - 1) * 500;
+      const duration = Math.min(baseDuration + extraDuration, 2400);
+      
+      logDebug("SWIPE", "Animation duration (few cards):", skipCount, "cards,", duration + "ms");
+      return duration;
+    }
+    
+    // For many cards (4+), use faster, more momentum-preserving timing
+    const baseDuration = 600; // Shorter base for momentum feel
+    const extraDuration = (skipCount - 1) * 200; // Much less per additional card
+    const maxDuration = Math.min(1200 + (totalCards * 50), 2000); // Dynamic max based on total cards
+    const duration = Math.min(baseDuration + extraDuration, maxDuration);
+    
+    logDebug("SWIPE", "Animation duration (many cards):", {
+      skipCount,
+      totalCards,
+      baseDuration,
+      extraDuration,
+      maxDuration,
+      finalDuration: duration + "ms"
+    });
+
+    return duration;
+  }
+
+  /**
+   * Gets the appropriate easing function for multi-card animations
+   * @param {number} skipCount - Number of cards being skipped
+   * @returns {string} CSS easing function
+   */
+  getEasingFunction(skipCount) {
+    if (skipCount === 1) {
+      return "ease-out"; // Standard easing for single card
+    }
+
+    // For multi-card swipes, use a much slower deceleration
+    // This cubic-bezier creates a fast start but very slow, gradual end
+    return "cubic-bezier(0.25, 0.46, 0.45, 0.94)"; // Much slower deceleration than ease-out
+  }
+}
+
+/**
+ * Main Simple Swipe Card class
+ */
+
+
+/**
+ * Main Simple Swipe Card class
+ * @extends LitElement
+ */
+class SimpleSwipeCard extends i {
+  constructor() {
+    super();
+
+    // LitElement should create shadowRoot automatically, but ensure it exists
+    // This is needed because our build method runs before LitElement's first update
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: "open" });
+      logDebug("INIT", "Created shadowRoot for manual DOM manipulation");
+    }
+
+    logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
+
+    this._config = {};
+    this._hass = null;
+    this.cards = [];
+    this.visibleCardIndices = []; // Track which cards are currently visible
+    this.currentIndex = 0;
+    this.slideWidth = 0;
+    this.slideHeight = 0;
+    this.cardContainer = null;
+    this.sliderElement = null;
+    this.initialized = false;
+    this.building = false;
+    this.resizeObserver = null;
+    this._swipeDirection = "horizontal"; // Default swipe direction
+
+    // Pagination animation tracking
+    this._previousIndex = undefined;
+    this._previousWrappedIndex = undefined;
+
+    // Card-mod support
+    this._cardModConfig = null;
+    this._cardModObserver = null;
+
+    // Initialize feature managers
+    this.swipeGestures = new SwipeGestures(this);
+    this.autoSwipe = new AutoSwipe(this);
+    this.resetAfter = new ResetAfter(this);
+    this.pagination = new Pagination(this);
+    this.cardBuilder = new CardBuilder(this);
+    this.stateSynchronization = new StateSynchronization(this);
+    this.carouselView = new CarouselView(this);
+    this.loopMode = new LoopMode(this);
+    this.swipeBehavior = new SwipeBehavior(this);
+    this._performingSeamlessJump = false;
+
+    this._visibilityUpdateTimeout = null;
+    this._visibilityRebuildTimeout = null;
+    this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
+
+    // Generate unique instance ID
+    this._instanceId = Math.random().toString(36).substring(2, 15);
+
+    // Initialize global dialog stack
+    initializeGlobalDialogStack();
+  }
+
+  /**
+   * Gets the config element for the Lovelace editor
+   * @returns {Promise<HTMLElement>} The editor element
+   */
+  static async getConfigElement() {
+    logDebug("SYSTEM", "SimpleSwipeCard.getConfigElement called");
+    await customElements.whenDefined("simple-swipe-card-editor");
+    return document.createElement("simple-swipe-card-editor");
+  }
+
+  /**
+   * Gets the minimal configuration for new cards
+   * @returns {Object} Minimal configuration object
+   */
+  static getStubConfig() {
+    logDebug("SYSTEM", "SimpleSwipeCard.getStubConfig called");
+    return {
+      type: "custom:simple-swipe-card",
+      cards: [],
+    };
+  }
+
+  setConfig(config) {
+    if (!config) {
+      throw new Error("Invalid configuration");
+    }
+    logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
+
+    this._config = JSON.parse(JSON.stringify(config));
+    if (!Array.isArray(this._config.cards)) this._config.cards = [];
+    if (this._config.show_pagination === undefined)
+      this._config.show_pagination = true;
+    if (this._config.card_spacing === undefined) {
+      this._config.card_spacing = 15;
+    } else {
+      const spacing = parseInt(this._config.card_spacing);
+      this._config.card_spacing = isNaN(spacing) || spacing < 0 ? 15 : spacing;
+    }
+
+    // Migrate enable_loopback to loop_mode
+    if (
+      this._config.enable_loopback !== undefined &&
+      this._config.loop_mode === undefined
+    ) {
+      this._config.loop_mode = this._config.enable_loopback
+        ? "loopback"
+        : "none";
+      delete this._config.enable_loopback;
+      logDebug(
+        "CONFIG",
+        "Migrated enable_loopback to loop_mode:",
+        this._config.loop_mode,
+      );
+    }
+
+    // Set default for loop_mode
+    if (this._config.loop_mode === undefined) {
+      this._config.loop_mode = "none";
+    }
+
+    // Validate loop_mode
+    if (!["none", "loopback", "infinite"].includes(this._config.loop_mode)) {
+      logDebug(
+        "CONFIG",
+        "Invalid loop_mode, defaulting to 'none':",
+        this._config.loop_mode,
+      );
+      this._config.loop_mode = "none";
+    }
+
+    // Initialize loop mode after config is set
+    this.loopMode?.initialize();
+
+    // Set default for swipe_direction
+    if (
+      this._config.swipe_direction === undefined ||
+      !["horizontal", "vertical"].includes(this._config.swipe_direction)
+    ) {
+      this._config.swipe_direction = "horizontal";
+    }
+
+    // Set default for swipe_behavior and validate based on loop_mode
+    if (this._config.swipe_behavior === undefined) {
+      this._config.swipe_behavior = "single";
+    }
+
+    // Validate swipe_behavior - only allow "free" with infinite loop mode
+    if (!["single", "free"].includes(this._config.swipe_behavior)) {
+      this._config.swipe_behavior = "single";
+    } else if (this._config.swipe_behavior === "free" && this._config.loop_mode !== "infinite") {
+      // Force to single if free is selected but not in infinite mode
+      this._config.swipe_behavior = "single";
+      logDebug("CONFIG", "Free swipe behavior requires infinite loop mode, defaulting to single");
+    } 
+
+    // Set defaults for auto-swipe options
+    if (this._config.enable_auto_swipe === undefined)
+      this._config.enable_auto_swipe = false;
+    if (this._config.auto_swipe_interval === undefined) {
+      this._config.auto_swipe_interval = 2000;
+    } else {
+      this._config.auto_swipe_interval = parseInt(
+        this._config.auto_swipe_interval,
+      );
+      if (
+        isNaN(this._config.auto_swipe_interval) ||
+        this._config.auto_swipe_interval < 500
+      ) {
+        this._config.auto_swipe_interval = 2000;
+      }
+    }
+
+    // Set defaults for reset-after options
+    if (this._config.enable_reset_after === undefined)
+      this._config.enable_reset_after = false;
+    if (this._config.reset_after_timeout === undefined) {
+      this._config.reset_after_timeout = 30000; // 30 seconds default
+    } else {
+      // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
+      this._config.reset_after_timeout = parseInt(
+        this._config.reset_after_timeout,
+      );
+      if (
+        isNaN(this._config.reset_after_timeout) ||
+        this._config.reset_after_timeout < 5000
+      ) {
+        this._config.reset_after_timeout = 30000;
+      }
+    }
+    if (this._config.reset_target_card === undefined) {
+      this._config.reset_target_card = 1; // Default to first card (1-based)
+    } else {
+      // Ensure it's a valid 1-based number
+      this._config.reset_target_card = Math.max(
+        1,
+        parseInt(this._config.reset_target_card),
+      );
+    }
+
+    // Set defaults for view mode options
+    if (this._config.view_mode === undefined) {
+      this._config.view_mode = "single";
+    }
+
+    // Validate view_mode
+    if (!["single", "carousel"].includes(this._config.view_mode)) {
+      this._config.view_mode = "single";
+    }
+
+    // Handle both card_min_width and cards_visible for backwards compatibility
+    if (this._config.view_mode === "carousel") {
+      // Set default for card_min_width (new responsive approach)
+      if (this._config.card_min_width === undefined) {
+        this._config.card_min_width = 200;
+      } else {
+        const minWidth = parseInt(this._config.card_min_width);
+        if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+          this._config.card_min_width = 200;
+        }
+      }
+
+      // Handle legacy cards_visible for backwards compatibility
+      if (this._config.cards_visible !== undefined) {
+        // Validate cards_visible with better bounds
+        const cardsVisible = parseFloat(this._config.cards_visible);
+        if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+          this._config.cards_visible = 2.5;
+        } else {
+          // Round to 1 decimal place to avoid precision issues
+          this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+        }
+      }
+      // If cards_visible is undefined, we'll use the responsive approach
+    }
+
+    // Store the card_mod configuration if present
+    if (config.card_mod) {
+      logDebug("CARD_MOD", "Card-mod configuration detected", config.card_mod);
+      this._cardModConfig = JSON.parse(JSON.stringify(config.card_mod));
+    } else {
+      this._cardModConfig = null;
+    }
+
+    // Store the current swipe direction for internal use
+    this._swipeDirection = this._config.swipe_direction;
+
+    // Store view mode for internal use
+    this._viewMode = this._config.view_mode || "single";
+
+    delete this._config.title;
+  }
+
+  /**
+   * Calculates cards visible from card_min_width (for responsive carousel)
+   * @returns {number} Number of cards visible
+   */
+  _calculateCardsVisibleFromMinWidth() {
+    if (!this.cardContainer) return 2.5; // Default fallback
+
+    const containerWidth = this.cardContainer.offsetWidth;
+    const minWidth = this._config.card_min_width || 200;
+    const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+
+    const rawCardsVisible =
+      (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+    return Math.max(1.1, Math.round(rawCardsVisible * 10) / 10);
+  }
+
+  /**
+   * Handles visibility changes from conditional cards
+   * @private
+   */
+  _handleConditionalVisibilityChange() {
+    logDebug("VISIBILITY", "Handling conditional card visibility change");
+
+    // Debounce multiple rapid changes
+    if (this._conditionalVisibilityTimeout) {
+      clearTimeout(this._conditionalVisibilityTimeout);
+    }
+
+    this._conditionalVisibilityTimeout = setTimeout(() => {
+      this._updateVisibleCardIndicesWithConditional();
+      this._conditionalVisibilityTimeout = null;
+    }, 50);
+  }
+
+  /**
+   * Updates visible card indices considering both Simple Swipe Card visibility conditions
+   * and conditional card visibility states
+   * @private
+   */
+  _updateVisibleCardIndicesWithConditional() {
+    if (!this._config?.cards || !this._hass) {
+      const wasEmpty = this.visibleCardIndices.length === 0;
+      this.visibleCardIndices = [];
+      if (!wasEmpty) {
+        logDebug(
+          "VISIBILITY",
+          "No cards or hass available, cleared visible indices",
+        );
+      }
+      return;
+    }
+
+    const previousVisibleIndices = [...this.visibleCardIndices];
+    this.visibleCardIndices = [];
+
+    this._config.cards.forEach((cardConfig, index) => {
+      // Check Simple Swipe Card visibility conditions
+      const swipeCardVisible = evaluateVisibilityConditions(
+        cardConfig.visibility,
+        this._hass,
+      );
+
+      // Check conditional card visibility if applicable
+      let conditionalVisible = true;
+      if (cardConfig.type === "conditional" && this.cards) {
+        const cardData = this.cards.find(
+          (card) => card && card.originalIndex === index,
+        );
+        if (cardData) {
+          conditionalVisible = cardData.conditionallyVisible;
+        }
+      }
+
+      // Card is visible if both conditions are met
+      if (swipeCardVisible && conditionalVisible) {
+        this.visibleCardIndices.push(index);
+      }
+    });
+
+    // Only log and rebuild when visibility actually changes
+    const hasChanged =
+      JSON.stringify(previousVisibleIndices) !==
+      JSON.stringify(this.visibleCardIndices);
+
+    if (hasChanged) {
+      logDebug(
+        "VISIBILITY",
+        `Visible cards changed: ${this.visibleCardIndices.length}/${this._config.cards.length} visible`,
+        this.visibleCardIndices,
+      );
+
+      // Adjust current index and rebuild if necessary
+      this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+
+      // Rebuild if connected and initialized
+      if (this.initialized && this.isConnected) {
+        this.cardBuilder.build();
+      }
+    }
+  }
+
+  /**
+   * Updates the list of visible card indices based on visibility conditions
+   * @private
+   */
+  _updateVisibleCardIndices() {
+    if (!this._config?.cards || !this._hass) {
+      const wasEmpty = this.visibleCardIndices.length === 0;
+      this.visibleCardIndices = [];
+      if (!wasEmpty) {
+        logDebug(
+          "VISIBILITY",
+          "No cards or hass available, cleared visible indices",
+        );
+      }
+      return;
+    }
+
+    const previousVisibleIndices = [...this.visibleCardIndices];
+    this.visibleCardIndices = [];
+
+    this._config.cards.forEach((cardConfig, index) => {
+      // Check Simple Swipe Card's own visibility conditions
+      const swipeCardVisible = evaluateVisibilityConditions(
+        cardConfig.visibility,
+        this._hass,
+      );
+
+      // Check conditional card conditions if this is a conditional card
+      let conditionalCardVisible = true;
+      if (cardConfig.type === "conditional" && cardConfig.conditions) {
+        conditionalCardVisible = this._evaluateConditionalCardConditions(
+          cardConfig.conditions,
+        );
+      }
+
+      // Card is visible only if both conditions are met
+      const isVisible = swipeCardVisible && conditionalCardVisible;
+
+      if (isVisible) {
+        this.visibleCardIndices.push(index);
+      }
+    });
+
+    // Only log and rebuild when visibility actually changes
+    const hasChanged =
+      JSON.stringify(previousVisibleIndices) !==
+      JSON.stringify(this.visibleCardIndices);
+
+    if (hasChanged) {
+      logDebug(
+        "VISIBILITY",
+        `Visible cards changed: ${this.visibleCardIndices.length}/${this._config.cards.length} visible`,
+        this.visibleCardIndices,
+      );
+
+      // If the currently visible cards changed, we need to adjust the current index
+      this._adjustCurrentIndexForVisibility(previousVisibleIndices);
+
+      // Use debounced rebuild to prevent interference with card-mod
+      this._scheduleVisibilityRebuild();
+    }
+  }
+
+  /**
+   * Evaluates conditional card conditions using the same logic as Home Assistant
+   * @param {Array} conditions - Array of condition objects
+   * @returns {boolean} True if all conditions are met
+   * @private
+   */
+  _evaluateConditionalCardConditions(conditions) {
+    if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+      return true; // No conditions means always visible
+    }
+
+    if (!this._hass) {
+      return true; // Default to visible if we can't evaluate
+    }
+
+    // All conditions must be true (AND logic)
+    return conditions.every((condition) => {
+      try {
+        return this._evaluateSingleCondition(condition);
+      } catch (error) {
+        logDebug(
+          "VISIBILITY",
+          "Error evaluating conditional card condition:",
+          condition,
+          error,
+        );
+        return true; // Default to visible on error
+      }
+    });
+  }
+
+  /**
+   * Evaluates a single conditional card condition
+   * @param {Object} condition - The condition to evaluate
+   * @returns {boolean} True if the condition is met
+   * @private
+   */
+  _evaluateSingleCondition(condition) {
+    if (!condition || typeof condition !== "object") {
+      return true;
+    }
+
+    const {
+      condition: conditionType,
+      entity,
+      state,
+      state_not,
+      above,
+      below,
+    } = condition;
+
+    // Handle shorthand format where condition type is implied
+    // If no explicit condition type but we have entity + state/state_not, treat as state condition
+    const actualConditionType =
+      conditionType ||
+      (entity && (state !== undefined || state_not !== undefined)
+        ? "state"
+        : null) ||
+      (entity && (above !== undefined || below !== undefined)
+        ? "numeric_state"
+        : null);
+
+    switch (actualConditionType) {
+      case "state": {
+        if (!entity || !this._hass.states[entity]) {
+          logDebug(
+            "VISIBILITY",
+            `Entity ${entity} not found for conditional card state condition`,
+          );
+          return false;
+        }
+
+        const entityState = this._hass.states[entity].state;
+
+        if (state !== undefined) {
+          const expectedState = String(state);
+          const actualState = String(entityState);
+          const result = actualState === expectedState;
+          logDebug(
+            "VISIBILITY",
+            `Conditional card state condition: ${entity} = ${actualState}, expected: ${expectedState}, result: ${result}`,
+          );
+          return result;
+        }
+
+        if (state_not !== undefined) {
+          const notExpectedState = String(state_not);
+          const actualState = String(entityState);
+          const result = actualState !== notExpectedState;
+          logDebug(
+            "VISIBILITY",
+            `Conditional card state not condition: ${entity} = ${actualState}, not expected: ${notExpectedState}, result: ${result}`,
+          );
+          return result;
+        }
+
+        return true;
+      }
+
+      case "numeric_state": {
+        if (!entity || !this._hass.states[entity]) {
+          logDebug(
+            "VISIBILITY",
+            `Entity ${entity} not found for conditional card numeric_state condition`,
+          );
+          return false;
+        }
+
+        const numericValue = parseFloat(this._hass.states[entity].state);
+        if (isNaN(numericValue)) {
+          return false;
+        }
+
+        let result = true;
+        if (above !== undefined) {
+          result = result && numericValue > parseFloat(above);
+        }
+        if (below !== undefined) {
+          result = result && numericValue < parseFloat(below);
+        }
+
+        logDebug(
+          "VISIBILITY",
+          `Conditional card numeric state condition: ${entity} = ${numericValue}, result: ${result}`,
+        );
+        return result;
+      }
+
+      case "screen": {
+        // Screen size conditions
+        const media = condition.media_query;
+        if (media && window.matchMedia) {
+          const mediaQuery = window.matchMedia(media);
+          const result = mediaQuery.matches;
+          logDebug(
+            "VISIBILITY",
+            `Screen condition: ${media}, result: ${result}`,
+          );
+          return result;
+        }
+        return true;
+      }
+
+      case "user": {
+        // User-based conditions
+        if (condition.users && Array.isArray(condition.users)) {
+          const currentUser = this._hass.user;
+          if (currentUser && currentUser.id) {
+            const result = condition.users.includes(currentUser.id);
+            logDebug(
+              "VISIBILITY",
+              `User condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`,
+            );
+            return result;
+          }
+        }
+        return true;
+      }
+
+      default:
+        // If we can't determine the condition type, log it and default to not visible for safety
+        if (entity) {
+          logDebug(
+            "VISIBILITY",
+            `Unknown or invalid conditional card condition:`,
+            condition,
+          );
+          return false; // Changed from true to false for safety
+        }
+        logDebug(
+          "VISIBILITY",
+          `Unknown condition type: ${actualConditionType}`,
+        );
+        return true; // Unknown conditions without entity default to visible
+    }
+  }
+
+  /**
+   * Schedules a debounced rebuild when visibility changes to prevent interference with card-mod
+   * @private
+   */
+  _scheduleVisibilityRebuild() {
+    // Clear any existing rebuild timeout
+    if (this._visibilityRebuildTimeout) {
+      clearTimeout(this._visibilityRebuildTimeout);
+    }
+
+    // Schedule rebuild with a small delay to allow card-mod to process
+    this._visibilityRebuildTimeout = setTimeout(() => {
+      if (this.initialized && this.isConnected && !this.building) {
+        logDebug("VISIBILITY", "Performing debounced rebuild due to visibility changes");
+        this.cardBuilder.build();
+      }
+      this._visibilityRebuildTimeout = null;
+    }, 150); // 150ms delay to allow card-mod processing
+  }  
+
+  /**
+   * Adjusts the current index when visibility changes (improved version)
+   * @param {Array} previousVisibleIndices - The previously visible card indices
+   * @private
+   */
+  _adjustCurrentIndexForVisibility(previousVisibleIndices) {
+    if (this.visibleCardIndices.length === 0) {
+      this.currentIndex = 0;
+      return;
+    }
+
+    // Try to stay on the same actual card if it's still visible
+    const currentCardOriginalIndex = previousVisibleIndices[this.currentIndex];
+    const newVisiblePosition = this.visibleCardIndices.indexOf(
+      currentCardOriginalIndex,
+    );
+
+    if (newVisiblePosition !== -1) {
+      // Current card is still visible, update position
+      this.currentIndex = newVisiblePosition;
+      logDebug(
+        "VISIBILITY",
+        `Current card still visible, adjusted index to ${this.currentIndex}`,
+      );
+    } else {
+      // Current card is no longer visible, try to stay close to current position
+      const totalVisibleCards = this.visibleCardIndices.length;
+
+      if (this.currentIndex >= totalVisibleCards) {
+        // We were at or past the end, go to last visible card
+        this.currentIndex = totalVisibleCards - 1;
+        logDebug(
+          "VISIBILITY",
+          `Adjusted to last visible card: ${this.currentIndex}`,
+        );
+      } else {
+        // Try to maintain relative position, but don't go to first card automatically
+        this.currentIndex = Math.min(this.currentIndex, totalVisibleCards - 1);
+        this.currentIndex = Math.max(0, this.currentIndex);
+        logDebug(
+          "VISIBILITY",
+          `Adjusted to maintain relative position: ${this.currentIndex}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Debounced version of _updateVisibleCardIndices
+   * @private
+   */
+  _debounceVisibilityUpdate() {
+    if (this._visibilityUpdateTimeout) {
+      clearTimeout(this._visibilityUpdateTimeout);
+    }
+
+    this._visibilityUpdateTimeout = setTimeout(() => {
+      this._updateVisibleCardIndices();
+      this._visibilityUpdateTimeout = null;
+    }, 50); // 50ms debounce
+  }
+
+  /**
+   * Handles invalid configuration gracefully
+   * @param {string} message - Error message to display
+   * @private
+   */
+  _handleInvalidConfig(message) {
+    logDebug("ERROR", `${message}`);
+    this._config = { ...DEFAULT_CONFIG };
+    this.visibleCardIndices = [];
+    if (this.isConnected) this.cardBuilder.build();
+  }
+
+  /**
+   * Updates child card configurations without rebuilding the entire card
+   * @private
+   */
+  _updateChildCardConfigs() {
+    logDebug("CONFIG", "Updating child card configs");
+    if (!this.cards || this.cards.length !== this.visibleCardIndices.length)
+      return;
+
+    this.visibleCardIndices.forEach((originalIndex, visibleIndex) => {
+      const cardConfig = this._config.cards[originalIndex];
+      const cardInstance = this.cards[visibleIndex];
+      if (
+        cardInstance &&
+        !cardInstance.error &&
+        cardInstance.element?.setConfig
+      ) {
+        if (
+          JSON.stringify(cardInstance.config) !== JSON.stringify(cardConfig)
+        ) {
+          logDebug(
+            "CONFIG",
+            "Updating config for visible card",
+            visibleIndex,
+            "original index",
+            originalIndex,
+          );
+          try {
+            cardInstance.element.setConfig(cardConfig);
+            cardInstance.config = JSON.parse(JSON.stringify(cardConfig));
+          } catch (e) {
+            console.error(
+              `Error setting config on child card ${visibleIndex}:`,
+              e,
+            );
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Updates layout options (pagination and spacing)
+   * @private
+   */
+  _updateLayoutOptions() {
+    logDebug(
+      "CONFIG",
+      "Updating layout options (pagination, spacing, direction)",
+    );
+
+    // Update swipe direction
+    if (this._swipeDirection !== this._config.swipe_direction) {
+      this._swipeDirection = this._config.swipe_direction;
+      // Need to rebuild for direction change
+      this.cardBuilder.build();
+      return;
+    }
+
+    // Update pagination visibility
+    this.pagination.updateLayout();
+
+    // Update slider position with new spacing
+    this.updateSlider(false);
+
+    if (this._cardModConfig) {
+      this._applyCardModStyles();
+    }
+  }
+
+  /**
+   * Sets the Home Assistant object
+   * @param {Object} hass - Home Assistant object
+   */
+  set hass(hass) {
+    if (!hass) {
+      return;
+    }
+
+    // Better change detection - only process if hass has actually changed
+    const oldHass = this._hass;
+    if (
+      oldHass === hass ||
+      (oldHass &&
+        hass &&
+        oldHass.states === hass.states &&
+        oldHass.user === hass.user &&
+        JSON.stringify(oldHass.config) === JSON.stringify(hass.config))
+    ) {
+      // Hass hasn't meaningfully changed, just update child cards
+      if (this.cards) {
+        this.cards.forEach((card) => {
+          if (card.element && !card.error) {
+            try {
+              card.element.hass = hass;
+            } catch (e) {
+              console.error("Error setting hass on child card:", e);
+            }
+          }
+        });
+      }
+      return;
+    }
+
+    // Only log when hass has actually changed
+    logDebug("INIT", "Setting hass (changed)");
+    this._hass = hass;
+
+    // Notify state synchronization of hass change
+    this.stateSynchronization?.onHassChange(oldHass, hass);
+
+    // Skip visibility updates during seamless jump to prevent interference
+    if (this._performingSeamlessJump) {
+      logDebug("LOOP", "Skipping hass-triggered visibility update during seamless jump");
+      // Still update child cards with new hass
+      if (this.cards) {
+        this.cards.forEach((card) => {
+          if (card.element && !card.error) {
+            try {
+              card.element.hass = hass;
+            } catch (e) {
+              console.error("Error setting hass on child card:", e);
+            }
+          }
+        });
+      }
+      return;
+    }
+
+    // Update visibility immediately when hass changes
+    if (oldHass !== hass) {
+      // Clear any pending debounced updates
+      if (this._visibilityUpdateTimeout) {
+        clearTimeout(this._visibilityUpdateTimeout);
+        this._visibilityUpdateTimeout = null;
+      }
+
+      // Update visibility immediately
+      this._updateVisibleCardIndices();
+    }
+
+    // Update hass for all child cards
+    if (this.cards) {
+      this.cards.forEach((card) => {
+        if (card.element && !card.error) {
+          try {
+            card.element.hass = hass;
+          } catch (e) {
+            console.error("Error setting hass on child card:", e);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Called when element is connected to DOM
+   */
+  connectedCallback() {
+    logDebug("INIT", "connectedCallback");
+
+    // Safety mechanism: Reset any stuck seamless jump flag
+    if (this._performingSeamlessJump) {
+      logDebug("INIT", "Clearing stuck seamless jump flag on connect");
+      this._performingSeamlessJump = false;
+    }
+
+    // Add event listeners for editor integration
+    this.addEventListener(
+      "config-changed",
+      this._handleConfigChanged.bind(this),
+    );
+
+    if (!this.initialized && this._config?.cards) {
+      logDebug("INIT", "connectedCallback: Initializing build.");
+      this.cardBuilder.build();
+    } else if (this.initialized && this.cardContainer) {
+      logDebug(
+        "INIT",
+        "connectedCallback: Re-initializing observers and gestures.",
+      );
+      this._setupResizeObserver();
+      if (this.visibleCardIndices.length > 1) {
+        this.swipeGestures.removeGestures();
+        setTimeout(() => {
+          if (this.isConnected) this.swipeGestures.addGestures();
+        }, 50);
+      }
+
+      // Apply card-mod styles when connected to DOM
+      if (this._cardModConfig) {
+        this._applyCardModStyles();
+        this._setupCardModObserver();
+      }
+
+      // Initialize or resume auto-swipe and reset-after if enabled
+      this.autoSwipe.manage();
+      this.resetAfter.manage();
+      this.stateSynchronization.manage();
+    }
+  }
+
+  /**
+   * Called when element is disconnected from DOM
+   */
+  disconnectedCallback() {
+    logDebug("INIT", "disconnectedCallback");
+
+    // Remove the config-changed event listener
+    this.removeEventListener(
+      "config-changed",
+      this._handleConfigChanged.bind(this),
+    );
+
+    // Safely remove observers and gestures
+    try {
+      this.resizeObserver?.cleanup();
+      this.swipeGestures?.removeGestures();
+      this.autoSwipe?.stop();
+      this.resetAfter?.stopTimer();
+      this.stateSynchronization?.stop();
+
+      // Clean up all timeout references
+      if (this._visibilityRebuildTimeout) {
+        clearTimeout(this._visibilityRebuildTimeout);
+        this._visibilityRebuildTimeout = null;
+      }
+
+      if (this._conditionalVisibilityTimeout) {
+        clearTimeout(this._conditionalVisibilityTimeout);
+        this._conditionalVisibilityTimeout = null;
+      }
+
+      // Add missing visibility update timeout cleanup
+      if (this._visibilityUpdateTimeout) {
+        clearTimeout(this._visibilityUpdateTimeout);
+        this._visibilityUpdateTimeout = null;
+      }
+
+      // Clean up card-mod observer
+      if (this._cardModObserver) {
+        this._cardModObserver.disconnect();
+        this._cardModObserver = null;
+        logDebug("CARD_MOD", "Disconnected card-mod observer");
+      }
+    } catch (error) {
+      console.warn("Error during cleanup:", error);
+    }
+
+    this.initialized = false;
+  }
+
+  /**
+   * Handles config-changed events
+   * @param {Event} e - The config-changed event
+   * @private
+   */
+  _handleConfigChanged(e) {
+    // Handle nested card events and prevent interference
+    if (e.detail?.fromSwipeCardEditor && e.detail?.editorId === this._editorId)
+      return;
+
+    logDebug("EVENT", "Root element received config-changed event:", e.detail);
+
+    // Check if this is from an element editor to prevent interference
+    if (
+      e.detail?.fromElementEditor ||
+      e.detail?.elementConfig ||
+      e.detail?.element
+    ) {
+      logDebug(
+        "ELEMENT",
+        "Caught element editor event, allowing normal propagation",
+      );
+      return;
+    }
+  }
+
+  /**
+   * Sets up a ResizeObserver to handle container resizing
+   * @private
+   */
+  _setupResizeObserver() {
+    if (this.resizeObserver || !this.cardContainer) return;
+
+    this.resizeObserver = setupResizeObserver(
+      this.cardContainer,
+      (newWidth, newHeight) => {
+        if (
+          (newWidth > 0 && Math.abs(newWidth - this.slideWidth) > 1) ||
+          (newHeight > 0 && Math.abs(newHeight - this.slideHeight) > 1)
+        ) {
+          logDebug("INIT", "Resize detected, recalculating layout.", {
+            oldWidth: this.slideWidth,
+            newWidth,
+            oldHeight: this.slideHeight,
+            newHeight,
+          });
+          this.cardBuilder.finishBuildLayout();
+        }
+      },
+    );
+  }
+
+  /**
+   * Gets transition CSS properties with fallbacks
+   * @param {boolean} animate - Whether to apply animation
+   * @returns {string} - Transition style value
+   */
+  _getTransitionStyle(animate) {
+    return getTransitionStyle(animate, this);
+  }
+
+  /**
+   * Applies card-mod styles to the component
+   * @private
+   */
+  _applyCardModStyles() {
+    applyCardModStyles(
+      this._cardModConfig,
+      this.shadowRoot,
+      this.shadowRoot?.host,
+      this.sliderElement,
+      this.pagination.paginationElement,
+    );
+  }
+
+  /**
+   * Sets up a MutationObserver for card-mod style changes
+   * @private
+   */
+  _setupCardModObserver() {
+    if (this._cardModObserver) {
+      this._cardModObserver.disconnect();
+      this._cardModObserver = null;
+    }
+
+    this._cardModObserver = setupCardModObserver(this.shadowRoot, () => {
+      this._applyCardModStyles();
+    });
+  }
+
+  /**
+   * Navigates to a specific visible slide
+   * @param {number} visibleIndex - The visible slide index to navigate to
+   */
+  goToSlide(visibleIndex, skipCount = 1) {
+    // Store skip count for animation duration calculation
+    this._lastSkipCount = skipCount;
+    const totalVisibleCards = this.visibleCardIndices.length;
+
+    if (
+      !this.visibleCardIndices ||
+      totalVisibleCards === 0 ||
+      !this.initialized ||
+      this.building
+    ) {
+      logDebug("SWIPE", "goToSlide skipped", {
+        totalVisible: totalVisibleCards,
+        initialized: this.initialized,
+        building: this.building,
+      });
+      return;
+    }
+
+    const viewMode = this._config.view_mode || "single";
+    const loopMode = this._config.loop_mode || "none";
+
+    // Handle loop mode navigation
+    visibleIndex = this.loopMode.handleNavigation(
+      visibleIndex,
+      viewMode === "carousel",
+    );
+    this.currentIndex = visibleIndex;
+
+    logDebug(
+      "SWIPE",
+      `Going to visible slide ${this.currentIndex} (${viewMode} mode)`,
+    );
+
+    // Notify state synchronization (use wrapped index for infinite mode)
+    const stateIndex =
+      loopMode === "infinite"
+        ? ((this.currentIndex % totalVisibleCards) + totalVisibleCards) %
+          totalVisibleCards
+        : this.currentIndex;
+    this.stateSynchronization?.onCardNavigate(stateIndex);
+
+    this.updateSlider();
+
+    // Handle reset-after timer for manual user interactions
+    if (!this.autoSwipe.isInProgress && !this.resetAfter.isInProgress) {
+      this.resetAfter.startTimer();
+    }
+
+    // Only pause auto-swipe for manual user interactions
+    if (
+      this._config.enable_auto_swipe &&
+      !this.autoSwipe.isInProgress &&
+      !this.resetAfter.isInProgress
+    ) {
+      this.autoSwipe.pause(5000);
+    }
+  }
+
+  /**
+   * Updates the slider position and pagination
+   * @param {boolean} [animate=true] - Whether to animate the transition
+   */
+  updateSlider(animate = true) {
+    if (this.cardContainer) {
+      this.slideWidth = this.cardContainer.offsetWidth;
+      this.slideHeight = this.cardContainer.offsetHeight;
+    }
+
+    const totalVisibleCards = this.visibleCardIndices.length;
+    logDebug("SWIPE", `Updating slider to visible index ${this.currentIndex}`, {
+      animate,
+      totalVisible: totalVisibleCards,
+      viewMode: this._config.view_mode,
+    });
+
+    if (
+      !this.sliderElement ||
+      totalVisibleCards === 0 ||
+      !this.initialized ||
+      this.building
+    ) {
+      logDebug("SWIPE", "updateSlider skipped", {
+        slider: !!this.sliderElement,
+        totalVisible: totalVisibleCards,
+        init: this.initialized,
+        building: this.building,
+      });
+      return;
+    }
+
+    const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+    const viewMode = this._config.view_mode || "single";
+    const loopMode = this._config.loop_mode || "none";
+
+    // Handle carousel mode
+    if (viewMode === "carousel" && this.carouselView) {
+      // Set gap for carousel spacing
+      this.sliderElement.style.gap = `${cardSpacing}px`;
+
+      // Handle custom animation duration for free swipe behavior in carousel mode
+      let animationDuration = animate ? 300 : 0; // Default, or 0 if not animating
+
+      if (animate && this._config.swipe_behavior === "free" && this._lastSkipCount > 1) {
+        animationDuration = this.swipeBehavior.calculateAnimationDuration(this._lastSkipCount);
+        const easingFunction = this.swipeBehavior.getEasingFunction(this._lastSkipCount);
+        this.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+        logDebug("SWIPE", `Carousel multi-card animation: ${this._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+      }
+
+      this.carouselView.updateSliderPosition(this.currentIndex, animate);
+
+      // Simple pagination update - no complex animation
+      this.pagination.update();
+
+      // Reset skip count
+      this._lastSkipCount = 1;
+
+      // Only schedule seamless jump if we're animating and have a valid duration
+      if (animate && animationDuration > 0) {
+        this.loopMode.scheduleSeamlessJump(this.currentIndex, animationDuration);
+      }
+      return;
+    }
+
+    // Single mode logic
+    const isHorizontal = this._swipeDirection === "horizontal";
+
+    // Calculate the DOM position from the logical index
+    let domPosition = this.currentIndex;
+
+    if (loopMode === "infinite") {
+      // For single mode infinite, we need to offset by duplicateCount to show real cards
+      const duplicateCount = this.loopMode.getDuplicateCount();
+      domPosition = this.currentIndex + duplicateCount;
+      
+      logDebug(
+        "SWIPE",
+        `Infinite mode: logical index ${this.currentIndex} -> DOM position ${domPosition}`,
+      );
+    } else {
+      // For non-infinite modes, ensure currentIndex is valid
+      if (loopMode !== "none" && totalVisibleCards > 1) {
+        if (this.currentIndex < 0) {
+          this.currentIndex = totalVisibleCards - 1;
+        } else if (this.currentIndex >= totalVisibleCards) {
+          this.currentIndex = 0;
+        }
+      } else {
+        this.currentIndex = Math.max(
+          0,
+          Math.min(this.currentIndex, totalVisibleCards - 1),
+        );
+      }
+      domPosition = this.currentIndex;
+    }
+
+    // Use gap for spacing instead of margins to maintain transparency
+    this.sliderElement.style.gap = `${cardSpacing}px`;
+
+    // Calculate transform amount based on DOM position
+    let translateAmount = 0;
+    if (isHorizontal) {
+      translateAmount = domPosition * (this.slideWidth + cardSpacing);
+    } else {
+      translateAmount = domPosition * (this.slideHeight + cardSpacing);
+    }
+
+    // Handle custom animation duration for free swipe behavior
+    let animationDuration = 300; // Default
+
+    if (animate && this._config.swipe_behavior === "free" && this._lastSkipCount > 1) {
+      animationDuration = this.swipeBehavior.calculateAnimationDuration(this._lastSkipCount);
+      const easingFunction = this.swipeBehavior.getEasingFunction(this._lastSkipCount);
+      this.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+      logDebug("SWIPE", `Multi-card animation: ${this._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+    } else {
+      this.sliderElement.style.transition = this._getTransitionStyle(animate);
+    }
+
+    // Apply transform based on swipe direction
+    if (isHorizontal) {
+      this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
+    } else {
+      this.sliderElement.style.transform = `translateY(-${translateAmount}px)`;
+    }
+
+    // Remove any existing margins that could interfere with transparency
+    removeCardMargins(this.cards);
+
+    // Simple pagination update - no complex animation
+    this.pagination.update();
+
+    // Reset skip count
+    this._lastSkipCount = 1;
+
+    logDebug(
+      "SWIPE",
+      `Slider updated, DOM position: ${domPosition}, transform: -${translateAmount}px along ${isHorizontal ? "X" : "Y"} axis`,
+    );
+
+    // Schedule seamless jump for infinite mode with proper timing
+    // Only schedule if we're animating and have a valid duration
+    if (animate && animationDuration > 0) {
+      this.loopMode.scheduleSeamlessJump(this.currentIndex, animationDuration);
+    }
+  }
+
+  /**
+   * Updates pagination dots manually for infinite mode
+   * @param {number} activeIndex - The index that should be active
+   * @private
+   */
+  _updatePaginationDots(activeIndex) {
+    if (this.pagination.paginationElement) {
+      const dots =
+        this.pagination.paginationElement.querySelectorAll(".pagination-dot");
+      dots.forEach((dot, i) => {
+        dot.classList.toggle("active", i === activeIndex);
+      });
+    }
+  }
+
+  /**
+   * Gets the card size for Home Assistant
+   * @returns {number} The card size
+   */
+  getCardSize() {
+    // If showing preview, return a moderate size
+    if (this.visibleCardIndices.length === 0) {
+      return 3;
+    }
+
+    // Normal logic for actual cards
+    let maxSize = 3;
+    if (this.cards && this.cards.length > 0) {
+      const currentCardData = this.cards[this.currentIndex];
+      if (
+        currentCardData?.element &&
+        !currentCardData.error &&
+        typeof currentCardData.element.getCardSize === "function"
+      ) {
+        try {
+          maxSize = currentCardData.element.getCardSize();
+        } catch (e) {
+          console.warn("Error getting card size from current element:", e);
+          maxSize = 3;
+        }
+      } else if (
+        currentCardData?.element &&
+        currentCardData.element.offsetHeight
+      ) {
+        // Fallback height estimation
+        maxSize = Math.max(
+          1,
+          Math.ceil(currentCardData.element.offsetHeight / 50),
+        );
+      }
+    }
+    logDebug("CONFIG", "Calculated card size:", maxSize);
+    return Math.max(3, maxSize);
+  }
+}
+
+/**
+ * UI management utilities for Simple Swipe Card Editor
+ */
+
+
+/**
+ * Handles editor UI initialization and state management
+ */
+class EditorUIManager {
+  constructor(editor) {
+    this.editor = editor;
+
+    // UI state management
+    this.collapsibleState = {
+      advanced: false, // Advanced options collapsed by default
+      cards: true, // Cards section expanded by default
+    };
+  }
+
+  /**
+   * Initializes the editor UI and sets up component loading
+   */
+  async initializeEditor() {
+    // Generate unique ID for this editor instance
+    this.editor._editorId = `swipe-card-editor-${Math.random().toString(36).substring(2, 15)}`;
+
+    // Bind event handlers
+    this.editor._boundHandleCardPicked =
+      this.editor.cardManagement.handleCardPicked.bind(
+        this.editor.cardManagement,
+      );
+    this.editor._boundHandleNestedCardEvents =
+      this.editor.eventHandling._handleNestedCardEvents.bind(
+        this.editor.eventHandling,
+      );
+
+    // Initialize tracking sets
+    this.editor._activeChildEditors = new Set();
+
+    // Initialize state tracking
+    this.editor._lastCardPickerSelection = null;
+    this.editor._ignoreNextCardPicker = false;
+
+    // Initialize element editor state
+    this.editor._elementEditSession = {
+      active: false,
+      parentDialogId: null,
+      elementId: null,
+      timestamp: null,
+      savedState: null,
+    };
+
+    // Create a registry of all editors and dialogs
+    const editorRegistry = getGlobalRegistry(GLOBAL_STATE.editorRegistry);
+    editorRegistry.set(this.editor._editorId, this);
+  }
+
+  /**
+   * Toggles a collapsible section
+   * @param {string} section - Section name to toggle
+   */
+  toggleSection(section) {
+    this.collapsibleState[section] = !this.collapsibleState[section];
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Gets the current collapsible state
+   * @returns {Object} Current collapsible state
+   */
+  getCollapsibleState() {
+    return this.collapsibleState;
+  }
+
+  /**
+   * Ensures required components are loaded
+   */
+  async ensureComponentsLoaded() {
+    const maxAttempts = 50; // 5 seconds max wait
+    let attempts = 0;
+
+    while (!customElements.get("hui-card-picker") && attempts < maxAttempts) {
+      await this.loadCustomElements();
+      if (!customElements.get("hui-card-picker")) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+    }
+
+    if (!customElements.get("hui-card-picker")) {
+      console.error("Failed to load hui-card-picker after multiple attempts");
+    }
+  }
+
+  /**
+   * Attempts to load custom elements
+   */
+  async loadCustomElements() {
+    if (!customElements.get("hui-card-picker")) {
+      try {
+        const attempts = [
+          () => customElements.get("hui-entities-card")?.getConfigElement?.(),
+          () =>
+            customElements.get("hui-conditional-card")?.getConfigElement?.(),
+          () =>
+            customElements.get("hui-vertical-stack-card")?.getConfigElement?.(),
+          () =>
+            customElements
+              .get("hui-horizontal-stack-card")
+              ?.getConfigElement?.(),
+        ];
+
+        for (const attempt of attempts) {
+          try {
+            await attempt();
+            if (customElements.get("hui-card-picker")) {
+              break;
+            }
+          } catch (e) {
+            console.debug("Card picker load attempt failed:", e);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load hui-card-picker", e);
+      }
+    }
+  }
+
+  /**
+   * Ensures the card picker is loaded and visible
+   */
+  ensureCardPickerLoaded() {
+    if (!this.editor.shadowRoot) {
+      logDebug("EDITOR", "_ensureCardPickerLoaded: No shadowRoot, returning.");
+      return;
+    }
+    logDebug("EDITOR", "_ensureCardPickerLoaded called");
+
+    const container = this.editor.shadowRoot.querySelector(
+      "#card-picker-container",
+    );
+    if (container) {
+      container.style.display = "block";
+
+      if (!container.hasAttribute("event-barrier-applied")) {
+        container.setAttribute("event-barrier-applied", "true");
+
+        // Add a comprehensive event barrier for all config-changed events
+        container.addEventListener(
+          "config-changed",
+          (e) => {
+            // Stop ALL config-changed events at the container level
+            logDebug(
+              "EDITOR",
+              "Intercepted config-changed at container level:",
+              e.detail?.config?.type,
+            );
+
+            // Process the card selection here directly
+            if (
+              e.target &&
+              e.target.tagName &&
+              e.target.tagName.toLowerCase() === "hui-card-picker" &&
+              e.detail &&
+              e.detail.config
+            ) {
+              const cardConfig = e.detail.config;
+              logDebug("EDITOR", "Processing card selection:", cardConfig.type);
+
+              // Add the card to our config
+              if (this.editor._config) {
+                const cards = Array.isArray(this.editor._config.cards)
+                  ? [...this.editor._config.cards]
+                  : [];
+                cards.push(cardConfig);
+
+                this.editor._config = {
+                  ...this.editor._config,
+                  cards,
+                };
+
+                // Fire our own config-changed event
+                this.editor.configManager.fireConfigChanged({
+                  cardAdded: true,
+                  cardType: cardConfig.type,
+                });
+
+                this.editor.requestUpdate();
+              }
+            }
+
+            // Always stop propagation
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return false;
+          },
+          { capture: true },
+        );
+      }
+
+      const picker = container.querySelector("hui-card-picker");
+      if (picker) {
+        picker.style.display = "block";
+
+        // If picker has no content, try to refresh it
+        if (picker.requestUpdate) {
+          picker.requestUpdate();
+        }
+      }
+    }
+
+    this.editor.requestUpdate();
+  }
+}
+
+/**
+ * Configuration management utilities for Simple Swipe Card Editor
+ */
+
+
+/**
+ * Handles configuration processing and validation
+ */
+class EditorConfigManager {
+  constructor(editor) {
+    this.editor = editor;
+  }
+
+  /**
+   * Sets and validates the editor configuration
+   * @param {Object} config - Configuration object
+   */
+  setConfig(config) {
+    if (!config) {
+      throw new Error("Invalid configuration");
+    }
+    logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
+
+    this.editor._config = JSON.parse(JSON.stringify(config));
+    if (!Array.isArray(this.editor._config.cards))
+      this.editor._config.cards = [];
+    if (this.editor._config.show_pagination === undefined)
+      this.editor._config.show_pagination = true;
+    if (this.editor._config.card_spacing === undefined) {
+      this.editor._config.card_spacing = 15;
+    } else {
+      const spacing = parseInt(this.editor._config.card_spacing);
+      this.editor._config.card_spacing =
+        isNaN(spacing) || spacing < 0 ? 15 : spacing;
+    }
+
+    // Migrate enable_loopback to loop_mode
+    if (
+      this.editor._config.enable_loopback !== undefined &&
+      this.editor._config.loop_mode === undefined
+    ) {
+      this.editor._config.loop_mode = this.editor._config.enable_loopback
+        ? "loopback"
+        : "none";
+      delete this.editor._config.enable_loopback;
+      logDebug(
+        "CONFIG",
+        "Migrated enable_loopback to loop_mode:",
+        this.editor._config.loop_mode,
+      );
+    }
+
+    // Set default for loop_mode
+    if (this.editor._config.loop_mode === undefined) {
+      this.editor._config.loop_mode = "none";
+    }
+
+    // Validate loop_mode
+    if (
+      !["none", "loopback", "infinite"].includes(this.editor._config.loop_mode)
+    ) {
+      logDebug(
+        "CONFIG",
+        "Invalid loop_mode, defaulting to 'none':",
+        this.editor._config.loop_mode,
+      );
+      this.editor._config.loop_mode = "none";
+    }
+
+    // Set default for swipe_direction
+    if (
+      this.editor._config.swipe_direction === undefined ||
+      !["horizontal", "vertical"].includes(this.editor._config.swipe_direction)
+    ) {
+      this.editor._config.swipe_direction = "horizontal";
+    }
+
+    // Set default for swipe_behavior and validate based on loop_mode
+    if (this.editor._config.swipe_behavior === undefined) {
+      this.editor._config.swipe_behavior = "single";
+    }
+
+    // Validate swipe_behavior - only allow "free" with infinite loop mode
+    if (!["single", "free"].includes(this.editor._config.swipe_behavior)) {
+      this.editor._config.swipe_behavior = "single";
+    } else if (this.editor._config.swipe_behavior === "free" && this.editor._config.loop_mode !== "infinite") {
+      // Force to single if free is selected but not in infinite mode
+      this.editor._config.swipe_behavior = "single";
+      logDebug("CONFIG", "Free swipe behavior requires infinite loop mode, defaulting to single");
+    }
+
+    // Set defaults for auto-swipe options
+    if (this.editor._config.enable_auto_swipe === undefined)
+      this.editor._config.enable_auto_swipe = false;
+    if (this.editor._config.auto_swipe_interval === undefined) {
+      this.editor._config.auto_swipe_interval = 2000;
+    } else {
+      this.editor._config.auto_swipe_interval = parseInt(
+        this.editor._config.auto_swipe_interval,
+      );
+      if (
+        isNaN(this.editor._config.auto_swipe_interval) ||
+        this.editor._config.auto_swipe_interval < 500
+      ) {
+        this.editor._config.auto_swipe_interval = 2000;
+      }
+    }
+
+    // Set defaults for reset-after options
+    if (this.editor._config.enable_reset_after === undefined)
+      this.editor._config.enable_reset_after = false;
+    if (this.editor._config.reset_after_timeout === undefined) {
+      this.editor._config.reset_after_timeout = 30000; // 30 seconds default
+    } else {
+      // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
+      this.editor._config.reset_after_timeout = parseInt(
+        this.editor._config.reset_after_timeout,
+      );
+      if (
+        isNaN(this.editor._config.reset_after_timeout) ||
+        this.editor._config.reset_after_timeout < 5000
+      ) {
+        this.editor._config.reset_after_timeout = 30000;
+      }
+    }
+    if (this.editor._config.reset_target_card === undefined) {
+      this.editor._config.reset_target_card = 1; // Default to first card (1-based)
+    } else {
+      // Ensure it's a valid 1-based number
+      this.editor._config.reset_target_card = Math.max(
+        1,
+        parseInt(this.editor._config.reset_target_card),
+      );
+    }
+
+    // Set defaults for view mode options
+    if (this.editor._config.view_mode === undefined) {
+      this.editor._config.view_mode = "single";
+    }
+
+    // Validate view_mode
+    if (!["single", "carousel"].includes(this.editor._config.view_mode)) {
+      this.editor._config.view_mode = "single";
+    }
+
+    // Handle both card_min_width and cards_visible for backwards compatibility
+    if (this.editor._config.view_mode === "carousel") {
+      // Set default for card_min_width (new responsive approach)
+      if (this.editor._config.card_min_width === undefined) {
+        this.editor._config.card_min_width = 200;
+      } else {
+        const minWidth = parseInt(this.editor._config.card_min_width);
+        if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+          this.editor._config.card_min_width = 200;
+        }
+      }
+
+      // Handle legacy cards_visible for backwards compatibility
+      if (this.editor._config.cards_visible !== undefined) {
+        // Validate cards_visible with better bounds
+        const cardsVisible = parseFloat(this.editor._config.cards_visible);
+        if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+          this.editor._config.cards_visible = 2.5;
+        } else {
+          // Round to 1 decimal place to avoid precision issues
+          this.editor._config.cards_visible =
+            Math.round(cardsVisible * 10) / 10;
+        }
+      }
+      // If cards_visible is undefined, we'll use the responsive approach
+    }
+
+    delete this.editor._config.title;
+
+    // Ensure card picker is loaded after config is set
+    setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 50);
+  }
+
+  /**
+   * Handles value changes from UI components
+   * @param {Event} ev - Change event
+   */
+  handleValueChanged(ev) {
+    if (!this.editor._config || !ev.target) return;
+    const target = ev.target;
+    const option = target.configValue || target.getAttribute("data-option");
+    const parentOption =
+      target.parentElement?.configValue ||
+      target.parentElement?.getAttribute("data-option");
+    const finalOption = option || parentOption;
+    if (!finalOption) return;
+
+    let value;
+
+    // Handle ha-entity-picker value-changed events
+    if (
+      target.localName === "ha-entity-picker" &&
+      ev.type === "value-changed"
+    ) {
+      value = ev.detail.value || null;
+    } else if (target.localName === "ha-switch") {
+      value = target.checked;
+    } else if (
+      target.localName === "ha-textfield" &&
+      target.type === "number"
+    ) {
+      value = parseFloat(target.value); // Use parseFloat for cards_visible
+      if (isNaN(value) || value < 0) {
+        // Set default values based on option
+        if (finalOption === "card_spacing") {
+          value = 15;
+        } else if (finalOption === "auto_swipe_interval") {
+          value = 2000;
+        } else if (finalOption === "reset_after_timeout") {
+          value = 30000;
+        } else if (finalOption === "cards_visible") {
+          value = 2.5;
+        } else {
+          value = 0;
+        }
+      }
+    } else {
+      value = target.value;
+    }
+
+    // Handle view mode switching with cleanup
+    if (
+      finalOption === "view_mode" &&
+      this.editor._config[finalOption] !== value
+    ) {
+      logDebug(
+        "EDITOR",
+        `View mode changing from ${this.editor._config[finalOption]} to ${value}`,
+      );
+
+      // Create new config with cleaned options
+      const newConfig = { ...this.editor._config, [finalOption]: value };
+
+      if (value === "carousel") {
+        // Switching TO carousel mode - remove single-mode-only options
+        delete newConfig.swipe_direction; // Carousel only supports horizontal
+
+        // Set responsive defaults for new users, preserve existing cards_visible for legacy
+        if (!newConfig.cards_visible && !newConfig.card_min_width) {
+          // New user - use responsive approach
+          newConfig.card_min_width = 200;
+        }
+        // If they already have cards_visible, keep it (backwards compatibility)
+        // If they already have card_min_width, keep it
+
+        logDebug(
+          "EDITOR",
+          "Cleaned config for carousel mode:",
+          Object.keys(newConfig),
+        );
+      } else if (value === "single") {
+        // Switching TO single mode - remove carousel-mode-only options
+        delete newConfig.cards_visible;
+        delete newConfig.card_min_width; // Remove both carousel options
+
+        // Restore single mode defaults if needed
+        if (!newConfig.swipe_direction) {
+          newConfig.swipe_direction = "horizontal";
+        }
+
+        logDebug(
+          "EDITOR",
+          "Cleaned config for single mode:",
+          Object.keys(newConfig),
+        );
+      }
+
+      this.editor._config = newConfig;
+      this.fireConfigChanged();
+      this.editor.requestUpdate();
+      return;
+    }
+
+    // Handle card_min_width changes (with migration)
+    if (
+      finalOption === "card_min_width" &&
+      this.editor._config[finalOption] !== value
+    ) {
+      logDebug(
+        "EDITOR",
+        `User changed card_min_width to ${value}, migrating from legacy mode`,
+      );
+
+      // If they had cards_visible, remove it (user-initiated migration)
+      if (this.editor._config.cards_visible !== undefined) {
+        const newConfig = { ...this.editor._config };
+        delete newConfig.cards_visible;
+        newConfig.card_min_width = value;
+        this.editor._config = newConfig;
+        logDebug("EDITOR", "Migrated from cards_visible to card_min_width");
+      } else {
+        this.editor._config = { ...this.editor._config, [finalOption]: value };
+      }
+
+      this.fireConfigChanged();
+      this.editor.requestUpdate();
+      return;
+    }
+
+    // Guard against redundant updates to prevent loops (for other options)
+    if (this.editor._config[finalOption] !== value) {
+      logDebug("EDITOR", `Value changed for ${finalOption}:`, value);
+
+      // Create a new config object to ensure reactivity
+      this.editor._config = { ...this.editor._config, [finalOption]: value };
+
+      // Fire config changed without requesting an update
+      this.fireConfigChanged();
+
+      // Don't call requestUpdate() here as it may cause update loops
+    }
+  }
+
+  /**
+   * Handles reset timeout changes
+   * @param {Event} ev - The change event
+   */
+  handleTimeoutChange(ev) {
+    const seconds = parseInt(ev.target.value);
+    if (!isNaN(seconds) && seconds >= 5) {
+      const milliseconds = seconds * 1000;
+      this.editor._config = {
+        ...this.editor._config,
+        reset_after_timeout: milliseconds,
+      };
+      this.fireConfigChanged();
+    }
+  }
+
+  /**
+   * Handles reset target card changes
+   * @param {Event} ev - The change event
+   */
+  handleTargetChange(ev) {
+    const oneBasedIndex = parseInt(ev.target.value);
+    if (!isNaN(oneBasedIndex) && oneBasedIndex >= 1) {
+      this.editor._config = {
+        ...this.editor._config,
+        reset_target_card: oneBasedIndex,
+      };
+      this.fireConfigChanged();
+    }
+  }
+
+  /**
+   * Creates a clean configuration object with only non-default values in UI order
+   * @param {Object} config - The full configuration object
+   * @returns {Object} Clean configuration with only non-default values in proper order
+   */
+  getCleanConfig(config) {
+    if (!config) return {};
+
+    const cleanConfig = { type: config.type };
+
+    // View Mode section (matches UI order)
+    // Include view mode if not default
+    if (config.view_mode && config.view_mode !== "single") {
+      cleanConfig.view_mode = config.view_mode;
+    }
+
+    // FIXED: Include the appropriate carousel option
+    if (config.view_mode === "carousel") {
+      if (config.cards_visible !== undefined) {
+        // Legacy approach - include cards_visible
+        cleanConfig.cards_visible = config.cards_visible;
+      } else if (
+        config.card_min_width !== undefined &&
+        config.card_min_width !== 200
+      ) {
+        // New approach - include card_min_width (only if not default)
+        cleanConfig.card_min_width = config.card_min_width;
+      }
+    }
+
+    // Display Options section (matches UI order)
+    const displayOptions = [
+      "card_spacing",
+      "swipe_direction",
+      "swipe_behavior", 
+      "show_pagination",
+    ];
+
+    // Advanced Options section (matches UI order)
+    const advancedOptions = [
+      "loop_mode",
+      "enable_auto_swipe",
+      "auto_swipe_interval",
+      "enable_reset_after",
+      "reset_after_timeout",
+      "reset_target_card",
+      "state_entity",
+    ];
+
+    // Defaults for comparison
+    const defaults = {
+      show_pagination: true,
+      card_spacing: 15,
+      loop_mode: "none",
+      swipe_direction: "horizontal",
+      swipe_behavior: "single",
+      enable_auto_swipe: false,
+      auto_swipe_interval: 2000,
+      enable_reset_after: false,
+      reset_after_timeout: 30000,
+      reset_target_card: 1,
+    };
+
+    // Add display options in UI order
+    displayOptions.forEach((key) => {
+      if (config[key] !== undefined && config[key] !== defaults[key]) {
+        cleanConfig[key] = config[key];
+      }
+    });
+
+    // Add advanced options in UI order
+    advancedOptions.forEach((key) => {
+      if (key === "state_entity") {
+        // Handle state_entity separately - only include if it has a meaningful value
+        if (
+          config.state_entity &&
+          config.state_entity !== null &&
+          config.state_entity !== ""
+        ) {
+          cleanConfig.state_entity = config.state_entity;
+        }
+      } else if (config[key] !== undefined && config[key] !== defaults[key]) {
+        cleanConfig[key] = config[key];
+      }
+    });
+
+    // Cards section (comes after configuration options, matching UI)
+    if (Array.isArray(config.cards)) {
+      cleanConfig.cards = config.cards;
+    }
+
+    // Add Home Assistant layout properties at the end (before card_mod)
+    const layoutProperties = ["grid_options", "layout_options", "view_layout"];
+    layoutProperties.forEach((prop) => {
+      if (config[prop] !== undefined) {
+        cleanConfig[prop] = config[prop];
+      }
+    });
+
+    // Add card_mod at the very end if it exists
+    if (config.card_mod !== undefined) {
+      cleanConfig.card_mod = config.card_mod;
+    }
+
+    return cleanConfig;
+  }
+
+  /**
+   * Fires the config-changed event with proper identification
+   * @param {Object} extraData - Additional data to include in the event
+   */
+  fireConfigChanged(extraData = {}) {
+    const cleanConfig = this.getCleanConfig(this.editor._config);
+    fireConfigChanged(this.editor, cleanConfig, {
+      editorId: this.editor._editorId,
+      fromSwipeCardEditor: true,
+      ...extraData,
+    });
+  }
+}
+
+/**
+ * Card management utilities for Simple Swipe Card Editor
+ */
+
+
+/**
+ * Handles card CRUD operations for the editor
+ */
+class EditorCardManagement {
+  constructor(editor) {
+    this.editor = editor;
+  }
+
+  /**
+   * Gets a descriptive name for a card configuration
+   * @param {Object} cardConfig - The card configuration
+   * @returns {Object} An object with type name and card name
+   */
+  getCardDescriptor(cardConfig) {
+    if (!cardConfig?.type)
+      return { typeName: "Unknown", name: "", isPictureElements: false };
+    const type = cardConfig.type.startsWith("custom:")
+      ? cardConfig.type.substring(7)
+      : cardConfig.type;
+    const typeName = type
+      .split(/[-_]/)
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+    const name = cardConfig.title || cardConfig.name || "";
+    const isPictureElements = type === "picture-elements";
+    return { typeName, name, isPictureElements };
+  }
+
+  /**
+   * Checks if a card configuration contains nested cards
+   * @param {Object} cardConfig - The card configuration to check
+   * @returns {boolean} True if the card has nested cards
+   */
+  hasNestedCards(cardConfig) {
+    // Check for action-card with card property
+    if (cardConfig.type === "custom:actions-card" && cardConfig.card) {
+      return Array.isArray(cardConfig.card)
+        ? cardConfig.card.length > 0
+        : !!cardConfig.card;
+    }
+    return false;
+  }
+
+  /**
+   * Gets the nested cards from a card configuration
+   * @param {Object} cardConfig - The card configuration
+   * @returns {Array} Array of nested card configurations
+   */
+  getNestedCards(cardConfig) {
+    if (!this.hasNestedCards(cardConfig)) return [];
+    return Array.isArray(cardConfig.card) ? cardConfig.card : [cardConfig.card];
+  }
+
+  /**
+   * Checks if a card has visibility conditions
+   * @param {Object} config - Card configuration
+   * @returns {boolean} True if the card has visibility conditions
+   */
+  hasVisibilityConditions(config) {
+    return (
+      config && Array.isArray(config.visibility) && config.visibility.length > 0
+    );
+  }
+
+  /**
+   * Checks if a card config is a picture-elements card
+   * @param {Object} config - Card configuration
+   * @returns {boolean} True if it's a picture-elements card
+   */
+  isPictureElementsCard(config) {
+    return config && config.type === "picture-elements";
+  }
+
+  /**
+   * Moves a card in the list
+   * @param {number} index - The index of the card to move
+   * @param {number} direction - The direction to move (-1 for up, 1 for down)
+   */
+  moveCard(index, direction) {
+    if (!this.editor._config?.cards) return;
+    const cards = [...this.editor._config.cards];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= cards.length) return;
+
+    // Swap the cards
+    logDebug("EDITOR", `Moving card ${index} to position ${newIndex}`);
+    [cards[index], cards[newIndex]] = [cards[newIndex], cards[index]];
+
+    this.editor._config = { ...this.editor._config, cards };
+    this.editor.configManager.fireConfigChanged();
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Removes a card from the list
+   * @param {number} index - The index of the card to remove
+   */
+  removeCard(index) {
+    if (
+      !this.editor._config?.cards ||
+      index < 0 ||
+      index >= this.editor._config.cards.length
+    )
+      return;
+
+    logDebug("EDITOR", `Removing card at index ${index}`);
+    const cards = this.editor._config.cards.filter((_, i) => i !== index);
+    this.editor._config = { ...this.editor._config, cards };
+    this.editor.configManager.fireConfigChanged();
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Moves a nested card in the list
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card
+   * @param {number} direction - The direction to move (-1 for up, 1 for down)
+   */
+  moveNestedCard(parentIndex, nestedIndex, direction) {
+    if (!this.editor._config?.cards || !this.editor._config.cards[parentIndex])
+      return;
+
+    const parentCard = this.editor._config.cards[parentIndex];
+    if (!this.hasNestedCards(parentCard)) return;
+
+    const nestedCards = this.getNestedCards(parentCard);
+    const newNestedIndex = nestedIndex + direction;
+
+    if (newNestedIndex < 0 || newNestedIndex >= nestedCards.length) return;
+
+    logDebug(
+      "EDITOR",
+      `Moving nested card ${parentIndex}.${nestedIndex} to position ${parentIndex}.${newNestedIndex}`,
+    );
+
+    // Swap the cards
+    [nestedCards[nestedIndex], nestedCards[newNestedIndex]] = [
+      nestedCards[newNestedIndex],
+      nestedCards[nestedIndex],
+    ];
+
+    // Update the configuration
+    const updatedCards = [...this.editor._config.cards];
+    updatedCards[parentIndex] = { ...parentCard, card: nestedCards };
+    this.editor._config = { ...this.editor._config, cards: updatedCards };
+
+    this.editor.configManager.fireConfigChanged();
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Removes a nested card from the list
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card to remove
+   */
+  removeNestedCard(parentIndex, nestedIndex) {
+    if (!this.editor._config?.cards || !this.editor._config.cards[parentIndex])
+      return;
+
+    const parentCard = this.editor._config.cards[parentIndex];
+    if (!this.hasNestedCards(parentCard)) return;
+
+    let nestedCards = this.getNestedCards(parentCard);
+    if (nestedIndex < 0 || nestedIndex >= nestedCards.length) return;
+
+    logDebug("EDITOR", `Removing nested card ${parentIndex}.${nestedIndex}`);
+
+    // Remove the card
+    nestedCards = nestedCards.filter((_, i) => i !== nestedIndex);
+
+    // Update the configuration
+    const updatedCards = [...this.editor._config.cards];
+    updatedCards[parentIndex] = { ...parentCard, card: nestedCards };
+    this.editor._config = { ...this.editor._config, cards: updatedCards };
+
+    this.editor.configManager.fireConfigChanged();
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Opens the edit dialog for a card
+   * @param {number} index - The index of the card to edit
+   */
+  async editCard(index) {
+    logDebug("EDITOR", `_editCard called for index ${index}`);
+    if (
+      !this.editor._config ||
+      !this.editor._config.cards ||
+      index < 0 ||
+      index >= this.editor._config.cards.length
+    ) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Invalid index for card editing:",
+        index,
+      );
+      return;
+    }
+
+    const cardConfig = this.editor._config.cards[index];
+    const hass = this.editor.hass;
+    const mainApp = document.querySelector("home-assistant");
+
+    if (!hass || !mainApp) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Cannot find Home Assistant instance",
+      );
+      return;
+    }
+
+    try {
+      await customElements.whenDefined("hui-dialog-edit-card");
+
+      const dialog = document.createElement("hui-dialog-edit-card");
+      dialog.hass = hass;
+
+      document.body.appendChild(dialog); // Add to body FIRST
+      this.editor._activeChildEditors.add(dialog);
+      dialog._parentEditorId = this.editor._editorId;
+
+      // Add special attributes for picture-elements cards to enhance tracking
+      if (this.isPictureElementsCard(cardConfig)) {
+        dialog.setAttribute("data-editing-picture-elements", "true");
+        dialog._editingPictureElements = true;
+      }
+
+      logDebug(
+        "EDITOR",
+        `[CARD INDEX ${index}] hui-dialog-edit-card created and added to body. Tracking it.`,
+      );
+
+      // --- Listener Setup ---
+      // Store bound functions for removal
+      const boundHandleDialogConfigChanged =
+        this.editor.eventHandling.handleDialogConfigChanged.bind(
+          this.editor.eventHandling,
+          index,
+          dialog,
+        );
+      const boundHandleDialogShowDialog =
+        this.editor.eventHandling.handleDialogShowDialog.bind(
+          this.editor.eventHandling,
+          index,
+        );
+
+      dialog.addEventListener(
+        "config-changed",
+        boundHandleDialogConfigChanged,
+        { capture: true },
+      );
+      dialog.addEventListener("show-dialog", boundHandleDialogShowDialog, {
+        capture: true,
+      });
+      dialog.addEventListener("ll-show-dialog", boundHandleDialogShowDialog, {
+        capture: true,
+      });
+
+      // For picture-elements, listen to element editor events
+      if (this.isPictureElementsCard(cardConfig)) {
+        dialog.addEventListener(
+          "element-updated",
+          (e) => {
+            logDebug("ELEMENT", "Element updated event on dialog", e.detail);
+            dialog._handlingElementEdit = true;
+            this.editor.eventHandling._elementEditSession.active = true;
+            this.editor.eventHandling._elementEditSession.timestamp =
+              Date.now();
+          },
+          { capture: true },
+        );
+
+        dialog.addEventListener(
+          "show-edit-element",
+          (e) => {
+            logDebug("ELEMENT", "Show edit element event on dialog", e.detail);
+            dialog._handlingElementEdit = true;
+            this.editor.eventHandling._elementEditSession.active = true;
+            this.editor.eventHandling._elementEditSession.timestamp =
+              Date.now();
+          },
+          { capture: true },
+        );
+      }
+
+      if (cardConfig.type === "custom:actions-card") {
+        dialog._editingActionsCard = true;
+      }
+
+      const handleDialogClose = () => {
+        logDebug(
+          "EDITOR",
+          `[CARD INDEX ${index}] hui-dialog-edit-card closed event received.`,
+        );
+        // Remove listeners using the stored bound functions
+        dialog.removeEventListener("dialog-closed", handleDialogClose);
+        dialog.removeEventListener(
+          "config-changed",
+          boundHandleDialogConfigChanged,
+          { capture: true },
+        );
+        dialog.removeEventListener("show-dialog", boundHandleDialogShowDialog, {
+          capture: true,
+        });
+        dialog.removeEventListener(
+          "ll-show-dialog",
+          boundHandleDialogShowDialog,
+          { capture: true },
+        );
+
+        if (this.isPictureElementsCard(cardConfig)) {
+          dialog.removeEventListener("element-updated", handleElementUpdated, {
+            capture: true,
+          });
+          dialog.removeEventListener(
+            "show-edit-element",
+            handleShowEditElement,
+            { capture: true },
+          );
+        }
+
+        this.editor._activeChildEditors.delete(dialog);
+        logDebug(
+          "EDITOR",
+          `[CARD INDEX ${index}] hui-dialog-edit-card removed from tracking. Active child editors: ${this.editor._activeChildEditors.size}`,
+        );
+
+        // Reset element edit session if it's from this dialog
+        if (dialog._handlingElementEdit) {
+          logDebug("ELEMENT", "Element edit session reset due to dialog close");
+          setTimeout(() => {
+            // Only clear if no new element edit session has started
+            if (
+              this.editor.eventHandling._elementEditSession.active &&
+              Date.now() -
+                this.editor.eventHandling._elementEditSession.timestamp >
+                500
+            ) {
+              this.editor.eventHandling._elementEditSession.active = false;
+            }
+          }, 500);
+        }
+
+        if (dialog.parentNode === document.body) {
+          try {
+            document.body.removeChild(dialog);
+            logDebug(
+              "EDITOR",
+              `[CARD INDEX ${index}] hui-dialog-edit-card removed from body.`,
+            );
+          } catch (error) {
+            console.warn(
+              `[CARD INDEX ${index}] Error removing dialog from body:`,
+              error,
+            );
+          }
+        }
+        setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
+      };
+      dialog.addEventListener("dialog-closed", handleDialogClose);
+
+      // Additional handlers for picture-elements cards
+      const handleElementUpdated = (e) => {
+        logDebug("ELEMENT", "Element updated event on dialog", e.detail);
+        dialog._handlingElementEdit = true;
+        this.editor.eventHandling._elementEditSession.active = true;
+        this.editor.eventHandling._elementEditSession.timestamp = Date.now();
+      };
+
+      const handleShowEditElement = (e) => {
+        logDebug("ELEMENT", "Show edit element event on dialog", e.detail);
+        dialog._handlingElementEdit = true;
+        this.editor.eventHandling._elementEditSession.active = true;
+        this.editor.eventHandling._elementEditSession.timestamp = Date.now();
+      };
+
+      if (this.isPictureElementsCard(cardConfig)) {
+        dialog.addEventListener("element-updated", handleElementUpdated, {
+          capture: true,
+        });
+        dialog.addEventListener("show-edit-element", handleShowEditElement, {
+          capture: true,
+        });
+      }
+      // --- End Listener Setup ---
+
+      const dialogParams = {
+        cardConfig: cardConfig,
+        lovelaceConfig: this.editor.lovelace || mainApp.lovelace,
+        // This is the FINAL save from hui-dialog-edit-card
+        saveCardConfig: async (savedCardConfig) => {
+          logDebug(
+            "EDITOR",
+            `[CARD INDEX ${index}] saveCardConfig callback in hui-dialog-edit-card invoked.`,
+          );
+
+          // Check if this save is coming from an element editor
+          if (dialog._savingFromElementEditor || dialog._handlingElementEdit) {
+            logDebug(
+              "ELEMENT",
+              `[CARD INDEX ${index}] Save detected from element editor, preserving dialog state`,
+            );
+            dialog._savingFromElementEditor = false;
+
+            // Keep the element edit session active for a short time to catch any related events
+            this.editor.eventHandling._elementEditSession.timestamp =
+              Date.now();
+
+            // If we have a savedCardConfig, update it silently in our configuration
+            // This keeps picture-elements changes without closing the editor
+            if (savedCardConfig) {
+              logDebug(
+                "ELEMENT",
+                "Silently updating config with element changes",
+              );
+              const updatedCards = [...this.editor._config.cards];
+              updatedCards[index] = savedCardConfig;
+              this.editor._config = {
+                ...this.editor._config,
+                cards: updatedCards,
+              };
+
+              // Fire a non-bubbling config change to update parent without closing
+              this.editor.configManager.fireConfigChanged({
+                maintainEditorState: true,
+                fromElementEditor: true,
+                updatedCardIndex: index,
+              });
+            }
+
+            // Return the config to prevent dialog from closing
+            return savedCardConfig;
+          }
+
+          // Handle dialog closing during element edit
+          if (dialog._lastElementConfig && !savedCardConfig) {
+            logDebug(
+              "ELEMENT",
+              `[CARD INDEX ${index}] Element editor cancel detected, restoring previous config`,
+            );
+            dialog._lastElementConfig = null;
+            // Don't return anything to allow dialog close
+            return;
+          }
+
+          if (!savedCardConfig) return;
+          const updatedCards = [...this.editor._config.cards];
+          updatedCards[index] = savedCardConfig;
+          this.editor._config = { ...this.editor._config, cards: updatedCards };
+          // Fire a BUBBLING event here, as the edit session for this card IS finished.
+          this.editor.configManager.fireConfigChanged({
+            reason: "child_dialog_saved",
+          });
+          this.editor.requestUpdate();
+          // Dialog will close itself, handleDialogClose will manage cleanup
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100); // Also ensure here
+        },
+      };
+
+      logDebug(
+        "EDITOR",
+        `[CARD INDEX ${index}] About to call dialog.showDialog()`,
+      );
+      await dialog.showDialog(dialogParams);
+      logDebug("EDITOR", `[CARD INDEX ${index}] dialog.showDialog() finished.`);
+    } catch (err) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Error opening edit dialog:",
+        err,
+      );
+      // Fallback method
+      fireHAEvent(this.editor, "ll-show-dialog", {
+        dialogTag: "hui-dialog-edit-card",
+        dialogImport: () => import('hui-dialog-edit-card'),
+        dialogParams: {
+          cardConfig: cardConfig,
+          lovelaceConfig: this.editor.lovelace || mainApp.lovelace,
+          saveCardConfig: async (savedCardConfig) => {
+            if (!savedCardConfig) return;
+            const updatedCards = [...this.editor._config.cards];
+            updatedCards[index] = savedCardConfig;
+            this.editor._config = {
+              ...this.editor._config,
+              cards: updatedCards,
+            };
+            this.editor.configManager.fireConfigChanged({
+              reason: "child_dialog_saved_fallback",
+            });
+            this.editor.requestUpdate();
+            setTimeout(
+              () => this.editor.uiManager.ensureCardPickerLoaded(),
+              100,
+            );
+          },
+        },
+      });
+    }
+  }
+
+  /**
+   * Opens the edit dialog for a nested card
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card to edit
+   */
+  async editNestedCard(parentIndex, nestedIndex) {
+    logDebug(
+      "EDITOR",
+      `_editNestedCard called for parent ${parentIndex}, nested ${nestedIndex}`,
+    );
+    if (
+      !this.editor._config?.cards ||
+      !this.editor._config.cards[parentIndex] ||
+      !this.hasNestedCards(this.editor._config.cards[parentIndex])
+    ) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Invalid indices for nested card editing:",
+        parentIndex,
+        nestedIndex,
+      );
+      return;
+    }
+
+    const parentCard = this.editor._config.cards[parentIndex];
+    const nestedCards = this.getNestedCards(parentCard);
+    if (nestedIndex < 0 || nestedIndex >= nestedCards.length) return;
+
+    const cardConfig = nestedCards[nestedIndex];
+    const hass = this.editor.hass;
+    const mainApp = document.querySelector("home-assistant");
+
+    if (!hass || !mainApp) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Cannot find Home Assistant instance",
+      );
+      return;
+    }
+
+    try {
+      await customElements.whenDefined("hui-dialog-edit-card");
+
+      const dialog = document.createElement("hui-dialog-edit-card");
+      dialog.hass = hass;
+
+      document.body.appendChild(dialog);
+      this.editor._activeChildEditors.add(dialog);
+      dialog._parentEditorId = this.editor._editorId;
+
+      // Add special attributes for picture-elements cards to enhance tracking
+      if (this.isPictureElementsCard(cardConfig)) {
+        dialog.setAttribute("data-editing-picture-elements", "true");
+        dialog._editingPictureElements = true;
+      }
+
+      // Add element editor detection
+      dialog.addEventListener(
+        "config-changed",
+        (e) => {
+          // Check if this is from an element editor
+          if (this.editor.eventHandling._isElementEditorEvent(e)) {
+            logDebug(
+              "ELEMENT",
+              `Nested card: Detected element editor event, allowing natural propagation`,
+            );
+
+            // Mark the dialog as handling an element edit session
+            dialog._handlingElementEdit = true;
+
+            // Update element edit session state
+            this.editor.eventHandling._elementEditSession.active = true;
+            this.editor.eventHandling._elementEditSession.timestamp =
+              Date.now();
+
+            // Track the event for state restoration if needed
+            if (e.detail && e.detail.config) {
+              dialog._lastElementConfig = JSON.parse(
+                JSON.stringify(e.detail.config),
+              );
+              dialog._savingFromElementEditor = true;
+            }
+
+            // Critical: Do NOT stop propagation for element editor events
+            return;
+          }
+
+          if (
+            e.detail?.fromExternalEditor ||
+            e.detail?.fromActionCardEditor ||
+            e.detail?.fromSwipeCardEditor
+          ) {
+            logDebug(
+              "EDITOR",
+              "Marking nested event as already handled in _editNestedCard's dialog",
+            );
+            e._handledByParentEditor = true;
+          }
+        },
+        true,
+      );
+
+      const handleDialogClose = () => {
+        dialog.removeEventListener("dialog-closed", handleDialogClose);
+
+        // End element editing session if this was the parent dialog
+        if (dialog._handlingElementEdit) {
+          logDebug(
+            "ELEMENT",
+            "Dialog handling element edit is closing, ending element edit session",
+          );
+          this.editor.eventHandling._elementEditSession.active = false;
+        }
+
+        this.editor._activeChildEditors.delete(dialog);
+        if (dialog.parentNode === document.body) {
+          try {
+            document.body.removeChild(dialog);
+          } catch (error) {
+            console.warn("Error removing nested card dialog:", error);
+          }
+        }
+        setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
+      };
+      dialog.addEventListener("dialog-closed", handleDialogClose);
+
+      const dialogParams = {
+        cardConfig: cardConfig,
+        lovelaceConfig: this.editor.lovelace || mainApp.lovelace,
+        saveCardConfig: async (savedCardConfig) => {
+          // Check if this save is coming from an element editor
+          if (dialog._savingFromElementEditor || dialog._handlingElementEdit) {
+            logDebug(
+              "ELEMENT",
+              `Nested card: Save detected from element editor, preserving dialog state`,
+            );
+            dialog._savingFromElementEditor = false;
+
+            // Keep the element edit session active for a short time to catch any related events
+            this.editor.eventHandling._elementEditSession.timestamp =
+              Date.now();
+
+            // If we have a savedCardConfig, update it silently in our configuration
+            if (savedCardConfig) {
+              logDebug(
+                "ELEMENT",
+                "Silently updating nested card config with element changes",
+              );
+              const updatedNestedCards = [...nestedCards];
+              updatedNestedCards[nestedIndex] = savedCardConfig;
+              const updatedParentCard = {
+                ...parentCard,
+                card: updatedNestedCards,
+              };
+              const updatedCards = [...this.editor._config.cards];
+              updatedCards[parentIndex] = updatedParentCard;
+              this.editor._config = {
+                ...this.editor._config,
+                cards: updatedCards,
+              };
+
+              // Fire a non-bubbling config change to update parent without closing
+              this.editor.configManager.fireConfigChanged({
+                maintainEditorState: true,
+                fromElementEditor: true,
+                updatedCardIndex: parentIndex,
+                nestedCardIndex: nestedIndex,
+              });
+            }
+
+            // Return the config to prevent dialog from closing
+            return savedCardConfig;
+          }
+
+          // Handle dialog closing during element edit
+          if (dialog._lastElementConfig && !savedCardConfig) {
+            logDebug(
+              "ELEMENT",
+              `Nested card: Element editor cancel detected, restoring previous config`,
+            );
+            dialog._lastElementConfig = null;
+            return;
+          }
+
+          if (!savedCardConfig) return;
+
+          logDebug(
+            "EDITOR",
+            `Saving nested card ${parentIndex}.${nestedIndex} with new config`,
+          );
+          const updatedNestedCards = [...nestedCards];
+          updatedNestedCards[nestedIndex] = savedCardConfig;
+          const updatedParentCard = { ...parentCard, card: updatedNestedCards };
+          const updatedCards = [...this.editor._config.cards];
+          updatedCards[parentIndex] = updatedParentCard;
+          this.editor._config = { ...this.editor._config, cards: updatedCards };
+          this.editor.configManager.fireConfigChanged();
+          this.editor.requestUpdate();
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100);
+        },
+      };
+      await dialog.showDialog(dialogParams);
+    } catch (err) {
+      logDebug(
+        "ERROR",
+        "SimpleSwipeCardEditor: Error opening edit dialog for nested card:",
+        err,
+      );
+      fireHAEvent(this.editor, "ll-show-dialog", {
+        dialogTag: "hui-dialog-edit-card",
+        dialogImport: () => import('hui-dialog-edit-card'),
+        dialogParams: {
+          cardConfig: cardConfig,
+          lovelaceConfig: this.editor.lovelace || mainApp.lovelace,
+          saveCardConfig: async (savedCardConfig) => {
+            if (!savedCardConfig) return;
+            const updatedNestedCards = [...nestedCards];
+            updatedNestedCards[nestedIndex] = savedCardConfig;
+            const updatedParentCard = {
+              ...parentCard,
+              card: updatedNestedCards,
+            };
+            const updatedCards = [...this.editor._config.cards];
+            updatedCards[parentIndex] = updatedParentCard;
+            this.editor._config = {
+              ...this.editor._config,
+              cards: updatedCards,
+            };
+            this.editor.configManager.fireConfigChanged();
+            this.editor.requestUpdate();
+            setTimeout(
+              () => this.editor.uiManager.ensureCardPickerLoaded(),
+              100,
+            );
+          },
+        },
+      });
+    }
+  }
+
+  /**
+   * Safely adds a card to the configuration without triggering editor replacement
+   * @param {Object} cardConfig - Card configuration to add
+   */
+  safelyAddCard(cardConfig) {
+    if (!cardConfig || !this.editor._config) return;
+
+    try {
+      // Add to the configuration
+      const currentCards = Array.isArray(this.editor._config.cards)
+        ? [...this.editor._config.cards]
+        : [];
+      const updatedConfig = {
+        ...this.editor._config,
+        cards: [...currentCards, cardConfig],
+      };
+
+      // Update our config
+      this.editor._config = updatedConfig;
+
+      // Fire config changed event with special flag
+      this.editor.configManager.fireConfigChanged({
+        isSafeCardAddition: true,
+        addedCardType: cardConfig.type,
+      });
+
+      // Force a visual update
+      this.editor.requestUpdate();
+      setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 50); // Ensure picker is fine after adding
+
+      // Log success
+      logDebug("EDITOR", "Safely added card:", cardConfig.type);
+    } catch (err) {
+      logDebug("ERROR", "Failed to safely add card:", err);
+    }
+  }
+
+  /**
+   * Handles card selection from the picker
+   * @param {Event} ev - The selection event
+   */
+  handleCardPicked(ev) {
+    // This is a fallback - all events should be caught by the container listener
+    logDebug(
+      "EDITOR",
+      "Fallback _handleCardPicked called:",
+      ev.detail?.config?.type,
+    );
+
+    // Stop propagation to prevent editor replacement
+    ev.stopPropagation();
+    if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+    if (!ev.detail?.config) return;
+
+    // Add the card to our config
+    const newCardConfig = ev.detail.config;
+    logDebug("EDITOR", "Adding card in fallback handler:", newCardConfig.type);
+
+    const currentCards = Array.isArray(this.editor._config.cards)
+      ? [...this.editor._config.cards]
+      : [];
+    const updatedConfig = {
+      ...this.editor._config,
+      cards: [...currentCards, newCardConfig],
+    };
+
+    this.editor._config = updatedConfig;
+    this.editor.configManager.fireConfigChanged();
+    this.editor.requestUpdate();
+  }
+}
+
+/**
+ * Event handling utilities for Simple Swipe Card Editor
+ */
+
+
+/**
+ * Handles complex event management for the editor
+ */
+class EditorEventHandling {
+  constructor(editor) {
+    this.editor = editor;
+
+    // Bind event handlers
+    this._boundHandleNestedCardEvents = this._handleNestedCardEvents.bind(this);
+
+    // Element editor detection
+    this._elementEditSession = {
+      active: false,
+      parentDialogId: null,
+      elementId: null,
+      timestamp: null,
+      savedState: null,
+    };
+  }
+
+  /**
+   * Sets up all event listeners for the editor
+   */
+  setupEventListeners() {
+    // Enhanced event handling for nested card editors
+    document.addEventListener(
+      "config-changed",
+      this._boundHandleNestedCardEvents,
+      { capture: true },
+    );
+
+    // Global handler for editor card picker selections
+    this._cardPickerHandler = (e) => {
+      // Check for element editor events first to avoid interference
+      if (this._isElementEditorEvent(e)) {
+        logDebug(
+          "ELEMENT",
+          "Config-changed event from element editor, allowing propagation",
+        );
+
+        // Mark this dialog as handling an element edit
+        if (e.target && e.target.closest("hui-dialog-edit-card")) {
+          const dialog = e.target.closest("hui-dialog-edit-card");
+          if (dialog) {
+            dialog._handlingElementEdit = true;
+
+            // Track element edit session
+            this._elementEditSession.active = true;
+            this._elementEditSession.parentDialogId =
+              dialog._parentEditorId || null;
+            this._elementEditSession.timestamp = Date.now();
+          }
+        }
+
+        return;
+      }
+
+      // Only process events potentially from card pickers
+      if (e.type === "config-changed" && e.detail?.config) {
+        // Special handling for actions-card or other problematic cards
+        const isActionCard = e.detail?.config?.type === "custom:actions-card";
+
+        // If this is a hui-card-picker event, capture it
+        if (e.target?.tagName?.toLowerCase() === "hui-card-picker") {
+          // Get the path of the event to see if it's related to our editor
+          const path = e.composedPath ? e.composedPath() : [];
+
+          if (
+            path.some(
+              (node) =>
+                node === this.editor ||
+                (node.shadowRoot && node.shadowRoot.contains(this.editor)) ||
+                (this.editor.shadowRoot &&
+                  this.editor.shadowRoot.contains(node)),
+            )
+          ) {
+            // This is from our editor's card picker
+            logDebug(
+              "EDITOR",
+              "Card picker selection captured by global handler:",
+              e.detail.config.type,
+            );
+
+            // If this is an Actions Card, we need special handling
+            if (isActionCard && !this.editor._ignoreNextCardPicker) {
+              // Store the information before stopping propagation
+              this.editor._lastCardPickerSelection = {
+                time: Date.now(),
+                config: e.detail.config,
+              };
+
+              // Flag to ignore the next event, process ourselves
+              this.editor._ignoreNextCardPicker = true;
+
+              // Process this ourselves without the event
+              this.editor._safelyAddCard(e.detail.config);
+
+              // Stop propagation to prevent editor replacement
+              if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+              e.stopPropagation();
+              return;
+            }
+          }
+        }
+      }
+    };
+
+    // Capture phase is important to intercept before default handling
+    document.addEventListener("config-changed", this._cardPickerHandler, {
+      capture: true,
+    });
+
+    // Listen for iron-select events to handle tabs
+    this._tabSwitchHandler = (e) => {
+      // Check if the event has already been processed by an actions card editor
+      if (e._processedByActionsCardEditor) {
+        logDebug(
+          "EVENT",
+          "Intercepted iron-select event already processed by actions card editor",
+        );
+        e.stopPropagation();
+        return;
+      }
+    };
+
+    document.addEventListener("iron-select", this._tabSwitchHandler, {
+      capture: true,
+    });
+
+    // Add handler for dialog-closed events
+    this._dialogClosedHandler = (e) => {
+      if (e.target && e.target.tagName === "HUI-DIALOG-EDIT-CARD") {
+        const dialog = e.target;
+        logDebug("EDITOR", "A HUI-DIALOG-EDIT-CARD closed", {
+          tracked: this.editor._activeChildEditors.has(dialog),
+          isActions: this._isActionsCardDialog(dialog),
+          handlingElementEdit: dialog._handlingElementEdit,
+        });
+
+        // End element editing session if this was the parent dialog
+        if (dialog._handlingElementEdit) {
+          logDebug(
+            "ELEMENT",
+            "Dialog handling element edit is closing, ending element edit session",
+          );
+          this._elementEditSession.active = false;
+
+          // Important: If dialog was handling element edit and has stored element config,
+          // ensure it's not lost on dialog close
+          if (dialog._lastElementConfig) {
+            logDebug("ELEMENT", "Preserving element config on dialog close");
+            this._elementEditSession.savedState = dialog._lastElementConfig;
+            dialog._lastElementConfig = null;
+          }
+        }
+
+        if (this.editor._activeChildEditors.has(dialog)) {
+          // Check if it's one we are tracking
+          this.editor._activeChildEditors.delete(dialog);
+          this.editor.requestUpdate(); // Update our own UI
+          setTimeout(() => this.editor.uiManager.ensureCardPickerLoaded(), 100); // Ensure picker is good after dialog closes
+        }
+      }
+
+      // Also handle element editor dialog close
+      if (
+        e.target &&
+        (e.target.tagName === "HUI-DIALOG-EDIT-ELEMENT" ||
+          (e.target.tagName === "HUI-DIALOG" && this._isElementEditorEvent(e)))
+      ) {
+        logDebug("ELEMENT", "Element editor dialog closed");
+        // Keep the active session for a short time after dialog close
+        setTimeout(() => {
+          // Only reset if no new element edit session has started
+          if (
+            this._elementEditSession.active &&
+            Date.now() - this._elementEditSession.timestamp > 500
+          ) {
+            logDebug("ELEMENT", "Resetting element edit session after timeout");
+            this._elementEditSession.active = false;
+          }
+        }, 500);
+      }
+    };
+    document.addEventListener("dialog-closed", this._dialogClosedHandler, {
+      capture: true,
+    });
+
+    // Add handler for element editor specific events
+    this._elementEditorHandler = (e) => {
+      if (
+        (e.type === "element-updated" || e.type === "show-edit-element") &&
+        !this._elementEditSession.active
+      ) {
+        logDebug(
+          "ELEMENT",
+          `Capturing ${e.type} event, starting element edit session`,
+        );
+        this._elementEditSession.active = true;
+        this._elementEditSession.timestamp = Date.now();
+        if (e.detail && e.detail.elementId) {
+          this._elementEditSession.elementId = e.detail.elementId;
+        }
+      }
+    };
+
+    document.addEventListener("element-updated", this._elementEditorHandler, {
+      capture: true,
+    });
+    document.addEventListener("show-edit-element", this._elementEditorHandler, {
+      capture: true,
+    });
+  }
+
+  /**
+   * Removes all event listeners
+   */
+  removeEventListeners() {
+    // Clean up all event listeners
+    document.removeEventListener("config-changed", this._cardPickerHandler, {
+      capture: true,
+    });
+    document.removeEventListener("iron-select", this._tabSwitchHandler, {
+      capture: true,
+    });
+    document.removeEventListener(
+      "config-changed",
+      this._boundHandleNestedCardEvents,
+      { capture: true },
+    );
+    document.removeEventListener("dialog-closed", this._dialogClosedHandler, {
+      capture: true,
+    });
+    document.removeEventListener(
+      "element-updated",
+      this._elementEditorHandler,
+      { capture: true },
+    );
+    document.removeEventListener(
+      "show-edit-element",
+      this._elementEditorHandler,
+      { capture: true },
+    );
+  }
+
+  /**
+   * Comprehensive event detection for element editors
+   * @param {Event} e - The event to check
+   * @returns {boolean} True if the event is from an element editor
+   */
+  _isElementEditorEvent(e) {
+    // First check: Look for obvious markers in the event
+    if (e.detail) {
+      if (
+        e.detail.fromElementEditor ||
+        e.detail.elementConfig ||
+        e.detail.elementToEdit ||
+        e.detail.element
+      ) {
+        logDebug("ELEMENT", "Element editor detected through event detail");
+        return true;
+      }
+    }
+
+    // Second check: Examine event path for element editor components
+    const path = e.composedPath ? e.composedPath() : [];
+    for (const node of path) {
+      if (!node || !node.localName) continue;
+
+      // Direct tag name checks
+      if (
+        node.localName === "hui-element-editor" ||
+        node.localName === "hui-dialog-edit-element" ||
+        node.localName.includes("element-editor")
+      ) {
+        logDebug(
+          "ELEMENT",
+          "Element editor detected through path node localName:",
+          node.localName,
+        );
+        return true;
+      }
+
+      // Check for specialized attributes or properties
+      if (
+        node._elementEditor ||
+        node._isElementEditor ||
+        (node.getAttribute &&
+          (node.getAttribute("element-id") ||
+            node.getAttribute("data-element-id"))) ||
+        (node.classList && node.classList.contains("element-editor"))
+      ) {
+        logDebug(
+          "ELEMENT",
+          "Element editor detected through specialized attributes",
+        );
+        return true;
+      }
+
+      // Look for picture-elements specific dialogs
+      if (
+        node.tagName === "HUI-DIALOG" &&
+        (node.querySelector(".element-editor") ||
+          (node._title &&
+            typeof node._title === "string" &&
+            node._title.toLowerCase().includes("element")))
+      ) {
+        logDebug(
+          "ELEMENT",
+          "Element editor detected through hui-dialog with element editor content",
+        );
+        return true;
+      }
+    }
+
+    // Third check: Examine the event characteristics
+    if (
+      e.type === "element-updated" ||
+      (e.type === "config-changed" &&
+        e.target &&
+        (e.target.localName === "hui-element-editor" ||
+          e.target.closest("hui-element-editor")))
+    ) {
+      logDebug(
+        "ELEMENT",
+        "Element editor detected through event characteristics",
+      );
+      return true;
+    }
+
+    // Check if this event happens during an active element editing session
+    if (
+      this._elementEditSession.active &&
+      Date.now() - this._elementEditSession.timestamp < 5000
+    ) {
+      // 5 second window
+      logDebug(
+        "ELEMENT",
+        "Element editor event detected through active editing session",
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Checks if a dialog is related to an Actions Card being edited
+   * @param {HTMLElement} dialog - Dialog element to check
+   * @returns {boolean} True if it's an Actions Card dialog
+   */
+  _isActionsCardDialog(dialog) {
+    if (!dialog) return false;
+
+    // Check if this dialog has our marker
+    if (dialog._editingActionsCard) return true;
+
+    // Check the card type being edited
+    try {
+      const cardConfig = dialog.cardConfig;
+      return cardConfig && cardConfig.type === "custom:actions-card";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Enhanced handler for nested card editor events
+   * @param {Event} e - The event to handle
+   */
+  _handleNestedCardEvents(e) {
+    // Check for element editor events first to prioritize them
+    if (this._isElementEditorEvent(e)) {
+      logDebug(
+        "ELEMENT",
+        "Detected element editor event in _handleNestedCardEvents",
+      );
+
+      // Determine if this is related to our card stack
+      const isRelatedToOurStack =
+        e.composedPath &&
+        e.composedPath().some((node) => {
+          return (
+            this.editor._activeChildEditors.has(node) ||
+            (node._parentEditorId &&
+              node._parentEditorId === this.editor._editorId)
+          );
+        });
+
+      if (isRelatedToOurStack) {
+        logDebug(
+          "ELEMENT",
+          "Element editor event is related to our dialog stack, handling specially",
+        );
+        // Don't interfere with element editor events from our own dialog stack
+        return;
+      }
+    }
+
+    // Already handled or not relevant
+    if (e._handledBySwipeCard || !e.detail?.fromActionCardEditor) return;
+
+    // Find if this event is related to our editor's cards
+    const cardElement = e.target.closest("[data-index]");
+    if (!cardElement || !this.editor._config?.cards) return;
+
+    const cardIndex = parseInt(cardElement.getAttribute("data-index"));
+    if (
+      isNaN(cardIndex) ||
+      cardIndex < 0 ||
+      cardIndex >= this.editor._config.cards.length
+    )
+      return;
+
+    logDebug(
+      "EVENT",
+      `Handling nested card event from actions card at index ${cardIndex}`,
+      e.detail,
+    );
+
+    // Prevent default behavior and stopPropagation
+    e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+
+    // Check if we should maintain editor state (prevent dialog close)
+    if (e.detail.maintainEditorState) {
+      logDebug(
+        "EVENT",
+        "Event marked to maintain editor state, preventing propagation",
+      );
+
+      // Update the configuration without firing normal event
+      const updatedCards = [...this.editor._config.cards];
+      updatedCards[cardIndex] = e.detail.config;
+
+      this.editor._config = {
+        ...this.editor._config,
+        cards: updatedCards,
+      };
+
+      // Fire our own config-changed event with special flag
+      this.editor.configManager.fireConfigChanged({
+        nestedCardUpdate: true,
+        updatedCardIndex: cardIndex,
+        nestedCardType: e.detail.config.type,
+        maintainEditorState: true,
+      });
+    } else {
+      // Standard handling
+      const updatedCards = [...this.editor._config.cards];
+      updatedCards[cardIndex] = e.detail.config;
+
+      this.editor._config = {
+        ...this.editor._config,
+        cards: updatedCards,
+      };
+
+      // Fire our own config-changed event
+      this.editor.configManager.fireConfigChanged({
+        nestedCardUpdate: true,
+        updatedCardIndex: cardIndex,
+        nestedCardType: e.detail.config.type,
+      });
+    }
+
+    // Mark as handled
+    e._handledBySwipeCard = true;
+
+    // Trigger UI update
+    this.editor.requestUpdate();
+  }
+
+  /**
+   * Handles config-changed events originating from within the hui-dialog-edit-card.
+   * @param {number} index - The index of the card being edited.
+   * @param {HTMLElement} dialog - The hui-dialog-edit-card element.
+   * @param {Event} e - The config-changed event.
+   */
+  handleDialogConfigChanged(index, dialog, e) {
+    // Log detailed information when in debug mode
+    {
+      // Always log in debug for now
+      const path = e.composedPath
+        ? e
+            .composedPath()
+            .map((n) => n.localName || n.nodeName)
+            .join(" > ")
+        : "No path";
+      const detailString = e.detail ? JSON.stringify(e.detail, null, 2) : "{}";
+      logDebug("EVENT", `Config change event details:`, {
+        target: e.target.localName,
+        path: path,
+        detail: JSON.parse(detailString),
+        rawDetail: detailString,
+        currentTarget: e.currentTarget.localName,
+      });
+    }
+
+    // Use our robust element editor detection
+    if (this._isElementEditorEvent(e)) {
+      logDebug(
+        "ELEMENT",
+        `[CARD INDEX ${index}] Element editor event detected, preserving and allowing propagation`,
+      );
+
+      // Mark the dialog as handling an element edit session
+      dialog._handlingElementEdit = true;
+
+      // Refresh element edit session time
+      this._elementEditSession.active = true;
+      this._elementEditSession.timestamp = Date.now();
+
+      // Track the event for state restoration if needed
+      if (e.detail && e.detail.config) {
+        dialog._lastElementConfig = JSON.parse(JSON.stringify(e.detail.config));
+        dialog._savingFromElementEditor = true;
+
+        // Silently update the configuration to keep changes without closing dialogs
+        if (dialog._editingPictureElements) {
+          try {
+            logDebug("ELEMENT", "Silently updating picture-elements config");
+            const updatedCards = [...this.editor._config.cards];
+            updatedCards[index] = e.detail.config;
+            this.editor._config = {
+              ...this.editor._config,
+              cards: updatedCards,
+            };
+
+            // Fire silent update
+            this.editor.configManager.fireConfigChanged({
+              maintainEditorState: true,
+              fromElementEditor: true,
+              elementEditorEvent: true,
+              updatedCardIndex: index,
+            });
+          } catch (err) {
+            logDebug("ERROR", "Error silently updating config:", err);
+          }
+        }
+      }
+
+      // Critical: Do NOT stop propagation for element editor events
+      return;
+    }
+
+    // Check if the event originated from within the dialog's content editor
+    if (e.target !== dialog && e.detail && e.detail.config) {
+      // Stop the event from bubbling OUTSIDE hui-dialog-edit-card
+      // but allow propagation *within* it.
+      e.stopPropagation();
+
+      const newCardConfig = e.detail.config;
+      logDebug(
+        "EDITOR",
+        `[CARD INDEX ${index}] Config received in handler: ${JSON.stringify(newCardConfig.type)}`,
+      );
+
+      const updatedCards = [...this.editor._config.cards];
+      updatedCards[index] = newCardConfig;
+      this.editor._config = { ...this.editor._config, cards: updatedCards };
+
+      // Fire our own config-changed event, with maintainEditorState: true.
+      this.editor.configManager.fireConfigChanged({
+        maintainEditorState: true,
+        updatedCardIndex: index,
+        reason: `child_dialog_update_${e.detail.fromActionCardEditor ? "action_card" : "generic"}`,
+      });
+      this.editor.requestUpdate(); // Update SimpleSwipeCardEditor's own UI if necessary
+
+      logDebug(
+        "EDITOR",
+        `[CARD INDEX ${index}] Processed config-changed from content, stopped propagation OUTSIDE dialog.`,
+      );
+    } else {
+      logDebug(
+        "EDITOR",
+        `[CARD INDEX ${index}] config-changed ignored or allowed to bubble (no config or event target is the dialog itself)`,
+      );
+    }
+  }
+
+  /**
+   * Handles show-dialog events originating from within the hui-dialog-edit-card.
+   * @param {number} index - The index of the card being edited.
+   * @param {Event} ev - The show-dialog or ll-show-dialog event.
+   */
+  handleDialogShowDialog(index, ev) {
+    // Check if this is for an element editor
+    const isElementEditorDialog =
+      ev.detail &&
+      ((ev.detail.dialogTag &&
+        (ev.detail.dialogTag === "hui-dialog-edit-element" ||
+          ev.detail.dialogTag.includes("element-editor"))) ||
+        ev.detail.elementToEdit);
+
+    if (isElementEditorDialog) {
+      logDebug(
+        "ELEMENT",
+        `[CARD INDEX ${index}] Element editor dialog detected, allowing normal event flow`,
+      );
+
+      // Mark parent dialog as handling element edit
+      const dialog = ev.currentTarget;
+      if (dialog) {
+        dialog._handlingElementEdit = true;
+      }
+
+      // Update element edit session state
+      this._elementEditSession.active = true;
+      this._elementEditSession.timestamp = Date.now();
+      if (ev.detail && ev.detail.elementId) {
+        this._elementEditSession.elementId = ev.detail.elementId;
+      }
+
+      // Don't interfere with element editor dialogs
+      return;
+    }
+
+    const detailString = ev.detail ? JSON.stringify(ev.detail) : "{}";
+    logDebug(
+      "EDITOR",
+      `[CARD INDEX ${index}] INTERCEPTED "${ev.type}" event from hui-dialog-edit-card OR ITS CONTENT`,
+      {
+        detail: JSON.parse(detailString),
+        target: ev.target.localName,
+      },
+    );
+
+    // For non-element editor dialogs, stop propagation and re-fire from our level
+    ev.stopPropagation();
+    if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    if (ev.cancelable) ev.preventDefault();
+
+    // Re-fire the event from SimpleSwipeCardEditor itself
+    logDebug(
+      "EDITOR",
+      `[CARD INDEX ${index}] Re-firing "${ev.type}" event from SimpleSwipeCardEditor.`,
+    );
+    fireHAEvent(this.editor, ev.type, ev.detail);
+  }
+}
+
+/**
+ * UI rendering functions for Simple Swipe Card Editor
+ */
+
+
+/**
+ * Renders the information panel at the top of the editor
+ * @returns {TemplateResult} The info panel template
+ */
+function renderInfoPanel() {
+  return x`
     <div class="info-panel">
       <div class="info-icon">
         <ha-icon icon="mdi:information"></ha-icon>
@@ -927,11 +8392,24 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
         features.
       </div>
     </div>
-  `}
-        ${function(t,i){const e=t.view_mode||"single";return Z`
+  `;
+}
+
+/**
+ * Renders the view mode selection section
+ * @param {Object} config - Current configuration
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The view mode template
+ */
+function renderViewModeOptions(config, valueChanged) {
+  const viewMode = config.view_mode || "single";
+
+  return x`
     <div class="section">
       <div
-        class="section-header-with-controls ${"single"===e?"single-mode":"carousel-mode"}"
+        class="section-header-with-controls ${viewMode === "single"
+          ? "single-mode"
+          : "carousel-mode"}"
       >
         <div class="section-header">View Mode</div>
         <div class="radio-group">
@@ -940,9 +8418,9 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
               type="radio"
               name="view-mode"
               value="single"
-              .checked=${"single"===e}
+              .checked=${viewMode === "single"}
               data-option="view_mode"
-              @change=${i}
+              @change=${valueChanged}
             />
             <span>Single</span>
           </label>
@@ -951,67 +8429,102 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
               type="radio"
               name="view-mode"
               value="carousel"
-              .checked=${"carousel"===e}
+              .checked=${viewMode === "carousel"}
               data-option="view_mode"
-              @change=${i}
+              @change=${valueChanged}
             />
             <span>Carousel</span>
           </label>
         </div>
       </div>
 
-      ${"carousel"===e?Z`
-            ${void 0!==t.cards_visible?Z`
+      ${viewMode === "carousel"
+        ? x`
+            ${config.cards_visible !== undefined
+              ? x`
                   <div class="option-info">
                     <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
                     <span
                       >Currently using legacy mode: cards_visible:
-                      ${t.cards_visible}</span
+                      ${config.cards_visible}</span
                     >
                   </div>
-                `:""}
+                `
+              : ""}
 
             <ha-textfield
               label="Minimum Card Width (px)"
-              .value=${(t.card_min_width||200).toString()}
+              .value=${(config.card_min_width || 200).toString()}
               data-option="card_min_width"
               type="number"
               min="50"
               max="500"
               step="10"
               suffix="px"
-              @change=${i}
-              @keydown=${t=>{"Enter"===t.key&&(t.preventDefault(),t.stopPropagation(),t.target.blur())}}
-              @input=${t=>{const i=parseFloat(t.target.value);i<50||i>500||isNaN(i)?t.target.style.borderColor="var(--error-color, #f44336)":t.target.style.borderColor=""}}
+              @change=${valueChanged}
+              @keydown=${(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.target.blur();
+                }
+              }}
+              @input=${(e) => {
+                const value = parseFloat(e.target.value);
+                if (value < 50 || value > 500 || isNaN(value)) {
+                  e.target.style.borderColor = "var(--error-color, #f44336)";
+                } else {
+                  e.target.style.borderColor = "";
+                }
+              }}
               autoValidate
               required
             ></ha-textfield>
             <div class="help-text">
-              ${void 0!==t.cards_visible?"Changing this value will switch to responsive mode and remove the cards_visible setting":"Minimum width per card in pixels. Number of visible cards adjusts automatically based on screen size."}
+              ${config.cards_visible !== undefined
+                ? "Changing this value will switch to responsive mode and remove the cards_visible setting"
+                : "Minimum width per card in pixels. Number of visible cards adjusts automatically based on screen size."}
             </div>
-          `:""}
+          `
+        : ""}
     </div>
-  `}(this.Qt,this.He.bind(this))}
-        ${function(t,i){const e=!1!==t.show_pagination,s=t.card_spacing??15,n=t.swipe_direction||"horizontal",o=t.view_mode||"single";return Z`
+  `;
+}
+
+/**
+ * Renders the display options section
+ * @param {Object} config - Current configuration
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The display options template
+ */
+function renderDisplayOptions(config, valueChanged) {
+  const showPagination = config.show_pagination !== false;
+  const cardSpacing = config.card_spacing ?? 15;
+  const swipeDirection = config.swipe_direction || "horizontal";
+  const swipeBehavior = config.swipe_behavior || "single";
+  const viewMode = config.view_mode || "single";
+
+  return x`
     <div class="section">
       <div class="section-header">Display Options</div>
 
       <ha-textfield
         label="Card Spacing (px)"
-        .value=${s.toString()}
+        .value=${cardSpacing.toString()}
         data-option="card_spacing"
         type="number"
         min="0"
         max="100"
         suffix="px"
-        @change=${i}
+        @change=${valueChanged}
         autoValidate
         pattern="[0-9]+"
         required
       ></ha-textfield>
       <div class="help-text">Visual gap between cards</div>
 
-      ${"single"===o?Z`
+      ${viewMode === "single"
+        ? x`
             <div class="option-row">
               <div class="option-left">
                 <div class="option-label">Swipe direction</div>
@@ -1021,10 +8534,10 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
               </div>
               <div class="option-control">
                 <ha-select
-                  .value=${n}
+                  .value=${swipeDirection}
                   data-option="swipe_direction"
-                  @change=${i}
-                  @closed=${t=>t.stopPropagation()}
+                  @change=${valueChanged}
+                  @closed=${(ev) => ev.stopPropagation()}
                 >
                   <ha-list-item .value=${"horizontal"}>
                     Horizontal
@@ -1045,7 +8558,8 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
                 </ha-select>
               </div>
             </div>
-          `:Z`
+          `
+        : x`
             <!-- Carousel mode: Only horizontal direction supported -->
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
@@ -1053,30 +8567,1146 @@ const t="2.4.0",i={cards:[],show_pagination:!0,card_spacing:15,loop_mode:"none",
             </div>
           `}
 
+      <!-- Only show swipe behavior when infinite loop mode is selected -->
+      ${config.loop_mode === "infinite"
+        ? x`
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-label">Swipe behavior</div>
+                <div class="option-help">
+                  How many cards to swipe at once
+                </div>
+              </div>
+              <div class="option-control">
+                <ha-select
+                  .value=${swipeBehavior}
+                  data-option="swipe_behavior"
+                  @change=${valueChanged}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                  <ha-list-item .value=${"single"}>
+                    Single card
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:numeric-1-circle"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"free"}>
+                    Free swipe
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:gesture-swipe"
+                    ></ha-icon>
+                  </ha-list-item>
+                </ha-select>
+              </div>
+            </div>
+          `
+        : x`
+            <!-- Show info when not in infinite mode -->
+            <div class="option-info">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>Free swipe behavior is only available with infinite loop mode</span>
+            </div>
+          `}
+
       <div class="option-row pagination-option">
         <div class="option-label">Show pagination dots</div>
         <div class="option-control">
           <ha-switch
-            .checked=${e}
+            .checked=${showPagination}
             data-option="show_pagination"
-            @change=${i}
+            @change=${valueChanged}
           ></ha-switch>
         </div>
       </div>
     </div>
-  `}(this.Qt,this.He.bind(this))}
-        ${Mt(this.Qt,this.uiManager.getCollapsibleState(),this.He.bind(this),this.De.bind(this),i,this.Be.bind(this),this.Je.bind(this),this.hass)}
-        ${At(i,this.hass,this.We.bind(this),this.ze.bind(this),this.Ue.bind(this),this.Ve.bind(this),this.Oe.bind(this),this.Re.bind(this),this.ke.bind(this),this.Me.bind(this),this.Le.bind(this),this.Ae.bind(this))}
-        ${e=this.hass,s=this.lovelace,n=this.se,Z`
+  `;
+}
+
+/**
+ * Renders the advanced options collapsible section
+ * @param {Object} config - Current configuration
+ * @param {Object} collapsibleState - State of collapsible sections
+ * @param {Function} valueChanged - Value change handler
+ * @param {Function} toggleSection - Section toggle handler
+ * @param {Array} cards - Array of cards for validation
+ * @param {Function} handleTimeoutChange - Timeout change handler
+ * @param {Function} handleTargetChange - Target change handler
+ * @param {Object} hass - Home Assistant object
+ * @returns {TemplateResult} The advanced options template
+ */
+function renderAdvancedOptions(
+  config,
+  collapsibleState,
+  valueChanged,
+  toggleSection,
+  cards,
+  handleTimeoutChange,
+  handleTargetChange,
+  hass,
+) {
+  const loopMode = config.loop_mode || "none";
+  const enableAutoSwipe = config.enable_auto_swipe === true;
+  const autoSwipeInterval = config.auto_swipe_interval ?? 2000;
+  const enableResetAfter = config.enable_reset_after === true;
+  const resetAfterTimeout = config.reset_after_timeout ?? 30000;
+  const resetTargetCard = config.reset_target_card ?? 1;
+  const stateEntity = config.state_entity || "";
+
+  // Count active and blocked advanced features (now works for both modes)
+  let activeFeatures = 0;
+  let blockedFeatures = 0;
+
+  if (loopMode !== "none") activeFeatures++;
+
+  // Count features for both single and carousel modes
+  if (enableAutoSwipe) activeFeatures++;
+  if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
+  if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
+  if (stateEntity) activeFeatures++; // Count state sync as active feature
+
+  // Create separate badges for active and blocked features
+  let activeBadge = "";
+  let blockedBadge = "";
+
+  if (activeFeatures > 0) {
+    activeBadge = `${activeFeatures} active`;
+  }
+
+  if (blockedFeatures > 0) {
+    blockedBadge = `${blockedFeatures} blocked`;
+  }
+
+  return x`
+    <div class="collapsible-section">
+      <div
+        class="section-toggle ${collapsibleState.advanced ? "expanded" : ""}"
+        @click=${() => toggleSection("advanced")}
+      >
+        <ha-icon
+          class="section-toggle-icon ${collapsibleState.advanced
+            ? "expanded"
+            : ""}"
+          icon="mdi:chevron-right"
+        ></ha-icon>
+        <div class="section-toggle-title">Advanced Options</div>
+        ${activeBadge
+          ? x`<div class="section-toggle-badge">${activeBadge}</div>`
+          : ""}
+        ${blockedBadge
+          ? x`<div class="section-toggle-badge blocked-only">
+              ${blockedBadge}
+            </div>`
+          : ""}
+      </div>
+
+      <div
+        class="section-content compact-options ${collapsibleState.advanced
+          ? "expanded"
+          : "collapsed"}"
+      >
+        ${renderLoopModeOption(loopMode, valueChanged)}
+        ${renderAutoSwipeOptions(
+          enableAutoSwipe,
+          autoSwipeInterval,
+          valueChanged,
+        )}
+        ${renderResetAfterOptions(
+          enableResetAfter,
+          enableAutoSwipe,
+          resetAfterTimeout,
+          resetTargetCard,
+          cards,
+          valueChanged,
+          handleTimeoutChange,
+          handleTargetChange,
+        )}
+        ${renderStateSynchronizationOptions(stateEntity, hass, valueChanged)}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders the loop mode options
+ * @param {string} loopMode - Current loop mode setting
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The loop mode options template
+ */
+function renderLoopModeOption(loopMode, valueChanged) {
+  return x`
+    <div class="option-row">
+      <div class="option-left">
+        <div class="option-label">Loop behavior</div>
+        <div class="option-help">
+          ${loopMode === "none"
+            ? "Stop at first/last card (no looping)"
+            : loopMode === "loopback"
+              ? "Jump back to first/last card"
+              : "Continuous loop navigation"}
+        </div>
+      </div>
+      <div class="option-control">
+        <ha-select
+          .value=${loopMode}
+          data-option="loop_mode"
+          @change=${valueChanged}
+          @closed=${(ev) => ev.stopPropagation()}
+        >
+          <ha-list-item .value=${"none"}> No looping </ha-list-item>
+          <ha-list-item .value=${"loopback"}> Jump to start/end </ha-list-item>
+          <ha-list-item .value=${"infinite"}> Continuous loop </ha-list-item>
+        </ha-select>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders the auto-swipe options
+ * @param {boolean} enableAutoSwipe - Current auto-swipe setting
+ * @param {number} autoSwipeInterval - Current interval setting
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The auto-swipe options template
+ */
+function renderAutoSwipeOptions(
+  enableAutoSwipe,
+  autoSwipeInterval,
+  valueChanged,
+) {
+  return x`
+    <div class="option-row">
+      <div class="option-label">Enable auto-swipe</div>
+      <div class="option-control">
+        <ha-switch
+          .checked=${enableAutoSwipe}
+          data-option="enable_auto_swipe"
+          @change=${valueChanged}
+        ></ha-switch>
+      </div>
+    </div>
+    <div class="help-text">Automatically cycle through cards</div>
+
+    ${enableAutoSwipe
+      ? x`
+          <ha-textfield
+            label="Auto-swipe interval (ms)"
+            .value=${autoSwipeInterval.toString()}
+            data-option="auto_swipe_interval"
+            type="number"
+            min="500"
+            suffix="ms"
+            @change=${valueChanged}
+            autoValidate
+            pattern="[0-9]+"
+            required
+          ></ha-textfield>
+          <div class="help-text">Time between swipes (min. 500ms).</div>
+        `
+      : ""}
+  `;
+}
+
+/**
+ * Renders the reset-after options
+ * @param {boolean} enableResetAfter - Current reset-after setting
+ * @param {boolean} enableAutoSwipe - Current auto-swipe setting
+ * @param {number} resetAfterTimeout - Current timeout setting
+ * @param {number} resetTargetCard - Current target card setting
+ * @param {Array} cards - Array of cards
+ * @param {Function} valueChanged - Value change handler
+ * @param {Function} handleTimeoutChange - Timeout change handler
+ * @param {Function} handleTargetChange - Target change handler
+ * @returns {TemplateResult} The reset-after options template
+ */
+function renderResetAfterOptions(
+  enableResetAfter,
+  enableAutoSwipe,
+  resetAfterTimeout,
+  resetTargetCard,
+  cards,
+  valueChanged,
+  handleTimeoutChange,
+  handleTargetChange,
+) {
+  return x`
+    <div class="option-row">
+      <div class="option-label">Enable reset after timeout</div>
+      <div class="option-control">
+        <ha-switch
+          .checked=${enableResetAfter}
+          data-option="enable_reset_after"
+          @change=${valueChanged}
+          ?disabled=${enableAutoSwipe}
+        ></ha-switch>
+      </div>
+    </div>
+    <div class="help-text">
+      ${enableAutoSwipe
+        ? "Disabled when auto-swipe is on"
+        : "Auto-return after inactivity"}
+    </div>
+
+    ${enableResetAfter && !enableAutoSwipe
+      ? x`
+          <ha-textfield
+            label="Reset timeout (seconds)"
+            .value=${Math.round(resetAfterTimeout / 1000).toString()}
+            type="number"
+            min="5"
+            max="3600"
+            suffix="sec"
+            @change=${handleTimeoutChange}
+            autoValidate
+            pattern="[0-9]+"
+            required
+          ></ha-textfield>
+          <div class="help-text">
+            Time of inactivity before resetting (5s to 1h)
+          </div>
+
+          <ha-textfield
+            label="Target card (1-based)"
+            .value=${resetTargetCard.toString()}
+            type="number"
+            min="1"
+            max=${(Math.max(0, cards.length - 1) + 1).toString()}
+            @change=${handleTargetChange}
+            ?disabled=${cards.length === 0}
+            autoValidate
+            pattern="[0-9]+"
+            required
+          ></ha-textfield>
+          <div class="help-text">
+            Which card to return to
+            ${cards.length === 0
+              ? "Add cards first to set a target."
+              : `(current range: 1-${cards.length})`}
+          </div>
+        `
+      : ""}
+  `;
+}
+
+/**
+ * Renders the state synchronization options
+ * @param {string} stateEntity - Current state entity setting
+ * @param {Object} hass - Home Assistant object
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The state synchronization options template
+ */
+function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
+  // Get all input_select and input_number entities
+  const inputEntities = Object.keys(hass.states || {})
+    .filter(
+      (entityId) =>
+        entityId.startsWith("input_select.") ||
+        entityId.startsWith("input_number."),
+    )
+    .sort()
+    .map((entityId) => ({
+      entityId,
+      friendlyName:
+        hass.states[entityId].attributes.friendly_name ||
+        entityId
+          .replace(/^(input_select\.|input_number\.)/, "")
+          .replace(/_/g, " "),
+    }));
+
+  return x`
+    <div class="option-row">
+      <div class="option-left">
+        <div class="option-label">State synchronization entity</div>
+        <div class="option-help">
+          Two-way sync with input_select/input_number entity
+        </div>
+      </div>
+      <div class="option-control">
+        <ha-select
+          .value=${stateEntity || ""}
+          data-option="state_entity"
+          @change=${valueChanged}
+          @closed=${(ev) => ev.stopPropagation()}
+        >
+          <ha-list-item .value=${""}>
+            <span style="color: var(--secondary-text-color);"
+              >Select an entity</span
+            >
+          </ha-list-item>
+          ${inputEntities.map(
+            (entity) => x`
+              <ha-list-item .value=${entity.entityId}>
+                ${entity.friendlyName}
+                <span
+                  style="color: var(--secondary-text-color); font-size: 0.9em; margin-left: 8px;"
+                >
+                  (${entity.entityId})
+                </span>
+              </ha-list-item>
+            `,
+          )}
+        </ha-select>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders the cards management section
+ * @param {Array} cards - Array of cards
+ * @param {Object} hass - Home Assistant object
+ * @param {Function} moveCard - Move card handler
+ * @param {Function} editCard - Edit card handler
+ * @param {Function} removeCard - Remove card handler
+ * @param {Function} getCardDescriptor - Get card descriptor function
+ * @param {Function} hasNestedCards - Check nested cards function
+ * @param {Function} getNestedCards - Get nested cards function
+ * @param {Function} hasVisibilityConditions - Check visibility conditions function
+ * @param {Function} moveNestedCard - Move nested card handler
+ * @param {Function} editNestedCard - Edit nested card handler
+ * @param {Function} removeNestedCard - Remove nested card handler
+ * @returns {TemplateResult} The cards management template
+ */
+function renderCardsSection(
+  cards,
+  hass,
+  moveCard,
+  editCard,
+  removeCard,
+  getCardDescriptor,
+  hasNestedCards,
+  getNestedCards,
+  hasVisibilityConditions,
+  moveNestedCard,
+  editNestedCard,
+  removeNestedCard,
+) {
+  return x`
+    <div class="section cards-section">
+      <div class="section-header">Cards</div>
+
+      <div class="card-list">
+        ${cards.length === 0
+          ? x`<div class="no-cards">
+              No cards added yet. Select a card type below to add your first
+              card.
+            </div>`
+          : cards.map((card, index) =>
+              renderCardRow(
+                card,
+                index,
+                cards.length,
+                hass,
+                moveCard,
+                editCard,
+                removeCard,
+                getCardDescriptor,
+                hasNestedCards,
+                getNestedCards,
+                hasVisibilityConditions,
+                moveNestedCard,
+                editNestedCard,
+                removeNestedCard,
+              ),
+            )}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders an individual card row
+ * @param {Object} card - Card configuration
+ * @param {number} index - Card index
+ * @param {number} totalCards - Total number of cards
+ * @param {Object} hass - Home Assistant object
+ * @param {Function} moveCard - Move card handler
+ * @param {Function} editCard - Edit card handler
+ * @param {Function} removeCard - Remove card handler
+ * @param {Function} getCardDescriptor - Get card descriptor function
+ * @param {Function} hasNestedCards - Check nested cards function
+ * @param {Function} getNestedCards - Get nested cards function
+ * @param {Function} hasVisibilityConditions - Check visibility conditions function
+ * @param {Function} moveNestedCard - Move nested card handler
+ * @param {Function} editNestedCard - Edit nested card handler
+ * @param {Function} removeNestedCard - Remove nested card handler
+ * @returns {TemplateResult} The card row template
+ */
+function renderCardRow(
+  card,
+  index,
+  totalCards,
+  hass,
+  moveCard,
+  editCard,
+  removeCard,
+  getCardDescriptor,
+  hasNestedCards,
+  getNestedCards,
+  hasVisibilityConditions,
+  moveNestedCard,
+  editNestedCard,
+  removeNestedCard,
+) {
+  const descriptor = getCardDescriptor(card);
+  const hasNested = hasNestedCards(card);
+  const nestedCards = hasNested ? getNestedCards(card) : [];
+  const hasVisibility = hasVisibilityConditions(card);
+  const isCurrentlyVisible = hass
+    ? evaluateVisibilityConditions(card.visibility, hass)
+    : true;
+
+  return x`
+    <div
+      class="card-row ${!isCurrentlyVisible ? "hidden-card" : ""}"
+      data-index=${index}
+    >
+      <div class="card-info">
+        <span class="card-index">${index + 1}</span>
+        <span class="card-type">${descriptor.typeName}</span>
+        ${descriptor.isPictureElements
+          ? x`<span class="picture-elements-badge">Elements</span>`
+          : ""}
+        ${hasVisibility && isCurrentlyVisible
+          ? x`<span class="visibility-badge">Conditional</span>`
+          : ""}
+        ${descriptor.name
+          ? x`<span class="card-name">(${descriptor.name})</span>`
+          : ""}
+      </div>
+      <div class="card-actions">
+        ${hasVisibility && !isCurrentlyVisible
+          ? x`<ha-icon class="hidden-icon" icon="mdi:eye-off"></ha-icon>`
+          : ""}
+        <ha-icon-button
+          label="Move Up"
+          ?disabled=${index === 0}
+          path="M7,15L12,10L17,15H7Z"
+          @click=${() => moveCard(index, -1)}
+        ></ha-icon-button>
+        <ha-icon-button
+          label="Move Down"
+          ?disabled=${index === totalCards - 1}
+          path="M7,9L12,14L17,9H7Z"
+          @click=${() => moveCard(index, 1)}
+        ></ha-icon-button>
+        <ha-icon-button
+          label="Edit Card"
+          path="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+          @click=${() => editCard(index)}
+        ></ha-icon-button>
+        <ha-icon-button
+          path="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+          @click=${() => removeCard(index)}
+          style="color: var(--error-color);"
+        ></ha-icon-button>
+      </div>
+    </div>
+    ${hasNested
+      ? renderNestedCards(
+          nestedCards,
+          index,
+          getCardDescriptor,
+          moveNestedCard,
+          editNestedCard,
+          removeNestedCard,
+        )
+      : ""}
+  `;
+}
+
+/**
+ * Renders nested cards container
+ * @param {Array} nestedCards - Array of nested cards
+ * @param {number} parentIndex - Parent card index
+ * @param {Function} getCardDescriptor - Get card descriptor function
+ * @param {Function} moveNestedCard - Move nested card handler
+ * @param {Function} editNestedCard - Edit nested card handler
+ * @param {Function} removeNestedCard - Remove nested card handler
+ * @returns {TemplateResult} The nested cards template
+ */
+function renderNestedCards(
+  nestedCards,
+  parentIndex,
+  getCardDescriptor,
+  moveNestedCard,
+  editNestedCard,
+  removeNestedCard,
+) {
+  return x`
+    <div class="nested-cards-container">
+      ${nestedCards.map((nestedCard, nestedIndex) => {
+        const nestedDescriptor = getCardDescriptor(nestedCard);
+        return x`
+          <div
+            class="nested-card-row"
+            data-parent-index=${parentIndex}
+            data-nested-index=${nestedIndex}
+          >
+            <div class="nested-card-info">
+              <span class="nested-card-index"
+                >${parentIndex + 1}.${nestedIndex + 1}</span
+              >
+              <span class="nested-card-type">${nestedDescriptor.typeName}</span>
+              ${nestedDescriptor.isPictureElements
+                ? x`<span class="picture-elements-badge">Elements</span>`
+                : ""}
+              ${nestedDescriptor.name
+                ? x`<span class="nested-card-name"
+                    >(${nestedDescriptor.name})</span
+                  >`
+                : ""}
+            </div>
+            <div class="nested-card-actions">
+              <ha-icon-button
+                label="Move Up"
+                ?disabled=${nestedIndex === 0}
+                path="M7,15L12,10L17,15H7Z"
+                @click=${() => moveNestedCard(parentIndex, nestedIndex, -1)}
+              ></ha-icon-button>
+              <ha-icon-button
+                label="Move Down"
+                ?disabled=${nestedIndex === nestedCards.length - 1}
+                path="M7,9L12,14L17,9H7Z"
+                @click=${() => moveNestedCard(parentIndex, nestedIndex, 1)}
+              ></ha-icon-button>
+              <ha-icon-button
+                label="Edit Card"
+                path="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+                @click=${() => editNestedCard(parentIndex, nestedIndex)}
+              ></ha-icon-button>
+              <ha-icon-button
+                label="Delete Card"
+                path="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                @click=${() => removeNestedCard(parentIndex, nestedIndex)}
+                style="color: var(--error-color);"
+              ></ha-icon-button>
+            </div>
+          </div>
+        `;
+      })}
+    </div>
+  `;
+}
+
+/**
+ * Renders the card picker section
+ * @param {Object} hass - Home Assistant object
+ * @param {Object} lovelace - Lovelace object
+ * @param {Function} handleCardPicked - Card picked handler
+ * @returns {TemplateResult} The card picker template
+ */
+function renderCardPicker(hass, lovelace, handleCardPicked) {
+  return x`
     <div id="card-picker-container">
       <hui-card-picker
-        .hass=${e}
-        .lovelace=${s}
-        @config-changed=${n}
+        .hass=${hass}
+        .lovelace=${lovelace}
+        @config-changed=${handleCardPicked}
         label="Add Card"
       ></hui-card-picker>
     </div>
-  `}
-        ${function(){const i=document.createElement("div");i.className="version-display";const e=document.createElement("div");e.className="version-text",e.textContent="Simple Swipe Card";const s=document.createElement("div");s.className="version-badges";const n=document.createElement("div");n.className="version-badge",n.textContent=`v${t}`;const o=document.createElement("a");o.href="https://github.com/nutteloost/simple-swipe-card",o.target="_blank",o.rel="noopener noreferrer",o.className="github-badge";const r=document.createElement("ha-icon");r.icon="mdi:github";const a=document.createElement("span");return a.textContent="GitHub",o.appendChild(r),o.appendChild(a),s.appendChild(n),s.appendChild(o),i.appendChild(e),i.appendChild(s),i}()}
+  `;
+}
+
+/**
+ * Renders the version display section
+ * @returns {HTMLElement} The version display element
+ */
+function renderVersionDisplay() {
+  // Create the main container
+  const versionDisplay = document.createElement("div");
+  versionDisplay.className = "version-display";
+
+  // Create the text part
+  const versionText = document.createElement("div");
+  versionText.className = "version-text";
+  versionText.textContent = "Simple Swipe Card";
+
+  // Create the badges container
+  const versionBadges = document.createElement("div");
+  versionBadges.className = "version-badges";
+
+  // Create the version badge
+  const versionBadge = document.createElement("div");
+  versionBadge.className = "version-badge";
+  versionBadge.textContent = `v${CARD_VERSION}`;
+
+  // Create the GitHub badge link
+  const githubBadge = document.createElement("a");
+  githubBadge.href = "https://github.com/nutteloost/simple-swipe-card";
+  githubBadge.target = "_blank";
+  githubBadge.rel = "noopener noreferrer";
+  githubBadge.className = "github-badge";
+
+  // Create the GitHub icon
+  const githubIcon = document.createElement("ha-icon");
+  githubIcon.icon = "mdi:github";
+
+  // Create the GitHub text
+  const githubText = document.createElement("span");
+  githubText.textContent = "GitHub";
+
+  // Assemble the GitHub badge
+  githubBadge.appendChild(githubIcon);
+  githubBadge.appendChild(githubText);
+
+  // Assemble the badges container
+  versionBadges.appendChild(versionBadge);
+  versionBadges.appendChild(githubBadge);
+
+  // Assemble the main container
+  versionDisplay.appendChild(versionText);
+  versionDisplay.appendChild(versionBadges);
+
+  return versionDisplay;
+}
+
+/**
+ * Editor class for the Simple Swipe Card with Visibility Support and Reset After
+ * REFACTORED VERSION - Now uses manager classes for better separation of concerns
+ */
+
+
+/**
+ * Editor class for the Simple Swipe Card with Visibility Support and Reset After
+ * @extends LitElement
+ */
+class SimpleSwipeCardEditor extends i {
+  static get properties() {
+    return {
+      hass: { type: Object },
+      _config: { type: Object, state: true },
+      lovelace: { type: Object },
+    };
+  }
+
+  static get styles() {
+    return getEditorStyles();
+  }
+
+  constructor() {
+    super();
+    logDebug("EDITOR", "SimpleSwipeCardEditor Constructor invoked.");
+    logDebug(
+      "EDITOR",
+      "Editor styles method available:",
+      !!this.constructor.styles,
+    );
+
+    // Initialize manager instances
+    this.uiManager = new EditorUIManager(this);
+    this.configManager = new EditorConfigManager(this);
+    this.cardManagement = new EditorCardManagement(this);
+    this.eventHandling = new EditorEventHandling(this);
+
+    // Initialize the editor UI
+    this.uiManager.initializeEditor();
+  }
+
+  /**
+   * Comprehensive event detection for element editors
+   * Addresses inconsistent behavior with nested element editing
+   * @param {Event} e - The event to check
+   * @returns {boolean} True if the event is from an element editor
+   * @private
+   */
+  _isElementEditorEvent(e) {
+    return this.eventHandling._isElementEditorEvent(e);
+  }
+
+  /**
+   * Checks if a dialog is related to an Actions Card being edited
+   * @param {HTMLElement} dialog - Dialog element to check
+   * @returns {boolean} True if it's an Actions Card dialog
+   * @private
+   */
+  _isActionsCardDialog(dialog) {
+    return this.eventHandling._isActionsCardDialog(dialog);
+  }
+
+  /**
+   * Checks if a card config is a picture-elements card
+   * @param {Object} config - Card configuration
+   * @returns {boolean} True if it's a picture-elements card
+   * @private
+   */
+  _isPictureElementsCard(config) {
+    return this.cardManagement.isPictureElementsCard(config);
+  }
+
+  /**
+   * Checks if a card has visibility conditions
+   * @param {Object} config - Card configuration
+   * @returns {boolean} True if the card has visibility conditions
+   * @private
+   */
+  _hasVisibilityConditions(config) {
+    return this.cardManagement.hasVisibilityConditions(config);
+  }
+
+  /**
+   * Toggles a collapsible section
+   * @param {string} section - Section name to toggle
+   * @private
+   */
+  _toggleSection(section) {
+    this.uiManager.toggleSection(section);
+  }
+
+  /**
+   * Checks if a card configuration contains nested cards
+   * @param {Object} cardConfig - The card configuration to check
+   * @returns {boolean} True if the card has nested cards
+   * @private
+   */
+  _hasNestedCards(cardConfig) {
+    return this.cardManagement.hasNestedCards(cardConfig);
+  }
+
+  /**
+   * Gets the nested cards from a card configuration
+   * @param {Object} cardConfig - The card configuration
+   * @returns {Array} Array of nested card configurations
+   * @private
+   */
+  _getNestedCards(cardConfig) {
+    return this.cardManagement.getNestedCards(cardConfig);
+  }
+
+  /**
+   * Moves a nested card in the list
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card
+   * @param {number} direction - The direction to move (-1 for up, 1 for down)
+   * @private
+   */
+  _moveNestedCard(parentIndex, nestedIndex, direction) {
+    this.cardManagement.moveNestedCard(parentIndex, nestedIndex, direction);
+  }
+
+  /**
+   * Removes a nested card from the list
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card to remove
+   * @private
+   */
+  _removeNestedCard(parentIndex, nestedIndex) {
+    this.cardManagement.removeNestedCard(parentIndex, nestedIndex);
+  }
+
+  /**
+   * Opens the edit dialog for a nested card
+   * @param {number} parentIndex - The index of the parent card
+   * @param {number} nestedIndex - The index of the nested card to edit
+   * @private
+   */
+  async _editNestedCard(parentIndex, nestedIndex) {
+    await this.cardManagement.editNestedCard(parentIndex, nestedIndex);
+  }
+
+  /**
+   * Opens the edit dialog for a card
+   * @param {number} index - The index of the card to edit
+   * @private
+   */
+  async _editCard(index) {
+    await this.cardManagement.editCard(index);
+  }
+
+  /**
+   * Handles card selection from the picker
+   * @param {Event} ev - The selection event
+   * @private
+   */
+  _handleCardPicked(ev) {
+    this.cardManagement.handleCardPicked(ev);
+  }
+
+  /**
+   * Gets a descriptive name for a card configuration
+   * @param {Object} cardConfig - The card configuration
+   * @returns {Object} An object with type name and card name
+   * @private
+   */
+  _getCardDescriptor(cardConfig) {
+    return this.cardManagement.getCardDescriptor(cardConfig);
+  }
+
+  /**
+   * Moves a card in the list
+   * @param {number} index - The index of the card to move
+   * @param {number} direction - The direction to move (-1 for up, 1 for down)
+   * @private
+   */
+  _moveCard(index, direction) {
+    this.cardManagement.moveCard(index, direction);
+  }
+
+  /**
+   * Removes a card from the list
+   * @param {number} index - The index of the card to remove
+   * @private
+   */
+  _removeCard(index) {
+    this.cardManagement.removeCard(index);
+  }
+
+  /**
+   * Safely adds a card to the configuration without triggering editor replacement
+   * @param {Object} cardConfig - Card configuration to add
+   * @private
+   */
+  _safelyAddCard(cardConfig) {
+    this.cardManagement.safelyAddCard(cardConfig);
+  }
+
+  /**
+   * Ensures the card picker is loaded and visible
+   * @private
+   */
+  _ensureCardPickerLoaded() {
+    this.uiManager.ensureCardPickerLoaded();
+  }
+
+  setConfig(config) {
+    this.configManager.setConfig(config);
+  }
+
+  _valueChanged(ev) {
+    this.configManager.handleValueChanged(ev);
+  }
+
+  /**
+   * Fires the config-changed event with proper identification
+   * @param {Object} [extraData] - Additional data to include in the event
+   * @private
+   */
+  _fireConfigChanged(extraData = {}) {
+    this.configManager.fireConfigChanged(extraData);
+  }
+
+  /**
+   * Renders the editor UI with extracted rendering functions
+   * @returns {TemplateResult} The template to render
+   */
+  render() {
+    if (!this.hass || !this._config) {
+      return x`<ha-circular-progress
+        active
+        alt="Loading editor"
+      ></ha-circular-progress>`;
+    }
+
+    const cards = this._config.cards || [];
+
+    return x`
+      <div class="card-config">
+        ${renderInfoPanel()}
+        ${renderViewModeOptions(this._config, this._valueChanged.bind(this))}
+        ${renderDisplayOptions(this._config, this._valueChanged.bind(this))}
+        ${renderAdvancedOptions(
+          this._config,
+          this.uiManager.getCollapsibleState(),
+          this._valueChanged.bind(this),
+          this._toggleSection.bind(this),
+          cards,
+          this._handleTimeoutChange.bind(this),
+          this._handleTargetChange.bind(this),
+          this.hass,
+        )}
+        ${renderCardsSection(
+          cards,
+          this.hass,
+          this._moveCard.bind(this),
+          this._editCard.bind(this),
+          this._removeCard.bind(this),
+          this._getCardDescriptor.bind(this),
+          this._hasNestedCards.bind(this),
+          this._getNestedCards.bind(this),
+          this._hasVisibilityConditions.bind(this),
+          this._moveNestedCard.bind(this),
+          this._editNestedCard.bind(this),
+          this._removeNestedCard.bind(this),
+        )}
+        ${renderCardPicker(
+          this.hass,
+          this.lovelace,
+          this._boundHandleCardPicked,
+        )}
+        ${renderVersionDisplay()}
       </div>
-    `;var e,s,n}Be(t){this.configManager.handleTimeoutChange(t)}Je(t){this.configManager.handleTargetChange(t)}async connectedCallback(){super.connectedCallback&&super.connectedCallback(),h("EDITOR","SimpleSwipeCardEditor connectedCallback");Ct(r,"Set").add(this),await this.uiManager.ensureComponentsLoaded(),setTimeout(()=>this.uiManager.ensureCardPickerLoaded(),50),this.eventHandling.setupEventListeners()}disconnectedCallback(){super.disconnectedCallback&&super.disconnectedCallback(),h("EDITOR","SimpleSwipeCardEditor disconnectedCallback"),this.eventHandling.removeEventListeners();Ct(r,"Set").delete(this);Ct(o).delete(this.ie)}}async function Lt(){try{await async function(){return h("SYSTEM","Using bundled LitElement dependencies"),!0}(),h("SYSTEM","Dependencies loaded, registering components"),customElements.get("simple-swipe-card")||(customElements.define("simple-swipe-card",SimpleSwipeCard),h("SYSTEM","SimpleSwipeCard component registered")),customElements.get("simple-swipe-card-editor")||(customElements.define("simple-swipe-card-editor",SimpleSwipeCardEditor),h("SYSTEM","SimpleSwipeCardEditor component registered")),zt(),console.info(`%c SIMPLE-SWIPE-CARD %c v${t} `,"color: white; background: #4caf50; font-weight: 700;","color: #4caf50; background: white; font-weight: 700;")}catch(t){console.error("SimpleSwipeCard: Failed to initialize:",t)}}function zt(){const t={type:"simple-swipe-card",name:"Simple Swipe Card",preview:!0,description:"A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout."};window.customCards&&!window.customCards.some(t=>"simple-swipe-card"===t.type)&&(window.customCards.push(t),h("SYSTEM","Card registered with Home Assistant customCards registry"))}ft()?ft().then(()=>{zt(),Lt()}).catch(t=>{console.error("SimpleSwipeCard: Error waiting for Card Helpers:",t),Lt()}):window.customCards?(zt(),Lt()):"loading"===document.readyState?window.addEventListener("load",()=>{zt(),Lt()},{once:!0}):setTimeout(()=>{zt(),Lt()},100);export{SimpleSwipeCard,SimpleSwipeCardEditor};
+    `;
+  }
+
+  /**
+   * Handles reset timeout changes
+   * @param {Event} ev - The change event
+   * @private
+   */
+  _handleTimeoutChange(ev) {
+    this.configManager.handleTimeoutChange(ev);
+  }
+
+  /**
+   * Handles reset target card changes
+   * @param {Event} ev - The change event
+   * @private
+   */
+  _handleTargetChange(ev) {
+    this.configManager.handleTargetChange(ev);
+  }
+
+  // Ensure card picker is properly loaded
+  async connectedCallback() {
+    if (super.connectedCallback) {
+      super.connectedCallback();
+    }
+    logDebug("EDITOR", "SimpleSwipeCardEditor connectedCallback");
+
+    // Register this editor instance globally for state sharing
+    const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
+    cardEditors.add(this);
+
+    // Ensure card picker is loaded before proceeding
+    await this.uiManager.ensureComponentsLoaded();
+
+    // Call _ensureCardPickerLoaded after a short delay to ensure shadowRoot is ready
+    setTimeout(() => this.uiManager.ensureCardPickerLoaded(), 50);
+
+    // Set up event handling
+    this.eventHandling.setupEventListeners();
+  }
+
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    logDebug("EDITOR", "SimpleSwipeCardEditor disconnectedCallback");
+
+    // Clean up event listeners
+    this.eventHandling.removeEventListeners();
+
+    // Unregister this editor
+    const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
+    cardEditors.delete(this);
+
+    const editorRegistry = getGlobalRegistry(GLOBAL_STATE.editorRegistry);
+    editorRegistry.delete(this._editorId);
+  }
+}
+
+/**
+ * Initialize the card after dependencies are loaded
+ */
+async function initializeCard() {
+  try {
+    // Ensure all dependencies are loaded
+    await ensureDependencies();
+
+    logDebug("SYSTEM", "Dependencies loaded, registering components");
+
+    // Register the custom elements
+    if (!customElements.get("simple-swipe-card")) {
+      customElements.define("simple-swipe-card", SimpleSwipeCard);
+      logDebug("SYSTEM", "SimpleSwipeCard component registered");
+    }
+
+    if (!customElements.get("simple-swipe-card-editor")) {
+      customElements.define("simple-swipe-card-editor", SimpleSwipeCardEditor);
+      logDebug("SYSTEM", "SimpleSwipeCardEditor component registered");
+    }
+
+    // Register with Home Assistant
+    registerWithHomeAssistant();
+
+    // Display version information
+    displayVersionInfo();
+  } catch (error) {
+    console.error("SimpleSwipeCard: Failed to initialize:", error);
+  }
+}
+
+/**
+ * Registers the card with Home Assistant
+ */
+function registerWithHomeAssistant() {
+  const cardInfo = {
+    type: "simple-swipe-card",
+    name: "Simple Swipe Card",
+    preview: true,
+    description:
+      "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout.",
+  };
+
+  if (
+    window.customCards &&
+    !window.customCards.some((card) => card.type === "simple-swipe-card")
+  ) {
+    window.customCards.push(cardInfo);
+    logDebug(
+      "SYSTEM",
+      "Card registered with Home Assistant customCards registry",
+    );
+  }
+}
+
+/**
+ * Display version information in console
+ */
+function displayVersionInfo() {
+  console.info(
+    `%c SIMPLE-SWIPE-CARD %c v${CARD_VERSION} `,
+    "color: white; background: #4caf50; font-weight: 700;",
+    "color: #4caf50; background: white; font-weight: 700;",
+  );
+}
+
+/**
+ * Initialize based on loading state
+ */
+function initialize() {
+  if (getHelpers()) {
+    // Card helpers are available, initialize with them
+    getHelpers()
+      .then(() => {
+        registerWithHomeAssistant();
+        initializeCard();
+      })
+      .catch((e) => {
+        console.error("SimpleSwipeCard: Error waiting for Card Helpers:", e);
+        // Fallback initialization
+        initializeCard();
+      });
+  } else if (window.customCards) {
+    // customCards registry exists, register and initialize
+    registerWithHomeAssistant();
+    initializeCard();
+  } else {
+    // Wait for window load event as fallback
+    if (document.readyState === "loading") {
+      window.addEventListener(
+        "load",
+        () => {
+          registerWithHomeAssistant();
+          initializeCard();
+        },
+        { once: true },
+      );
+    } else {
+      // Document already loaded
+      setTimeout(() => {
+        registerWithHomeAssistant();
+        initializeCard();
+      }, 100);
+    }
+  }
+}
+
+// Start initialization
+initialize();
+
+export { SimpleSwipeCard, SimpleSwipeCardEditor };

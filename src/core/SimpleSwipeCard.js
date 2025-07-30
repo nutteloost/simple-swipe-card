@@ -24,6 +24,7 @@ import {
 } from "../utils/EventHelpers.js";
 import { CarouselView } from "../features/CarouselView.js";
 import { LoopMode } from "../features/LoopMode.js";
+import { SwipeBehavior } from "../features/SwipeBehavior.js";
 
 /**
  * Main Simple Swipe Card class
@@ -56,6 +57,10 @@ export class SimpleSwipeCard extends LitElement {
     this.resizeObserver = null;
     this._swipeDirection = "horizontal"; // Default swipe direction
 
+    // Pagination animation tracking
+    this._previousIndex = undefined;
+    this._previousWrappedIndex = undefined;
+
     // Card-mod support
     this._cardModConfig = null;
     this._cardModObserver = null;
@@ -69,8 +74,11 @@ export class SimpleSwipeCard extends LitElement {
     this.stateSynchronization = new StateSynchronization(this);
     this.carouselView = new CarouselView(this);
     this.loopMode = new LoopMode(this);
+    this.swipeBehavior = new SwipeBehavior(this);
+    this._performingSeamlessJump = false;
 
     this._visibilityUpdateTimeout = null;
+    this._visibilityRebuildTimeout = null;
     this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
 
     // Generate unique instance ID
@@ -160,6 +168,20 @@ export class SimpleSwipeCard extends LitElement {
     ) {
       this._config.swipe_direction = "horizontal";
     }
+
+    // Set default for swipe_behavior and validate based on loop_mode
+    if (this._config.swipe_behavior === undefined) {
+      this._config.swipe_behavior = "single";
+    }
+
+    // Validate swipe_behavior - only allow "free" with infinite loop mode
+    if (!["single", "free"].includes(this._config.swipe_behavior)) {
+      this._config.swipe_behavior = "single";
+    } else if (this._config.swipe_behavior === "free" && this._config.loop_mode !== "infinite") {
+      // Force to single if free is selected but not in infinite mode
+      this._config.swipe_behavior = "single";
+      logDebug("CONFIG", "Free swipe behavior requires infinite loop mode, defaulting to single");
+    } 
 
     // Set defaults for auto-swipe options
     if (this._config.enable_auto_swipe === undefined)
@@ -417,11 +439,8 @@ export class SimpleSwipeCard extends LitElement {
       // If the currently visible cards changed, we need to adjust the current index
       this._adjustCurrentIndexForVisibility(previousVisibleIndices);
 
-      // Trigger rebuild if initialized and connected
-      if (this.initialized && this.isConnected) {
-        logDebug("VISIBILITY", "Triggering rebuild due to visibility changes");
-        this.cardBuilder.build();
-      }
+      // Use debounced rebuild to prevent interference with card-mod
+      this._scheduleVisibilityRebuild();
     }
   }
 
@@ -601,6 +620,26 @@ export class SimpleSwipeCard extends LitElement {
         return true; // Unknown conditions without entity default to visible
     }
   }
+
+  /**
+   * Schedules a debounced rebuild when visibility changes to prevent interference with card-mod
+   * @private
+   */
+  _scheduleVisibilityRebuild() {
+    // Clear any existing rebuild timeout
+    if (this._visibilityRebuildTimeout) {
+      clearTimeout(this._visibilityRebuildTimeout);
+    }
+
+    // Schedule rebuild with a small delay to allow card-mod to process
+    this._visibilityRebuildTimeout = setTimeout(() => {
+      if (this.initialized && this.isConnected && !this.building) {
+        logDebug("VISIBILITY", "Performing debounced rebuild due to visibility changes");
+        this.cardBuilder.build();
+      }
+      this._visibilityRebuildTimeout = null;
+    }, 150); // 150ms delay to allow card-mod processing
+  }  
 
   /**
    * Adjusts the current index when visibility changes (improved version)
@@ -787,6 +826,24 @@ export class SimpleSwipeCard extends LitElement {
     // Notify state synchronization of hass change
     this.stateSynchronization?.onHassChange(oldHass, hass);
 
+    // Skip visibility updates during seamless jump to prevent interference
+    if (this._performingSeamlessJump) {
+      logDebug("LOOP", "Skipping hass-triggered visibility update during seamless jump");
+      // Still update child cards with new hass
+      if (this.cards) {
+        this.cards.forEach((card) => {
+          if (card.element && !card.error) {
+            try {
+              card.element.hass = hass;
+            } catch (e) {
+              console.error("Error setting hass on child card:", e);
+            }
+          }
+        });
+      }
+      return;
+    }
+
     // Update visibility immediately when hass changes
     if (oldHass !== hass) {
       // Clear any pending debounced updates
@@ -818,6 +875,12 @@ export class SimpleSwipeCard extends LitElement {
    */
   connectedCallback() {
     logDebug("INIT", "connectedCallback");
+
+    // Safety mechanism: Reset any stuck seamless jump flag
+    if (this._performingSeamlessJump) {
+      logDebug("INIT", "Clearing stuck seamless jump flag on connect");
+      this._performingSeamlessJump = false;
+    }
 
     // Add event listeners for editor integration
     this.addEventListener(
@@ -998,7 +1061,9 @@ export class SimpleSwipeCard extends LitElement {
    * Navigates to a specific visible slide
    * @param {number} visibleIndex - The visible slide index to navigate to
    */
-  goToSlide(visibleIndex) {
+  goToSlide(visibleIndex, skipCount = 1) {
+    // Store skip count for animation duration calculation
+    this._lastSkipCount = skipCount;
     const totalVisibleCards = this.visibleCardIndices.length;
 
     if (
@@ -1095,19 +1160,29 @@ export class SimpleSwipeCard extends LitElement {
     if (viewMode === "carousel" && this.carouselView) {
       // Set gap for carousel spacing
       this.sliderElement.style.gap = `${cardSpacing}px`;
-      this.carouselView.updateSliderPosition(this.currentIndex, animate);
 
-      // Handle pagination for carousel infinite mode
-      if (loopMode === "infinite") {
-        const wrappedIndex = this.loopMode.getWrappedIndexForPagination(
-          this.currentIndex,
-        );
-        this._updatePaginationDots(wrappedIndex);
-      } else {
-        this.pagination.update();
+      // Handle custom animation duration for free swipe behavior in carousel mode
+      let animationDuration = animate ? 300 : 0; // Default, or 0 if not animating
+
+      if (animate && this._config.swipe_behavior === "free" && this._lastSkipCount > 1) {
+        animationDuration = this.swipeBehavior.calculateAnimationDuration(this._lastSkipCount);
+        const easingFunction = this.swipeBehavior.getEasingFunction(this._lastSkipCount);
+        this.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+        logDebug("SWIPE", `Carousel multi-card animation: ${this._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
       }
 
-      this.loopMode.scheduleSeamlessJump(this.currentIndex);
+      this.carouselView.updateSliderPosition(this.currentIndex, animate);
+
+      // Simple pagination update - no complex animation
+      this.pagination.update();
+
+      // Reset skip count
+      this._lastSkipCount = 1;
+
+      // Only schedule seamless jump if we're animating and have a valid duration
+      if (animate && animationDuration > 0) {
+        this.loopMode.scheduleSeamlessJump(this.currentIndex, animationDuration);
+      }
       return;
     }
 
@@ -1118,10 +1193,10 @@ export class SimpleSwipeCard extends LitElement {
     let domPosition = this.currentIndex;
 
     if (loopMode === "infinite") {
-      // In infinite mode, map logical index to DOM position
+      // For single mode infinite, we need to offset by duplicateCount to show real cards
       const duplicateCount = this.loopMode.getDuplicateCount();
       domPosition = this.currentIndex + duplicateCount;
-
+      
       logDebug(
         "SWIPE",
         `Infinite mode: logical index ${this.currentIndex} -> DOM position ${domPosition}`,
@@ -1154,7 +1229,17 @@ export class SimpleSwipeCard extends LitElement {
       translateAmount = domPosition * (this.slideHeight + cardSpacing);
     }
 
-    this.sliderElement.style.transition = this._getTransitionStyle(animate);
+    // Handle custom animation duration for free swipe behavior
+    let animationDuration = 300; // Default
+
+    if (animate && this._config.swipe_behavior === "free" && this._lastSkipCount > 1) {
+      animationDuration = this.swipeBehavior.calculateAnimationDuration(this._lastSkipCount);
+      const easingFunction = this.swipeBehavior.getEasingFunction(this._lastSkipCount);
+      this.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
+      logDebug("SWIPE", `Multi-card animation: ${this._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+    } else {
+      this.sliderElement.style.transition = this._getTransitionStyle(animate);
+    }
 
     // Apply transform based on swipe direction
     if (isHorizontal) {
@@ -1166,23 +1251,22 @@ export class SimpleSwipeCard extends LitElement {
     // Remove any existing margins that could interfere with transparency
     removeCardMargins(this.cards);
 
-    // Update pagination dots (use wrapped index for infinite mode)
-    if (loopMode === "infinite") {
-      const wrappedIndex = this.loopMode.getWrappedIndexForPagination(
-        this.currentIndex,
-      );
-      this._updatePaginationDots(wrappedIndex);
-    } else {
-      this.pagination.update();
-    }
+    // Simple pagination update - no complex animation
+    this.pagination.update();
+
+    // Reset skip count
+    this._lastSkipCount = 1;
 
     logDebug(
       "SWIPE",
       `Slider updated, DOM position: ${domPosition}, transform: -${translateAmount}px along ${isHorizontal ? "X" : "Y"} axis`,
     );
 
-    // Schedule seamless jump for infinite mode
-    this.loopMode.scheduleSeamlessJump(this.currentIndex);
+    // Schedule seamless jump for infinite mode with proper timing
+    // Only schedule if we're animating and have a valid duration
+    if (animate && animationDuration > 0) {
+      this.loopMode.scheduleSeamlessJump(this.currentIndex, animationDuration);
+    }
   }
 
   /**

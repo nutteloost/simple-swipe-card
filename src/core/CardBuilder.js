@@ -133,6 +133,18 @@ export class CardBuilder {
       this.card._config.cards,
     );
 
+    if (this.card.loopMode.isInfiniteMode) {
+      console.log("=== CARDBUILDER INFINITE MODE DEBUG ===");
+      console.log("Visible card indices:", this.card.visibleCardIndices);
+      console.log("Cards to load:", cardsToLoad.map(card => ({
+        visibleIndex: card.visibleIndex,
+        originalIndex: card.originalIndex,
+        isDuplicate: card.isDuplicate,
+        cardType: card.config?.type
+      })));
+      console.log("=== END CARDBUILDER DEBUG ===");
+    }
+
     logDebug("INIT", `Building cards:`, {
       totalVisible: this.card.visibleCardIndices.length,
       totalToLoad: cardsToLoad.length,

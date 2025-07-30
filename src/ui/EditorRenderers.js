@@ -131,6 +131,7 @@ export function renderDisplayOptions(config, valueChanged) {
   const showPagination = config.show_pagination !== false;
   const cardSpacing = config.card_spacing ?? 15;
   const swipeDirection = config.swipe_direction || "horizontal";
+  const swipeBehavior = config.swipe_behavior || "single";
   const viewMode = config.view_mode || "single";
 
   return html`
@@ -193,6 +194,51 @@ export function renderDisplayOptions(config, valueChanged) {
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
               <span>Carousel mode supports horizontal swiping only</span>
+            </div>
+          `}
+
+      <!-- Only show swipe behavior when infinite loop mode is selected -->
+      ${config.loop_mode === "infinite"
+        ? html`
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-label">Swipe behavior</div>
+                <div class="option-help">
+                  How many cards to swipe at once
+                </div>
+              </div>
+              <div class="option-control">
+                <ha-select
+                  .value=${swipeBehavior}
+                  data-option="swipe_behavior"
+                  @change=${valueChanged}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                  <ha-list-item .value=${"single"}>
+                    Single card
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:numeric-1-circle"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"free"}>
+                    Free swipe
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:gesture-swipe"
+                    ></ha-icon>
+                  </ha-list-item>
+                </ha-select>
+              </div>
+            </div>
+          `
+        : html`
+            <!-- Show info when not in infinite mode -->
+            <div class="option-info">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>Free swipe behavior is only available with infinite loop mode</span>
             </div>
           `}
 

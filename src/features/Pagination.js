@@ -37,7 +37,7 @@ export class Pagination {
       for (let i = 0; i < this.card.visibleCardIndices.length; i++) {
         const dot = document.createElement("div");
         dot.className = "pagination-dot";
-        if (i === this.card.currentIndex) dot.classList.add("active");
+        if (i === this._getCurrentDotIndex()) dot.classList.add("active");
         dot.addEventListener("click", (e) => {
           e.stopPropagation();
           this.card.goToSlide(i);
@@ -130,17 +130,63 @@ export class Pagination {
   }
 
   /**
-   * Updates the pagination dots to reflect current state
+   * Gets the current dot index that should be active
+   * Handles all loop modes consistently
+   * @returns {number} The dot index (0-based)
+   * @private
+   */
+  _getCurrentDotIndex() {
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return 0;
+
+    if (this.card._config.loop_mode === "infinite") {
+      // For infinite mode, wrap the current index to the visible range
+      return ((this.card.currentIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+    } else {
+      // For other modes, clamp to valid range
+      return Math.max(0, Math.min(this.card.currentIndex, totalVisibleCards - 1));
+    }
+  }
+
+  /**
+   * Updates pagination dots to reflect current state
+   * This is the main method - simple and reliable
    */
   update() {
-    // Update pagination dots - always based on visible cards, never duplicates
-    if (this.paginationElement) {
-      const dots = this.paginationElement.querySelectorAll(".pagination-dot");
-      dots.forEach((dot, i) => {
-        // Always use currentIndex (which represents the virtual position)
-        dot.classList.toggle("active", i === this.card.currentIndex);
-      });
+    if (!this.paginationElement) return;
+
+    const activeDotIndex = this._getCurrentDotIndex();
+    const dots = this.paginationElement.querySelectorAll(".pagination-dot");
+    
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === activeDotIndex);
+    });
+
+    logDebug("PAGINATION", `Updated dots: active dot ${activeDotIndex}`);
+  }
+
+  /**
+   * Updates pagination dots during swipe gesture
+   * @param {number} virtualIndex - The virtual card index during swipe
+   */
+  updateDuringSwipe(virtualIndex) {
+    if (!this.paginationElement) return;
+
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards === 0) return;
+
+    // Calculate which dot should be active for this virtual position
+    let activeDotIndex;
+    if (this.card._config.loop_mode === "infinite") {
+      activeDotIndex = ((virtualIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+    } else {
+      activeDotIndex = Math.max(0, Math.min(virtualIndex, totalVisibleCards - 1));
     }
+
+    const dots = this.paginationElement.querySelectorAll(".pagination-dot");
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === activeDotIndex);
+    });
   }
 
   /**

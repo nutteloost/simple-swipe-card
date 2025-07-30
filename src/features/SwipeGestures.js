@@ -381,6 +381,8 @@ export class SwipeGestures {
         } else {
           this.card.sliderElement.style.transform = `translateY(${newTransform}px)`;
         }
+        // Update pagination dots to match current transform position
+        this._updatePaginationDuringSwipe(newTransform);        
       }
       this._lastMoveTime = currentTime;
     }
@@ -397,6 +399,11 @@ export class SwipeGestures {
       logDebug("SWIPE", "Swipe End ignored (not dragging)");
       return;
     }
+
+    // Debug: Check if seamless jump is blocking
+    if (this.card._performingSeamlessJump) {
+      logDebug("SWIPE", "WARNING: Swipe end during seamless jump - this might indicate a stuck flag");
+    }    
 
     // Cleanup listeners
     if (e.type === "mouseup") {
@@ -461,10 +468,9 @@ export class SwipeGestures {
         return;
       }
 
-      // Calculate velocity and movement for swipe logic (reuse variables for consistency)
-      const timeDiffForSwipe = Date.now() - this._lastMoveTime;
-      const velocityForSwipe =
-        timeDiffForSwipe > 10 ? Math.abs(totalMove) / timeDiffForSwipe : 0;
+      // Calculate velocity and movement for swipe logic
+      const timeDiffForSwipe = Math.max(1, Date.now() - this._gestureStartTime); // Use gesture start time instead
+      const velocityForSwipe = Math.abs(totalMove) / timeDiffForSwipe;
 
       // Use the appropriate dimension for threshold calculation
       const slideSize = isHorizontal
@@ -490,8 +496,10 @@ export class SwipeGestures {
       let nextIndex = this.card.currentIndex;
       const loopMode = this.card._config.loop_mode || "none";
       const totalVisibleCards = this.card.visibleCardIndices.length;
+      const swipeBehavior = this.card._config.swipe_behavior || "single";
 
-      // Use consistent velocity threshold
+      // Check if swipe threshold is crossed
+      let skipCount = 1; // Default value
       if (
         Math.abs(totalMove) > threshold ||
         Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
@@ -504,22 +512,28 @@ export class SwipeGestures {
           currentIndex: this.card.currentIndex,
           totalVisibleCards: totalVisibleCards,
           loopMode: loopMode,
+          swipeBehavior: swipeBehavior,
         });
 
-        if (
-          Math.abs(totalMove) > threshold ||
-          Math.abs(velocityForSwipe) > this._swipeVelocityThreshold
-        ) {
-          nextIndex = this.card.loopMode.handleSwipeNavigation(
-            this.card.currentIndex,
-            totalMove,
-          );
+        // Calculate skip count based on swipe behavior
+        skipCount = this.card.swipeBehavior.calculateSkipCount(
+          velocityForSwipe,
+          Math.abs(totalMove),
+          totalVisibleCards,
+          swipeBehavior,
+        );
 
-          logDebug(
-            "SWIPE",
-            `Swipe resulted in navigation: ${this.card.currentIndex} → ${nextIndex} (${this.card.loopMode.getMode()} mode)`,
-          );
-        }
+        // Determine direction and apply skip count
+        const direction = totalMove > 0 ? skipCount : -skipCount;  // Fixed: removed negative sign from first part
+        nextIndex = this.card.loopMode.handleSwipeNavigation(
+          this.card.currentIndex,
+          direction,
+        );
+
+        logDebug(
+          "SWIPE",
+          `Swipe resulted in navigation: ${this.card.currentIndex} → ${nextIndex} (${loopMode} mode, ${swipeBehavior} behavior, skip: ${skipCount})`,
+        );
       } else {
         logDebug("SWIPE", `Swipe threshold NOT crossed:`, {
           totalMove: totalMove,
@@ -527,12 +541,21 @@ export class SwipeGestures {
           velocity: velocityForSwipe,
           velocityThreshold: this._swipeVelocityThreshold,
           viewMode: viewMode,
+          swipeBehavior: swipeBehavior,
         });
       }
 
       if (nextIndex !== this.card.currentIndex) {
         logDebug("SWIPE", `Swipe resulted in index change to ${nextIndex}`);
-        this.card.goToSlide(nextIndex);
+        
+        // Store the starting position for pagination animation (use current wrapped index for infinite mode)
+        if (this.card._config.loop_mode === "infinite") {
+          this.card._previousIndex = this.card.loopMode.getWrappedIndexForPagination(this.card.currentIndex);
+        } else {
+          this.card._previousIndex = this.card.currentIndex;
+        }
+        
+        this.card.goToSlide(nextIndex, skipCount);
         // Start reset-after timer for manual swipe interactions
         setTimeout(() => {
           if (this.card.isConnected && !this.card._autoSwipeInProgress) {
@@ -547,6 +570,51 @@ export class SwipeGestures {
         this.card.updateSlider();
       }
     });
+  }
+
+  /**
+   * Updates pagination dots during swipe gesture based on current transform
+   * @param {number} currentTransform - Current transform value
+   * @private
+   */
+  _updatePaginationDuringSwipe(currentTransform) {
+    if (!this.card.pagination?.paginationElement || this.card.visibleCardIndices.length <= 1) {
+      return;
+    }
+
+    const isHorizontal = this.card._swipeDirection === "horizontal";
+    const viewMode = this.card._config.view_mode || "single";
+    const cardSpacing = Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    // Calculate relative movement from initial position
+    const deltaTransform = currentTransform - this._initialTransform;
+    
+    let cardsMoved;
+
+    if (viewMode === "carousel") {
+      // For carousel mode, calculate based on card width
+      const cardsVisible = this.card._config.cards_visible || 
+                          this.card._calculateCardsVisibleFromMinWidth();
+      const totalSpacing = (cardsVisible - 1) * cardSpacing;
+      const cardWidth = (this.card.slideWidth - totalSpacing) / cardsVisible;
+      const moveDistance = cardWidth + cardSpacing;
+      
+      // Simple calculation - no threshold complexity
+      cardsMoved = Math.round(-deltaTransform / moveDistance);
+    } else {
+      // For single mode
+      const slideSize = isHorizontal ? this.card.slideWidth : this.card.slideHeight;
+      const moveDistance = slideSize + cardSpacing;
+      
+      // Simple calculation - no threshold complexity
+      cardsMoved = Math.round(-deltaTransform / moveDistance);
+    }
+
+    // Calculate virtual index based on starting position + movement
+    const virtualIndex = this.card.currentIndex + cardsMoved;
+
+    // Update pagination with the calculated virtual index
+    this.card.pagination.updateDuringSwipe(virtualIndex);
   }
 
   /**
