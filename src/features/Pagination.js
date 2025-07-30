@@ -141,10 +141,16 @@ export class Pagination {
 
     if (this.card._config.loop_mode === "infinite") {
       // For infinite mode, wrap the current index to the visible range
-      return ((this.card.currentIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+      return (
+        ((this.card.currentIndex % totalVisibleCards) + totalVisibleCards) %
+        totalVisibleCards
+      );
     } else {
       // For other modes, clamp to valid range
-      return Math.max(0, Math.min(this.card.currentIndex, totalVisibleCards - 1));
+      return Math.max(
+        0,
+        Math.min(this.card.currentIndex, totalVisibleCards - 1),
+      );
     }
   }
 
@@ -157,7 +163,7 @@ export class Pagination {
 
     const activeDotIndex = this._getCurrentDotIndex();
     const dots = this.paginationElement.querySelectorAll(".pagination-dot");
-    
+
     dots.forEach((dot, i) => {
       dot.classList.toggle("active", i === activeDotIndex);
     });
@@ -178,9 +184,14 @@ export class Pagination {
     // Calculate which dot should be active for this virtual position
     let activeDotIndex;
     if (this.card._config.loop_mode === "infinite") {
-      activeDotIndex = ((virtualIndex % totalVisibleCards) + totalVisibleCards) % totalVisibleCards;
+      activeDotIndex =
+        ((virtualIndex % totalVisibleCards) + totalVisibleCards) %
+        totalVisibleCards;
     } else {
-      activeDotIndex = Math.max(0, Math.min(virtualIndex, totalVisibleCards - 1));
+      activeDotIndex = Math.max(
+        0,
+        Math.min(virtualIndex, totalVisibleCards - 1),
+      );
     }
 
     const dots = this.paginationElement.querySelectorAll(".pagination-dot");

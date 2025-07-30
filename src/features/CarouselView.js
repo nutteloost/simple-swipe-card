@@ -112,14 +112,27 @@ export class CarouselView {
     const transform = this.calculateTransform(targetIndex);
 
     // Handle custom animation duration for multi-card swipes (like single mode)
-    if (animate && this.card._config.swipe_behavior === "free" && this.card._lastSkipCount > 1) {
-      const animationDuration = this.card.swipeBehavior.calculateAnimationDuration(this.card._lastSkipCount);
-      const easingFunction = this.card.swipeBehavior.getEasingFunction(this.card._lastSkipCount);
+    if (
+      animate &&
+      this.card._config.swipe_behavior === "free" &&
+      this.card._lastSkipCount > 1
+    ) {
+      const animationDuration =
+        this.card.swipeBehavior.calculateAnimationDuration(
+          this.card._lastSkipCount,
+        );
+      const easingFunction = this.card.swipeBehavior.getEasingFunction(
+        this.card._lastSkipCount,
+      );
       this.card.sliderElement.style.transition = `transform ${animationDuration}ms ${easingFunction}`;
-      logDebug("SWIPE", `Carousel multi-card animation: ${this.card._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`);
+      logDebug(
+        "SWIPE",
+        `Carousel multi-card animation: ${this.card._lastSkipCount} cards, ${animationDuration}ms duration, easing: ${easingFunction}`,
+      );
     } else {
       // Use default transition
-      this.card.sliderElement.style.transition = this.card._getTransitionStyle(animate);
+      this.card.sliderElement.style.transition =
+        this.card._getTransitionStyle(animate);
     }
 
     // Apply transform (carousel only supports horizontal)

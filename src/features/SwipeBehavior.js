@@ -38,16 +38,19 @@ export class SwipeBehavior {
 
     if (viewMode === "carousel") {
       // In carousel mode, use individual card width
-      const cardsVisible = this.card._config.cards_visible || 
-                          this.card._calculateCardsVisibleFromMinWidth();
-      const cardSpacing = Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+      const cardsVisible =
+        this.card._config.cards_visible ||
+        this.card._calculateCardsVisibleFromMinWidth();
+      const cardSpacing =
+        Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
       const totalSpacing = (cardsVisible - 1) * cardSpacing;
       unitSize = (this.card.slideWidth - totalSpacing) / cardsVisible;
     } else {
       // In single mode, use full slide size
-      unitSize = this.card._swipeDirection === "horizontal"
-        ? this.card.slideWidth
-        : this.card.slideHeight;
+      unitSize =
+        this.card._swipeDirection === "horizontal"
+          ? this.card.slideWidth
+          : this.card.slideHeight;
     }
 
     // Distance-based skip count (50% threshold)
@@ -57,13 +60,13 @@ export class SwipeBehavior {
     if (velocity > 0.8) {
       // QUICK SWIPE: Use velocity-dominant calculation with lower thresholds
       let velocityBasedSkip = 1;
-      if (velocity > 0.8) velocityBasedSkip = 2;   // Much lower threshold - easy to trigger
-      if (velocity > 1.5) velocityBasedSkip = 3;   // Medium speed gets 3 cards
-      if (velocity > 2.5) velocityBasedSkip = 4;   // High speed gets 4 cards
-      
+      if (velocity > 0.8) velocityBasedSkip = 2; // Much lower threshold - easy to trigger
+      if (velocity > 1.5) velocityBasedSkip = 3; // Medium speed gets 3 cards
+      if (velocity > 2.5) velocityBasedSkip = 4; // High speed gets 4 cards
+
       // For quick swipes, take the higher of velocity-based or distance-based
       const quickSwipeResult = Math.max(velocityBasedSkip, distanceBasedSkip);
-      
+
       logDebug("SWIPE", "Quick swipe detected:", {
         velocity: velocity.toFixed(3),
         distance: distance.toFixed(0),
@@ -72,9 +75,8 @@ export class SwipeBehavior {
         distanceBasedSkip,
         result: quickSwipeResult,
       });
-      
+
       return Math.min(quickSwipeResult, Math.min(4, totalCards - 1));
-      
     } else {
       // CONTROLLED DRAG: Use pure distance-based calculation
       logDebug("SWIPE", "Controlled drag detected:", {
@@ -83,7 +85,7 @@ export class SwipeBehavior {
         unitSize: unitSize.toFixed(0),
         distanceBasedSkip,
       });
-      
+
       return Math.min(distanceBasedSkip, totalCards - 1);
     }
   }
@@ -95,30 +97,36 @@ export class SwipeBehavior {
    */
   calculateAnimationDuration(skipCount) {
     const totalCards = this.card.visibleCardIndices.length;
-    
+
     // For few cards (1-3), use the current longer, more deliberate timing
     if (totalCards <= 3) {
       const baseDuration = 800;
       const extraDuration = (skipCount - 1) * 500;
       const duration = Math.min(baseDuration + extraDuration, 2400);
-      
-      logDebug("SWIPE", "Animation duration (few cards):", skipCount, "cards,", duration + "ms");
+
+      logDebug(
+        "SWIPE",
+        "Animation duration (few cards):",
+        skipCount,
+        "cards,",
+        duration + "ms",
+      );
       return duration;
     }
-    
+
     // For many cards (4+), use faster, more momentum-preserving timing
     const baseDuration = 600; // Shorter base for momentum feel
     const extraDuration = (skipCount - 1) * 200; // Much less per additional card
-    const maxDuration = Math.min(1200 + (totalCards * 50), 2000); // Dynamic max based on total cards
+    const maxDuration = Math.min(1200 + totalCards * 50, 2000); // Dynamic max based on total cards
     const duration = Math.min(baseDuration + extraDuration, maxDuration);
-    
+
     logDebug("SWIPE", "Animation duration (many cards):", {
       skipCount,
       totalCards,
       baseDuration,
       extraDuration,
       maxDuration,
-      finalDuration: duration + "ms"
+      finalDuration: duration + "ms",
     });
 
     return duration;

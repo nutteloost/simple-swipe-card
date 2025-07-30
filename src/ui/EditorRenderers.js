@@ -203,9 +203,7 @@ export function renderDisplayOptions(config, valueChanged) {
             <div class="option-row">
               <div class="option-left">
                 <div class="option-label">Swipe behavior</div>
-                <div class="option-help">
-                  How many cards to swipe at once
-                </div>
+                <div class="option-help">How many cards to swipe at once</div>
               </div>
               <div class="option-control">
                 <ha-select
@@ -238,7 +236,10 @@ export function renderDisplayOptions(config, valueChanged) {
             <!-- Show info when not in infinite mode -->
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
-              <span>Free swipe behavior is only available with infinite loop mode</span>
+              <span
+                >Free swipe behavior is only available with infinite loop
+                mode</span
+              >
             </div>
           `}
 

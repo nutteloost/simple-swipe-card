@@ -85,10 +85,16 @@ export class EditorConfigManager {
     // Validate swipe_behavior - only allow "free" with infinite loop mode
     if (!["single", "free"].includes(this.editor._config.swipe_behavior)) {
       this.editor._config.swipe_behavior = "single";
-    } else if (this.editor._config.swipe_behavior === "free" && this.editor._config.loop_mode !== "infinite") {
+    } else if (
+      this.editor._config.swipe_behavior === "free" &&
+      this.editor._config.loop_mode !== "infinite"
+    ) {
       // Force to single if free is selected but not in infinite mode
       this.editor._config.swipe_behavior = "single";
-      logDebug("CONFIG", "Free swipe behavior requires infinite loop mode, defaulting to single");
+      logDebug(
+        "CONFIG",
+        "Free swipe behavior requires infinite loop mode, defaulting to single",
+      );
     }
 
     // Set defaults for auto-swipe options
@@ -383,7 +389,7 @@ export class EditorConfigManager {
     const displayOptions = [
       "card_spacing",
       "swipe_direction",
-      "swipe_behavior", 
+      "swipe_behavior",
       "show_pagination",
     ];
 

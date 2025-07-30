@@ -382,7 +382,7 @@ export class SwipeGestures {
           this.card.sliderElement.style.transform = `translateY(${newTransform}px)`;
         }
         // Update pagination dots to match current transform position
-        this._updatePaginationDuringSwipe(newTransform);        
+        this._updatePaginationDuringSwipe(newTransform);
       }
       this._lastMoveTime = currentTime;
     }
@@ -402,8 +402,11 @@ export class SwipeGestures {
 
     // Debug: Check if seamless jump is blocking
     if (this.card._performingSeamlessJump) {
-      logDebug("SWIPE", "WARNING: Swipe end during seamless jump - this might indicate a stuck flag");
-    }    
+      logDebug(
+        "SWIPE",
+        "WARNING: Swipe end during seamless jump - this might indicate a stuck flag",
+      );
+    }
 
     // Cleanup listeners
     if (e.type === "mouseup") {
@@ -524,7 +527,7 @@ export class SwipeGestures {
         );
 
         // Determine direction and apply skip count
-        const direction = totalMove > 0 ? skipCount : -skipCount;  // Fixed: removed negative sign from first part
+        const direction = totalMove > 0 ? skipCount : -skipCount; // Fixed: removed negative sign from first part
         nextIndex = this.card.loopMode.handleSwipeNavigation(
           this.card.currentIndex,
           direction,
@@ -547,14 +550,17 @@ export class SwipeGestures {
 
       if (nextIndex !== this.card.currentIndex) {
         logDebug("SWIPE", `Swipe resulted in index change to ${nextIndex}`);
-        
+
         // Store the starting position for pagination animation (use current wrapped index for infinite mode)
         if (this.card._config.loop_mode === "infinite") {
-          this.card._previousIndex = this.card.loopMode.getWrappedIndexForPagination(this.card.currentIndex);
+          this.card._previousIndex =
+            this.card.loopMode.getWrappedIndexForPagination(
+              this.card.currentIndex,
+            );
         } else {
           this.card._previousIndex = this.card.currentIndex;
         }
-        
+
         this.card.goToSlide(nextIndex, skipCount);
         // Start reset-after timer for manual swipe interactions
         setTimeout(() => {
@@ -578,34 +584,41 @@ export class SwipeGestures {
    * @private
    */
   _updatePaginationDuringSwipe(currentTransform) {
-    if (!this.card.pagination?.paginationElement || this.card.visibleCardIndices.length <= 1) {
+    if (
+      !this.card.pagination?.paginationElement ||
+      this.card.visibleCardIndices.length <= 1
+    ) {
       return;
     }
 
     const isHorizontal = this.card._swipeDirection === "horizontal";
     const viewMode = this.card._config.view_mode || "single";
-    const cardSpacing = Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
 
     // Calculate relative movement from initial position
     const deltaTransform = currentTransform - this._initialTransform;
-    
+
     let cardsMoved;
 
     if (viewMode === "carousel") {
       // For carousel mode, calculate based on card width
-      const cardsVisible = this.card._config.cards_visible || 
-                          this.card._calculateCardsVisibleFromMinWidth();
+      const cardsVisible =
+        this.card._config.cards_visible ||
+        this.card._calculateCardsVisibleFromMinWidth();
       const totalSpacing = (cardsVisible - 1) * cardSpacing;
       const cardWidth = (this.card.slideWidth - totalSpacing) / cardsVisible;
       const moveDistance = cardWidth + cardSpacing;
-      
+
       // Simple calculation - no threshold complexity
       cardsMoved = Math.round(-deltaTransform / moveDistance);
     } else {
       // For single mode
-      const slideSize = isHorizontal ? this.card.slideWidth : this.card.slideHeight;
+      const slideSize = isHorizontal
+        ? this.card.slideWidth
+        : this.card.slideHeight;
       const moveDistance = slideSize + cardSpacing;
-      
+
       // Simple calculation - no threshold complexity
       cardsMoved = Math.round(-deltaTransform / moveDistance);
     }
