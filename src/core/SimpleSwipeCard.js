@@ -294,6 +294,16 @@ export class SimpleSwipeCard extends LitElement {
     if (!this.cardContainer) return 2.5; // Default fallback
 
     const containerWidth = this.cardContainer.offsetWidth;
+
+    // SAFETY CHECK: If container not properly sized yet, use a reasonable default
+    if (containerWidth <= 0) {
+      logDebug(
+        "LOOP",
+        "Container width not available, using default cards_visible: 2.5",
+      );
+      return 2.5;
+    }
+
     const minWidth = this._config.card_min_width || 200;
     const cardSpacing = Math.max(0, parseInt(this._config.card_spacing)) || 0;
 

@@ -114,11 +114,11 @@ export class LoopMode {
     const duplicateCount = this.getDuplicateCount();
     const totalVisibleCards = visibleCardIndices.length;
 
-    // FIXED: Add leading duplicates (copies of last cards) with proper wrapping
+    // Add leading duplicates (copies of last cards) with proper wrapping
     for (let i = 0; i < duplicateCount; i++) {
-      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      // Start from last card and work backwards, with proper wrapping
       const sourceVisibleIndex =
-        (totalVisibleCards - duplicateCount + i + totalVisibleCards) %
+        (totalVisibleCards - 1 - (i % totalVisibleCards) + totalVisibleCards) %
         totalVisibleCards;
       const originalIndex = visibleCardIndices[sourceVisibleIndex];
       cardsToLoad.push({
@@ -139,9 +139,9 @@ export class LoopMode {
       });
     });
 
-    // FIXED: Add trailing duplicates (copies of first cards) with proper wrapping
+    // Add trailing duplicates (copies of first cards) with proper wrapping
     for (let i = 0; i < duplicateCount; i++) {
-      // FIXED: Wrap around properly when duplicateCount > totalVisibleCards
+      // Wrap around properly when duplicateCount > totalVisibleCards
       const sourceVisibleIndex = i % totalVisibleCards;
       const originalIndex = visibleCardIndices[sourceVisibleIndex];
       cardsToLoad.push({

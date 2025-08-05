@@ -49,7 +49,11 @@ export class CarouselView {
     const loopMode = this.card._config.loop_mode || "none";
 
     // Edge case: If we have fewer cards than cards_visible, don't transform at all
-    if (totalCards <= Math.floor(cardsVisible)) {
+    // BUT: In infinite mode, we always have enough cards due to duplicates
+    if (
+      totalCards <= Math.floor(cardsVisible) &&
+      this.card._config.loop_mode !== "infinite"
+    ) {
       logDebug(
         "SWIPE",
         "Insufficient cards for carousel transform, staying at position 0",
@@ -61,7 +65,7 @@ export class CarouselView {
     let domPosition;
 
     if (loopMode === "infinite") {
-      // FIXED: For carousel infinite mode, also use real DOM positioning like single mode
+      // For carousel infinite mode, also use real DOM positioning like single mode
       const duplicateCount = this.card.loopMode.getDuplicateCount();
       domPosition = targetIndex + duplicateCount;
       logDebug(
