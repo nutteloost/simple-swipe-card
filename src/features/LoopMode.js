@@ -66,7 +66,7 @@ export class LoopMode {
 
     if (viewMode === "single") {
       // For single mode with free swipe, need more duplicates for hard swipes
-      return swipeBehavior === "free" ? 6 : 1;
+      return swipeBehavior === "free" ? 4 : 1;
     } else {
       // For carousel mode, we need significantly more duplicates
       const cardsVisible =
@@ -74,12 +74,12 @@ export class LoopMode {
         this.card._calculateCardsVisibleFromMinWidth();
 
       // Base count: at least 2x the visible cards to handle wide screens
-      const baseCount = Math.max(6, Math.ceil(cardsVisible * 2));
+      const baseCount = Math.max(5, Math.ceil(cardsVisible * 2));
 
       if (swipeBehavior === "free") {
         // For free swipe in carousel: base count + extra buffer for multi-card swipes
-        // Add up to 8 extra duplicates to handle fast swipes on wide screens
-        const extraBuffer = Math.min(8, Math.ceil(cardsVisible));
+        // Add up to 5 extra duplicates to handle fast swipes on wide screens
+        const extraBuffer = Math.min(5, Math.ceil(cardsVisible));
         return baseCount + extraBuffer;
       } else {
         // For single swipe in carousel: base count is usually sufficient
@@ -410,7 +410,7 @@ export class LoopMode {
         this._activeTransitionHandler = null;
 
         // Add a small delay to ensure all rendering is complete
-        setTimeout(executeJump, 50);
+        setTimeout(executeJump, 10);
       }
     };
 
@@ -423,7 +423,7 @@ export class LoopMode {
     }
 
     // Fallback timeout in case transitionend doesn't fire
-    const bufferTime = Math.max(150, Math.min(transitionDuration * 0.2, 300));
+    const bufferTime = Math.min(100, transitionDuration * 0.1);
     const totalWaitTime = transitionDuration + bufferTime;
 
     this._pendingSeamlessJump = setTimeout(() => {

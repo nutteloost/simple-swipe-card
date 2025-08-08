@@ -342,14 +342,53 @@ export class SimpleSwipeCardEditor extends LitElement {
     }
     logDebug("EDITOR", "SimpleSwipeCardEditor disconnectedCallback");
 
-    // Clean up event listeners
-    this.eventHandling.removeEventListeners();
+    try {
+      // Clean up manager instances
+      if (this.uiManager) {
+        this.uiManager.cleanup();
+        this.uiManager = null;
+      }
 
-    // Unregister this editor
-    const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
-    cardEditors.delete(this);
+      if (this.configManager) {
+        this.configManager.cleanup();
+        this.configManager = null;
+      }
 
-    const editorRegistry = getGlobalRegistry(GLOBAL_STATE.editorRegistry);
-    editorRegistry.delete(this._editorId);
+      // Clear other manager references
+      this.cardManagement = null;
+      this.eventHandling = null;
+
+      // Clean up event listeners
+      this.eventHandling?.removeEventListeners();
+
+      // Clear editor-specific state
+      if (this._activeChildEditors) {
+        this._activeChildEditors.clear();
+        this._activeChildEditors = null;
+      }
+
+      // Clear editor ID reference
+      this._editorId = null;
+
+      // Clear config reference
+      this._config = null;
+    } catch (error) {
+      console.warn("Error during editor cleanup:", error);
+    }
+
+    // Unregister this editor from global registries
+    try {
+      const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
+      cardEditors.delete(this);
+
+      const editorRegistry = getGlobalRegistry(GLOBAL_STATE.editorRegistry);
+      if (this._editorId) {
+        editorRegistry.delete(this._editorId);
+      }
+    } catch (error) {
+      console.warn("Error unregistering editor:", error);
+    }
+
+    logDebug("EDITOR", "SimpleSwipeCardEditor cleanup completed");
   }
 }

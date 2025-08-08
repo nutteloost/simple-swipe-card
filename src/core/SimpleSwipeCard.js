@@ -313,13 +313,12 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Handles visibility changes from conditional cards
+   * Handles visibility changes from conditional cards (OPTIMIZED)
    * @private
    */
   _handleConditionalVisibilityChange() {
     logDebug("VISIBILITY", "Handling conditional card visibility change");
 
-    // Debounce multiple rapid changes
     if (this._conditionalVisibilityTimeout) {
       clearTimeout(this._conditionalVisibilityTimeout);
     }
@@ -327,9 +326,8 @@ export class SimpleSwipeCard extends LitElement {
     this._conditionalVisibilityTimeout = setTimeout(() => {
       this._updateVisibleCardIndicesWithConditional();
       this._conditionalVisibilityTimeout = null;
-    }, 50);
+    }, 150);
   }
-
   /**
    * Updates visible card indices considering both Simple Swipe Card visibility conditions
    * and conditional card visibility states
@@ -647,7 +645,6 @@ export class SimpleSwipeCard extends LitElement {
       clearTimeout(this._visibilityRebuildTimeout);
     }
 
-    // Schedule rebuild with a small delay to allow card-mod to process
     this._visibilityRebuildTimeout = setTimeout(() => {
       if (this.initialized && this.isConnected && !this.building) {
         logDebug(
@@ -657,7 +654,7 @@ export class SimpleSwipeCard extends LitElement {
         this.cardBuilder.build();
       }
       this._visibilityRebuildTimeout = null;
-    }, 150); // 150ms delay to allow card-mod processing
+    }, 300);
   }
 
   /**
@@ -708,7 +705,7 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Debounced version of _updateVisibleCardIndices
+   * More aggressive debounced version
    * @private
    */
   _debounceVisibilityUpdate() {
@@ -719,7 +716,7 @@ export class SimpleSwipeCard extends LitElement {
     this._visibilityUpdateTimeout = setTimeout(() => {
       this._updateVisibleCardIndices();
       this._visibilityUpdateTimeout = null;
-    }, 50); // 50ms debounce
+    }, 200);
   }
 
   /**
@@ -805,7 +802,7 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Sets the Home Assistant object
+   * Sets the Home Assistant object (OPTIMIZED)
    * @param {Object} hass - Home Assistant object
    */
   set hass(hass) {
@@ -813,28 +810,22 @@ export class SimpleSwipeCard extends LitElement {
       return;
     }
 
-    // Better change detection - only process if hass has actually changed
+    // OPTIMIZATION: Better change detection - only process if hass has actually changed
     const oldHass = this._hass;
-    if (
-      oldHass === hass ||
-      (oldHass &&
-        hass &&
-        oldHass.states === hass.states &&
-        oldHass.user === hass.user &&
-        JSON.stringify(oldHass.config) === JSON.stringify(hass.config))
-    ) {
-      // Hass hasn't meaningfully changed, just update child cards
-      if (this.cards) {
-        this.cards.forEach((card) => {
-          if (card.element && !card.error) {
-            try {
-              card.element.hass = hass;
-            } catch (e) {
-              console.error("Error setting hass on child card:", e);
-            }
-          }
-        });
-      }
+    if (oldHass === hass) {
+      return; // Exact same object, no need to update
+    }
+
+    // OPTIMIZATION: More granular change detection
+    const hasStatesChanged = !oldHass || oldHass.states !== hass.states;
+    const hasUserChanged = !oldHass || oldHass.user !== hass.user;
+    const hasConfigChanged =
+      !oldHass ||
+      JSON.stringify(oldHass.config) !== JSON.stringify(hass.config);
+
+    if (!hasStatesChanged && !hasUserChanged && !hasConfigChanged) {
+      // Only update child cards if nothing relevant changed
+      this._updateChildCardsHass(hass);
       return;
     }
 
@@ -851,34 +842,32 @@ export class SimpleSwipeCard extends LitElement {
         "LOOP",
         "Skipping hass-triggered visibility update during seamless jump",
       );
-      // Still update child cards with new hass
-      if (this.cards) {
-        this.cards.forEach((card) => {
-          if (card.element && !card.error) {
-            try {
-              card.element.hass = hass;
-            } catch (e) {
-              console.error("Error setting hass on child card:", e);
-            }
-          }
-        });
-      }
+      this._updateChildCardsHass(hass);
       return;
     }
 
-    // Update visibility immediately when hass changes
-    if (oldHass !== hass) {
+    // OPTIMIZATION: Only update visibility if states actually changed
+    if (hasStatesChanged) {
       // Clear any pending debounced updates
       if (this._visibilityUpdateTimeout) {
         clearTimeout(this._visibilityUpdateTimeout);
         this._visibilityUpdateTimeout = null;
       }
 
-      // Update visibility immediately
+      // Update visibility immediately when hass changes
       this._updateVisibleCardIndices();
     }
 
     // Update hass for all child cards
+    this._updateChildCardsHass(hass);
+  }
+
+  /**
+   * OPTIMIZATION: Separate method for updating child cards hass
+   * @param {Object} hass - Home Assistant object
+   * @private
+   */
+  _updateChildCardsHass(hass) {
     if (this.cards) {
       this.cards.forEach((card) => {
         if (card.element && !card.error) {
@@ -943,7 +932,7 @@ export class SimpleSwipeCard extends LitElement {
    * Called when element is disconnected from DOM
    */
   disconnectedCallback() {
-    logDebug("INIT", "disconnectedCallback");
+    logDebug("INIT", "disconnectedCallback - Enhanced cleanup starting");
 
     // Remove the config-changed event listener
     this.removeEventListener(
@@ -951,42 +940,154 @@ export class SimpleSwipeCard extends LitElement {
       this._handleConfigChanged.bind(this),
     );
 
-    // Safely remove observers and gestures
     try {
-      this.resizeObserver?.cleanup();
-      this.swipeGestures?.removeGestures();
-      this.autoSwipe?.stop();
-      this.resetAfter?.stopTimer();
-      this.stateSynchronization?.stop();
+      // Clear all timeouts and intervals with better logging
+      this._clearAllTimeouts();
 
-      // Clean up all timeout references
-      if (this._visibilityRebuildTimeout) {
-        clearTimeout(this._visibilityRebuildTimeout);
-        this._visibilityRebuildTimeout = null;
-      }
+      // Clean up feature managers (but don't destroy core state)
+      this._cleanupFeatureManagers();
 
-      if (this._conditionalVisibilityTimeout) {
-        clearTimeout(this._conditionalVisibilityTimeout);
-        this._conditionalVisibilityTimeout = null;
-      }
-
-      // Add missing visibility update timeout cleanup
-      if (this._visibilityUpdateTimeout) {
-        clearTimeout(this._visibilityUpdateTimeout);
-        this._visibilityUpdateTimeout = null;
-      }
+      // Clean up DOM references and observers, but preserve cards array
+      this._cleanupDOMAndObservers();
 
       // Clean up card-mod observer
-      if (this._cardModObserver) {
-        this._cardModObserver.disconnect();
-        this._cardModObserver = null;
-        logDebug("CARD_MOD", "Disconnected card-mod observer");
-      }
+      this._cleanupCardModObserver();
+
+      // Clear any remaining event listeners
+      this._clearRemainingEventListeners();
     } catch (error) {
       console.warn("Error during cleanup:", error);
     }
 
     this.initialized = false;
+    logDebug("INIT", "disconnectedCallback - Enhanced cleanup completed");
+  }
+
+  /**
+   * Clear all timeout references
+   * @private
+   */
+  _clearAllTimeouts() {
+    const timeouts = [
+      "_visibilityRebuildTimeout",
+      "_conditionalVisibilityTimeout",
+      "_visibilityUpdateTimeout",
+      "_layoutRetryCount",
+    ];
+
+    timeouts.forEach((timeoutName) => {
+      if (this[timeoutName]) {
+        clearTimeout(this[timeoutName]);
+        this[timeoutName] = null;
+        logDebug("INIT", `Cleared timeout: ${timeoutName}`);
+      }
+    });
+  }
+
+  /**
+   * Enhanced feature manager cleanup (preserve state, stop activities)
+   * @private
+   */
+  _cleanupFeatureManagers() {
+    try {
+      if (this.resizeObserver) {
+        this.resizeObserver.cleanup();
+        this.resizeObserver = null;
+      }
+
+      if (this.swipeGestures) {
+        this.swipeGestures.removeGestures();
+        // Clear any internal state flags but don't destroy the object
+        this.swipeGestures._isDragging = false;
+        this.swipeGestures._isScrolling = false;
+      }
+
+      if (this.autoSwipe) {
+        this.autoSwipe.stop();
+        // Clear internal timers
+        this.autoSwipe._autoSwipeTimer = null;
+        this.autoSwipe._autoSwipePauseTimer = null;
+      }
+
+      if (this.resetAfter) {
+        this.resetAfter.stopTimer();
+        // Clear internal timer but keep preserved state for restoration
+        this.resetAfter._resetAfterTimer = null;
+        // Keep _resetAfterPreservedState for potential reconnection
+      }
+
+      if (this.stateSynchronization) {
+        this.stateSynchronization.stop();
+      }
+
+      logDebug("INIT", "Feature managers cleaned up (state preserved)");
+    } catch (error) {
+      console.warn("Error cleaning up feature managers:", error);
+    }
+  }
+
+  /**
+   * Clean up DOM references and observers without destroying card state
+   * @private
+   */
+  _cleanupDOMAndObservers() {
+    // Clear DOM references (but keep cards array intact for reconnection)
+    this.cardContainer = null;
+    this.sliderElement = null;
+
+    // Clear pagination DOM references
+    if (this.pagination && this.pagination.paginationElement) {
+      this.pagination.paginationElement = null;
+    }
+
+    // Don't clear hass or config - keep them for reconnection
+    // Don't clear cards array - preserve for reconnection
+
+    logDebug(
+      "INIT",
+      "DOM references and observers cleaned up (cards preserved)",
+    );
+  }
+
+  /**
+   * Card-mod observer cleanup
+   * @private
+   */
+  _cleanupCardModObserver() {
+    if (this._cardModObserver) {
+      try {
+        this._cardModObserver.disconnect();
+        this._cardModObserver = null;
+        logDebug("CARD_MOD", "Card-mod observer cleaned up");
+      } catch (error) {
+        console.warn("Error cleaning up card-mod observer:", error);
+      }
+    }
+
+    // Keep card-mod config for reconnection
+    // this._cardModConfig = null; // Don't clear this
+  }
+
+  /**
+   * Clear any remaining event listeners
+   * @private
+   */
+  _clearRemainingEventListeners() {
+    // Remove any click blocking timers from swipe gestures
+    if (this.swipeGestures && this.swipeGestures._clickBlockTimer) {
+      clearTimeout(this.swipeGestures._clickBlockTimer);
+      this.swipeGestures._clickBlockTimer = null;
+      this.swipeGestures._isClickBlocked = false;
+    }
+
+    // Clear any pending seamless jump operations
+    if (this.loopMode && this.loopMode._pendingSeamlessJump) {
+      clearTimeout(this.loopMode._pendingSeamlessJump);
+      this.loopMode._pendingSeamlessJump = null;
+      this._performingSeamlessJump = false;
+    }
+
+    logDebug("INIT", "Remaining event listeners cleared");
   }
 
   /**

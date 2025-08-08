@@ -11,6 +11,9 @@ import { fireConfigChanged } from "../utils/EventHelpers.js";
 export class EditorConfigManager {
   constructor(editor) {
     this.editor = editor;
+
+    // Initialize throttling property
+    this._editorUpdateThrottle = null;
   }
 
   /**
@@ -212,9 +215,8 @@ export class EditorConfigManager {
       target.localName === "ha-textfield" &&
       target.type === "number"
     ) {
-      value = parseFloat(target.value); // Use parseFloat for cards_visible
+      value = parseFloat(target.value);
       if (isNaN(value) || value < 0) {
-        // Set default values based on option
         if (finalOption === "card_spacing") {
           value = 15;
         } else if (finalOption === "auto_swipe_interval") {
@@ -231,46 +233,36 @@ export class EditorConfigManager {
       value = target.value;
     }
 
+    // Guard against redundant updates earlier to prevent unnecessary work
+    if (this.editor._config[finalOption] === value) {
+      return; // No change, exit early
+    }
+
     // Handle view mode switching with cleanup
-    if (
-      finalOption === "view_mode" &&
-      this.editor._config[finalOption] !== value
-    ) {
+    if (finalOption === "view_mode") {
       logDebug(
         "EDITOR",
         `View mode changing from ${this.editor._config[finalOption]} to ${value}`,
       );
 
-      // Create new config with cleaned options
       const newConfig = { ...this.editor._config, [finalOption]: value };
 
       if (value === "carousel") {
-        // Switching TO carousel mode - remove single-mode-only options
-        delete newConfig.swipe_direction; // Carousel only supports horizontal
-
-        // Set responsive defaults for new users, preserve existing cards_visible for legacy
+        delete newConfig.swipe_direction;
         if (!newConfig.cards_visible && !newConfig.card_min_width) {
-          // New user - use responsive approach
           newConfig.card_min_width = 200;
         }
-        // If they already have cards_visible, keep it (backwards compatibility)
-        // If they already have card_min_width, keep it
-
         logDebug(
           "EDITOR",
           "Cleaned config for carousel mode:",
           Object.keys(newConfig),
         );
       } else if (value === "single") {
-        // Switching TO single mode - remove carousel-mode-only options
         delete newConfig.cards_visible;
-        delete newConfig.card_min_width; // Remove both carousel options
-
-        // Restore single mode defaults if needed
+        delete newConfig.card_min_width;
         if (!newConfig.swipe_direction) {
           newConfig.swipe_direction = "horizontal";
         }
-
         logDebug(
           "EDITOR",
           "Cleaned config for single mode:",
@@ -280,21 +272,17 @@ export class EditorConfigManager {
 
       this.editor._config = newConfig;
       this.fireConfigChanged();
-      this.editor.requestUpdate();
+      this._scheduleEditorUpdate();
       return;
     }
 
     // Handle card_min_width changes (with migration)
-    if (
-      finalOption === "card_min_width" &&
-      this.editor._config[finalOption] !== value
-    ) {
+    if (finalOption === "card_min_width") {
       logDebug(
         "EDITOR",
         `User changed card_min_width to ${value}, migrating from legacy mode`,
       );
 
-      // If they had cards_visible, remove it (user-initiated migration)
       if (this.editor._config.cards_visible !== undefined) {
         const newConfig = { ...this.editor._config };
         delete newConfig.cards_visible;
@@ -306,22 +294,31 @@ export class EditorConfigManager {
       }
 
       this.fireConfigChanged();
-      this.editor.requestUpdate();
+      this._scheduleEditorUpdate();
       return;
     }
 
-    // Guard against redundant updates to prevent loops (for other options)
-    if (this.editor._config[finalOption] !== value) {
-      logDebug("EDITOR", `Value changed for ${finalOption}:`, value);
+    // Handle other config changes
+    logDebug("EDITOR", `Value changed for ${finalOption}:`, value);
+    this.editor._config = { ...this.editor._config, [finalOption]: value };
+    this.fireConfigChanged();
+    // Don't call requestUpdate() directly, use throttled version
+    this._scheduleEditorUpdate();
+  }
 
-      // Create a new config object to ensure reactivity
-      this.editor._config = { ...this.editor._config, [finalOption]: value };
-
-      // Fire config changed without requesting an update
-      this.fireConfigChanged();
-
-      // Don't call requestUpdate() here as it may cause update loops
+  /**
+   * Throttled editor update scheduling
+   * @private
+   */
+  _scheduleEditorUpdate() {
+    if (this._editorUpdateThrottle) {
+      return; // Already scheduled
     }
+
+    this._editorUpdateThrottle = setTimeout(() => {
+      this.editor.requestUpdate();
+      this._editorUpdateThrottle = null;
+    }, 50);
   }
 
   /**
@@ -473,5 +470,18 @@ export class EditorConfigManager {
       fromSwipeCardEditor: true,
       ...extraData,
     });
+  }
+
+  /**
+   * Cleanup method for editor config manager
+   */
+  cleanup() {
+    // Clear any pending throttled operations
+    if (this._editorUpdateThrottle) {
+      clearTimeout(this._editorUpdateThrottle);
+      this._editorUpdateThrottle = null;
+    }
+
+    logDebug("EDITOR", "EditorConfigManager cleanup completed");
   }
 }

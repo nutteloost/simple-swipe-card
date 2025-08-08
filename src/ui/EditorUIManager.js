@@ -18,6 +18,28 @@ export class EditorUIManager {
       advanced: false, // Advanced options collapsed by default
       cards: true, // Cards section expanded by default
     };
+
+    // Initialize throttling properties
+    this._cardPickerLoadThrottle = null;
+    this._editorUpdateThrottle = null;
+  }
+
+  /**
+   * Cleanup method for editor UI manager
+   */
+  cleanup() {
+    // Clear any pending throttled operations
+    if (this._cardPickerLoadThrottle) {
+      clearTimeout(this._cardPickerLoadThrottle);
+      this._cardPickerLoadThrottle = null;
+    }
+
+    if (this._editorUpdateThrottle) {
+      clearTimeout(this._editorUpdateThrottle);
+      this._editorUpdateThrottle = null;
+    }
+
+    logDebug("EDITOR", "EditorUIManager cleanup completed");
   }
 
   /**
@@ -137,6 +159,23 @@ export class EditorUIManager {
       logDebug("EDITOR", "_ensureCardPickerLoaded: No shadowRoot, returning.");
       return;
     }
+
+    // Throttle this method to prevent excessive calls
+    if (this._cardPickerLoadThrottle) {
+      clearTimeout(this._cardPickerLoadThrottle);
+    }
+
+    this._cardPickerLoadThrottle = setTimeout(() => {
+      this._doEnsureCardPickerLoaded();
+      this._cardPickerLoadThrottle = null;
+    }, 100);
+  }
+
+  /**
+   * Actual card picker loading implementation
+   * @private
+   */
+  _doEnsureCardPickerLoaded() {
     logDebug("EDITOR", "_ensureCardPickerLoaded called");
 
     const container = this.editor.shadowRoot.querySelector(
@@ -145,59 +184,17 @@ export class EditorUIManager {
     if (container) {
       container.style.display = "block";
 
+      // Only set up event barrier once
       if (!container.hasAttribute("event-barrier-applied")) {
         container.setAttribute("event-barrier-applied", "true");
 
-        // Add a comprehensive event barrier for all config-changed events
+        // Add a comprehensive event barrier with optimized handling
         container.addEventListener(
           "config-changed",
           (e) => {
-            // Stop ALL config-changed events at the container level
-            logDebug(
-              "EDITOR",
-              "Intercepted config-changed at container level:",
-              e.detail?.config?.type,
-            );
-
-            // Process the card selection here directly
-            if (
-              e.target &&
-              e.target.tagName &&
-              e.target.tagName.toLowerCase() === "hui-card-picker" &&
-              e.detail &&
-              e.detail.config
-            ) {
-              const cardConfig = e.detail.config;
-              logDebug("EDITOR", "Processing card selection:", cardConfig.type);
-
-              // Add the card to our config
-              if (this.editor._config) {
-                const cards = Array.isArray(this.editor._config.cards)
-                  ? [...this.editor._config.cards]
-                  : [];
-                cards.push(cardConfig);
-
-                this.editor._config = {
-                  ...this.editor._config,
-                  cards,
-                };
-
-                // Fire our own config-changed event
-                this.editor.configManager.fireConfigChanged({
-                  cardAdded: true,
-                  cardType: cardConfig.type,
-                });
-
-                this.editor.requestUpdate();
-              }
-            }
-
-            // Always stop propagation
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-            return false;
+            this._handleCardPickerSelection(e);
           },
-          { capture: true },
+          { capture: true, passive: false },
         );
       }
 
@@ -205,13 +202,82 @@ export class EditorUIManager {
       if (picker) {
         picker.style.display = "block";
 
-        // If picker has no content, try to refresh it
-        if (picker.requestUpdate) {
+        // Only call requestUpdate if needed
+        if (picker.requestUpdate && !picker._hasRequestedUpdate) {
           picker.requestUpdate();
+          picker._hasRequestedUpdate = true;
         }
       }
     }
 
-    this.editor.requestUpdate();
+    // Throttled requestUpdate
+    this._scheduleEditorUpdate();
+  }
+
+  /**
+   * @param {Event} e - Config changed event
+   * @private
+   */
+  _handleCardPickerSelection(e) {
+    // Stop ALL config-changed events at the container level
+    logDebug(
+      "EDITOR",
+      "Intercepted config-changed at container level:",
+      e.detail?.config?.type,
+    );
+
+    // Process the card selection here directly
+    if (
+      e.target &&
+      e.target.tagName &&
+      e.target.tagName.toLowerCase() === "hui-card-picker" &&
+      e.detail &&
+      e.detail.config
+    ) {
+      const cardConfig = e.detail.config;
+      logDebug("EDITOR", "Processing card selection:", cardConfig.type);
+
+      // Add the card to our config
+      if (this.editor._config) {
+        const cards = Array.isArray(this.editor._config.cards)
+          ? [...this.editor._config.cards]
+          : [];
+        cards.push(cardConfig);
+
+        this.editor._config = {
+          ...this.editor._config,
+          cards,
+        };
+
+        // Fire our own config-changed event
+        this.editor.configManager.fireConfigChanged({
+          cardAdded: true,
+          cardType: cardConfig.type,
+        });
+
+        // Throttled requestUpdate
+        this._scheduleEditorUpdate();
+      }
+    }
+
+    // Always stop propagation
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    return false;
+  }
+
+  /**
+   * Throttled editor update scheduling
+   * @private
+   */
+  _scheduleEditorUpdate() {
+    if (this._editorUpdateThrottle) {
+      return; // Already scheduled
+    }
+
+    this._editorUpdateThrottle = setTimeout(() => {
+      this.editor.requestUpdate();
+      this._editorUpdateThrottle = null;
+    }, 50);
   }
 }

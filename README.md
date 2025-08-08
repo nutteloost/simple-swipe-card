@@ -149,6 +149,10 @@ This card can be configured using the visual editor or YAML.
 | reset_target_card | number | 1 | Index of card to return to (1 = first card) |
 | state_entity | string | null | Entity ID for state synchronization. Supports input_select and input_number entities |
 
+> [!WARNING]  
+> Infinite loop mode creates duplicate cards for a true seamless scrolling experience which can be resource-intensive with camera cards or complex cards. Consider using `loop_mode: loopback` for better performance
+
+
 ### Example Configuration
 
 ```yaml
