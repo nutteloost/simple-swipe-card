@@ -33,11 +33,19 @@ export class Pagination {
       // Calculate and set fixed container dimensions based on configured dot sizes
       this._setFixedPaginationDimensions();
 
+      const hasStateSync = this.card._config.state_entity && this.card._hass;
+
       // Use visible cards count for pagination
       for (let i = 0; i < this.card.visibleCardIndices.length; i++) {
         const dot = document.createElement("div");
         dot.className = "pagination-dot";
-        if (i === this._getCurrentDotIndex()) dot.classList.add("active");
+
+        // If state sync is enabled, don't set any initial active state
+        // This prevents the jump from wrong position to correct position
+        if (!hasStateSync && i === this._getCurrentDotIndex()) {
+          dot.classList.add("active");
+        }
+
         dot.addEventListener("click", (e) => {
           e.stopPropagation();
           this.card.goToSlide(i);
@@ -49,6 +57,9 @@ export class Pagination {
       if (this.card._cardModConfig) {
         this.card._applyCardModStyles();
       }
+
+      // If state sync is enabled, the pagination will be updated when state sync runs in finishBuildLayout
+      // This happens automatically through the normal flow without setTimeout
     }
   }
 
@@ -156,19 +167,40 @@ export class Pagination {
 
   /**
    * Updates pagination dots to reflect current state
-   * This is the main method - simple and reliable
+   * @param {boolean} animate - Whether to animate the transition (defaults to true)
    */
-  update() {
+  update(animate = true) {
     if (!this.paginationElement) return;
 
     const activeDotIndex = this._getCurrentDotIndex();
     const dots = this.paginationElement.querySelectorAll(".pagination-dot");
 
+    // Temporarily disable transitions if not animating
+    if (!animate) {
+      dots.forEach((dot) => {
+        dot.style.transition = "none";
+      });
+      // Force reflow to ensure transition: none takes effect
+      this.paginationElement.offsetHeight;
+    }
+
     dots.forEach((dot, i) => {
       dot.classList.toggle("active", i === activeDotIndex);
     });
 
-    logDebug("PAGINATION", `Updated dots: active dot ${activeDotIndex}`);
+    // Restore transitions after a frame if we disabled them
+    if (!animate) {
+      requestAnimationFrame(() => {
+        dots.forEach((dot) => {
+          dot.style.transition = "";
+        });
+      });
+    }
+
+    logDebug(
+      "PAGINATION",
+      `Updated dots: active dot ${activeDotIndex}${animate ? " (animated)" : " (instant)"}`,
+    );
   }
 
   /**

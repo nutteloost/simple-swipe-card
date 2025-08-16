@@ -453,6 +453,15 @@ export class SimpleSwipeCard extends LitElement {
       // If the currently visible cards changed, we need to adjust the current index
       this._adjustCurrentIndexForVisibility(previousVisibleIndices);
 
+      // PREVENT rebuilds during initial setup or when already building
+      if (this.building || !this.initialized) {
+        logDebug(
+          "VISIBILITY",
+          "Skipping visibility rebuild during initial setup to prevent flicker",
+        );
+        return;
+      }
+
       // Use debounced rebuild to prevent interference with card-mod
       this._scheduleVisibilityRebuild();
     }
@@ -846,6 +855,16 @@ export class SimpleSwipeCard extends LitElement {
       return;
     }
 
+    // PREVENT rebuilds during initial setup when building is in progress
+    if (this.building) {
+      logDebug(
+        "VISIBILITY",
+        "Skipping visibility update during build to prevent rebuild flicker",
+      );
+      this._updateChildCardsHass(hass);
+      return;
+    }
+
     // OPTIMIZATION: Only update visibility if states actually changed
     if (hasStatesChanged) {
       // Clear any pending debounced updates
@@ -1183,8 +1202,10 @@ export class SimpleSwipeCard extends LitElement {
   /**
    * Navigates to a specific visible slide
    * @param {number} visibleIndex - The visible slide index to navigate to
+   * @param {number} skipCount - Number of cards to skip (for animation duration)
+   * @param {boolean} animate - Whether to animate the transition (defaults to true)
    */
-  goToSlide(visibleIndex, skipCount = 1) {
+  goToSlide(visibleIndex, skipCount = 1, animate = true) {
     // Store skip count for animation duration calculation
     this._lastSkipCount = skipCount;
     const totalVisibleCards = this.visibleCardIndices.length;
@@ -1226,7 +1247,8 @@ export class SimpleSwipeCard extends LitElement {
         : this.currentIndex;
     this.stateSynchronization?.onCardNavigate(stateIndex);
 
-    this.updateSlider();
+    // Pass animate parameter to updateSlider
+    this.updateSlider(animate);
 
     // Handle reset-after timer for manual user interactions
     if (!this.autoSwipe.isInProgress && !this.resetAfter.isInProgress) {
@@ -1308,7 +1330,7 @@ export class SimpleSwipeCard extends LitElement {
       this.carouselView.updateSliderPosition(this.currentIndex, animate);
 
       // Simple pagination update - no complex animation
-      this.pagination.update();
+      this.pagination.update(animate);
 
       // Reset skip count
       this._lastSkipCount = 1;
@@ -1400,7 +1422,7 @@ export class SimpleSwipeCard extends LitElement {
     removeCardMargins(this.cards);
 
     // Simple pagination update - no complex animation
-    this.pagination.update();
+    this.pagination.update(animate);
 
     // Reset skip count
     this._lastSkipCount = 1;

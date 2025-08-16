@@ -43,11 +43,21 @@ export class CardBuilder {
     // Preserve reset-after state before rebuild
     this.card.resetAfter?.preserveState();
 
-    // Reset state
+    // Reset state - but preserve currentIndex for state sync during rebuilds
     this.card.cards = [];
-    this.card.currentIndex = 0;
+
+    // Store current index to check if this is first build vs rebuild
+    const wasAtDefaultPosition = this.card.currentIndex === 0;
+
+    // Only reset currentIndex if state sync is not configured
+    if (!this.card._config.state_entity || !this.card._hass) {
+      this.card.currentIndex = 0;
+    }
+    // If state sync is configured, preserve currentIndex during rebuilds
+
     this.card.virtualIndex = 0;
     this.card.realIndex = 0;
+
     this.card.resizeObserver?.cleanup();
     this.card.swipeGestures?.removeGestures();
     this.card.autoSwipe?.stop();
@@ -187,6 +197,16 @@ export class CardBuilder {
           this.card.sliderElement.appendChild(cardData.slide);
         }
       });
+
+    // Apply state sync initial positioning BEFORE pagination is created
+    // Only set initial position on first build (when still at default position)
+    if (
+      wasAtDefaultPosition &&
+      this.card._config.state_entity &&
+      this.card._hass
+    ) {
+      this.card.currentIndex = this._getStateSyncInitialIndex();
+    }
 
     this.card.pagination?.create();
     this.card._applyCardModStyles();
@@ -408,6 +428,66 @@ export class CardBuilder {
     this.card.autoSwipe?.manage();
     this.card.resetAfter?.manage();
     this.card.stateSynchronization?.manage();
+  }
+
+  /**
+   * Reads state synchronization entity and returns the target card index
+   * @returns {number} The target card index (0-based), or current index if no state sync
+   * @private
+   */
+  _getStateSyncInitialIndex() {
+    // Check if state synchronization is configured
+    if (!this.card._config.state_entity || !this.card._hass) {
+      return this.card.currentIndex;
+    }
+
+    const stateEntity = this.card._config.state_entity;
+    const entity = this.card._hass.states[stateEntity];
+    if (!entity) {
+      logDebug("STATE", "State entity not found during build:", stateEntity);
+      return this.card.currentIndex;
+    }
+
+    // Use the same mapping logic as StateSynchronization
+    const entityValue = entity.state;
+    let targetIndex = null;
+
+    if (stateEntity.startsWith("input_select.")) {
+      if (
+        !entity.attributes.options ||
+        !Array.isArray(entity.attributes.options)
+      ) {
+        return this.card.currentIndex;
+      }
+
+      const options = entity.attributes.options;
+      const optionIndex = options.indexOf(entityValue);
+
+      if (
+        optionIndex !== -1 &&
+        optionIndex < this.card.visibleCardIndices.length
+      ) {
+        targetIndex = optionIndex;
+      }
+    } else if (stateEntity.startsWith("input_number.")) {
+      const numValue = parseInt(entityValue);
+      if (!isNaN(numValue)) {
+        const cardIndex = numValue - 1; // Convert from 1-based to 0-based
+        if (cardIndex >= 0 && cardIndex < this.card.visibleCardIndices.length) {
+          targetIndex = cardIndex;
+        }
+      }
+    }
+
+    if (targetIndex !== null) {
+      logDebug(
+        "STATE",
+        `State sync initial index determined during build: ${targetIndex} from entity state: ${entityValue}`,
+      );
+      return targetIndex;
+    }
+
+    return this.card.currentIndex;
   }
 
   /**

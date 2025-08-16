@@ -180,12 +180,21 @@ export class StateSynchronization {
     // Store initial state
     this._lastEntityState = entity.state;
 
-    // Sync card to entity's current state (gives external control priority)
-    const cardIndex = this._mapEntityValueToCardIndex(entity.state);
-    if (cardIndex !== null && cardIndex !== this.card.currentIndex) {
+    // Check if card is already at the correct position (set during build)
+    const targetIndex = this._mapEntityValueToCardIndex(entity.state);
+    if (targetIndex !== null && targetIndex === this.card.currentIndex) {
       logDebug(
         "STATE",
-        `Initial sync: setting card to index ${cardIndex} from entity state:`,
+        `Initial sync: card already at correct position ${targetIndex}, skipping initial positioning`,
+      );
+      return;
+    }
+
+    // Sync card to entity's current state if position is different
+    if (targetIndex !== null && targetIndex !== this.card.currentIndex) {
+      logDebug(
+        "STATE",
+        `Initial sync: setting card to index ${targetIndex} from entity state:`,
         entity.state,
       );
 
@@ -194,7 +203,8 @@ export class StateSynchronization {
         this.card.autoSwipe?.pause(2000);
       }
 
-      this.card.goToSlide(cardIndex);
+      // Skip animation for initial sync to prevent scroll animation on load
+      this.card.goToSlide(targetIndex, 1, false);
     }
   }
 
