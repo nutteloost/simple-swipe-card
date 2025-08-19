@@ -222,6 +222,10 @@ export function applyCardModStyles(
         "--simple-swipe-card-pagination-right",
         "--simple-swipe-card-transition-speed",
         "--simple-swipe-card-transition-easing",
+        "--simple-swipe-card-pagination-fade-duration",
+        "--simple-swipe-card-pagination-animation-type",
+        "--simple-swipe-card-pagination-animation-delay",
+        "--simple-swipe-card-pagination-animation-easing",
       ];
 
       shadowElements.forEach((element) => {

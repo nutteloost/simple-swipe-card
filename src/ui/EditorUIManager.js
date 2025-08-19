@@ -101,20 +101,30 @@ export class EditorUIManager {
    * Ensures required components are loaded
    */
   async ensureComponentsLoaded() {
-    const maxAttempts = 50; // 5 seconds max wait
+    const maxAttempts = 10; // Reduced from 20 to 10 (1 second max wait)
     let attempts = 0;
 
-    while (!customElements.get("hui-card-picker") && attempts < maxAttempts) {
-      await this.loadCustomElements();
-      if (!customElements.get("hui-card-picker")) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        attempts++;
-      }
+    // If hui-card-picker is already available, return immediately
+    if (customElements.get("hui-card-picker")) {
+      return;
     }
 
-    if (!customElements.get("hui-card-picker")) {
-      console.error("Failed to load hui-card-picker after multiple attempts");
+    while (!customElements.get("hui-card-picker") && attempts < maxAttempts) {
+      try {
+        await this.loadCustomElements();
+        if (customElements.get("hui-card-picker")) {
+          return;
+        }
+      } catch (e) {
+        // Silently fail individual attempts
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      attempts++;
     }
+
+    // Don't log anything if card picker fails to load - it's optional
+    // The editor can function without it
   }
 
   /**
@@ -142,11 +152,11 @@ export class EditorUIManager {
               break;
             }
           } catch (e) {
-            console.debug("Card picker load attempt failed:", e);
+            // Silently fail individual attempts
           }
         }
       } catch (e) {
-        console.warn("Could not load hui-card-picker", e);
+        // Silently fail - card picker is optional
       }
     }
   }
@@ -156,7 +166,6 @@ export class EditorUIManager {
    */
   ensureCardPickerLoaded() {
     if (!this.editor.shadowRoot) {
-      logDebug("EDITOR", "_ensureCardPickerLoaded: No shadowRoot, returning.");
       return;
     }
 

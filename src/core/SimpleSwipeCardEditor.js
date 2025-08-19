@@ -256,45 +256,64 @@ export class SimpleSwipeCardEditor extends LitElement {
       ></ha-circular-progress>`;
     }
 
+    // Safety check: if managers are null (during disconnection), show loading
+    if (!this.uiManager || !this.configManager || !this.cardManagement) {
+      return html`<ha-circular-progress
+        active
+        alt="Loading editor"
+      ></ha-circular-progress>`;
+    }
+
     const cards = this._config.cards || [];
 
-    return html`
-      <div class="card-config">
-        ${renderInfoPanel()}
-        ${renderViewModeOptions(this._config, this._valueChanged.bind(this))}
-        ${renderDisplayOptions(this._config, this._valueChanged.bind(this))}
-        ${renderAdvancedOptions(
-          this._config,
-          this.uiManager.getCollapsibleState(),
-          this._valueChanged.bind(this),
-          this._toggleSection.bind(this),
-          cards,
-          this._handleTimeoutChange.bind(this),
-          this._handleTargetChange.bind(this),
-          this.hass,
-        )}
-        ${renderCardsSection(
-          cards,
-          this.hass,
-          this._moveCard.bind(this),
-          this._editCard.bind(this),
-          this._removeCard.bind(this),
-          this._getCardDescriptor.bind(this),
-          this._hasNestedCards.bind(this),
-          this._getNestedCards.bind(this),
-          this._hasVisibilityConditions.bind(this),
-          this._moveNestedCard.bind(this),
-          this._editNestedCard.bind(this),
-          this._removeNestedCard.bind(this),
-        )}
-        ${renderCardPicker(
-          this.hass,
-          this.lovelace,
-          this._boundHandleCardPicked,
-        )}
-        ${renderVersionDisplay()}
-      </div>
-    `;
+    try {
+      return html`
+        <div class="card-config">
+          ${renderInfoPanel()}
+          ${renderViewModeOptions(this._config, this._valueChanged.bind(this))}
+          ${renderDisplayOptions(this._config, this._valueChanged.bind(this))}
+          ${renderAdvancedOptions(
+            this._config,
+            this.uiManager.getCollapsibleState(),
+            this._valueChanged.bind(this),
+            this._toggleSection.bind(this),
+            cards,
+            this._handleTimeoutChange.bind(this),
+            this._handleTargetChange.bind(this),
+            this.hass,
+          )}
+          ${renderCardsSection(
+            cards,
+            this.hass,
+            this._moveCard.bind(this),
+            this._editCard.bind(this),
+            this._removeCard.bind(this),
+            this._getCardDescriptor.bind(this),
+            this._hasNestedCards.bind(this),
+            this._getNestedCards.bind(this),
+            this._hasVisibilityConditions.bind(this),
+            this._moveNestedCard.bind(this),
+            this._editNestedCard.bind(this),
+            this._removeNestedCard.bind(this),
+          )}
+          ${renderCardPicker(
+            this.hass,
+            this.lovelace,
+            this._boundHandleCardPicked,
+          )}
+          ${renderVersionDisplay()}
+        </div>
+      `;
+    } catch (error) {
+      console.error("Simple Swipe Card Editor render error:", error);
+      return html`<div style="color: red; padding: 16px;">
+        <strong>Editor Error:</strong> ${error.message} <br /><br />
+        <small
+          >Please refresh the page or restart Home Assistant if this
+          persists.</small
+        >
+      </div>`;
+    }
   }
 
   /**
@@ -315,6 +334,20 @@ export class SimpleSwipeCardEditor extends LitElement {
     this.configManager.handleTargetChange(ev);
   }
 
+  /**
+   * Handles auto-hide slider value changes
+   * @param {Event} ev - Slider change event
+   * @private
+   */
+  _autoHideSliderChanged(ev) {
+    const value = parseFloat(ev.target.value) * 1000; // Convert to milliseconds
+    this._config = {
+      ...this._config,
+      auto_hide_pagination: value,
+    };
+    this._configChanged();
+  }
+
   // Ensure card picker is properly loaded
   async connectedCallback() {
     if (super.connectedCallback) {
@@ -322,18 +355,51 @@ export class SimpleSwipeCardEditor extends LitElement {
     }
     logDebug("EDITOR", "SimpleSwipeCardEditor connectedCallback");
 
-    // Register this editor instance globally for state sharing
-    const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
-    cardEditors.add(this);
+    try {
+      // Ensure managers are initialized (they might be null after disconnectedCallback)
+      if (!this.uiManager) {
+        logDebug("EDITOR", "Reinitializing managers after reconnection");
 
-    // Ensure card picker is loaded before proceeding
-    await this.uiManager.ensureComponentsLoaded();
+        this.uiManager = new EditorUIManager(this);
+        this.configManager = new EditorConfigManager(this);
+        this.cardManagement = new EditorCardManagement(this);
+        this.eventHandling = new EditorEventHandling(this);
 
-    // Call _ensureCardPickerLoaded after a short delay to ensure shadowRoot is ready
-    setTimeout(() => this.uiManager.ensureCardPickerLoaded(), 50);
+        // Initialize the editor UI after manager creation
+        this.uiManager.initializeEditor();
+      }
 
-    // Set up event handling
-    this.eventHandling.setupEventListeners();
+      // Register this editor instance globally for state sharing
+      const cardEditors = getGlobalRegistry(GLOBAL_STATE.cardEditors, "Set");
+      cardEditors.add(this);
+
+      // Try to load components, but don't fail if card picker isn't available
+      try {
+        await this.uiManager.ensureComponentsLoaded();
+      } catch (error) {
+        // Component loading failed, but editor can still function
+        logDebug("EDITOR", "Warning: Could not load all components");
+      }
+
+      // Set up event handling with null check
+      if (this.eventHandling?.setupEventListeners) {
+        this.eventHandling.setupEventListeners();
+      }
+
+      // Load card picker with delay and null check
+      setTimeout(() => {
+        if (this.uiManager?.ensureCardPickerLoaded) {
+          this.uiManager.ensureCardPickerLoaded();
+        }
+      }, 50);
+
+      // Request a single render update
+      this.requestUpdate();
+    } catch (error) {
+      console.error("Error during editor setup:", error);
+      // Try to render anyway
+      this.requestUpdate();
+    }
   }
 
   disconnectedCallback() {
@@ -370,8 +436,11 @@ export class SimpleSwipeCardEditor extends LitElement {
       // Clear editor ID reference
       this._editorId = null;
 
-      // Clear config reference
-      this._config = null;
+      // DO NOT clear config reference - this is needed for reconnection
+      // this._config = null; // <-- REMOVED this line
+
+      // DO NOT clear hass reference - this might be needed for reconnection
+      // this.hass = null; // <-- Don't clear this either
     } catch (error) {
       console.warn("Error during editor cleanup:", error);
     }

@@ -253,6 +253,37 @@ export function renderDisplayOptions(config, valueChanged) {
           ></ha-switch>
         </div>
       </div>
+
+      ${showPagination
+        ? html`
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-help">
+                  Hide pagination dots after inactivity
+                </div>
+              </div>
+              <div class="option-control">
+                <div class="auto-hide-control">
+                  <div class="auto-hide-value">
+                    ${(config.auto_hide_pagination || 0) === 0
+                      ? "Never"
+                      : `${(config.auto_hide_pagination || 0) / 1000}s`}
+                  </div>
+                  <ha-slider
+                    .value=${(config.auto_hide_pagination || 0) / 1000}
+                    .min=${0}
+                    .max=${10}
+                    .step=${0.5}
+                    data-option="auto_hide_pagination"
+                    @input=${valueChanged}
+                    @change=${valueChanged}
+                    pin
+                  ></ha-slider>
+                </div>
+              </div>
+            </div>
+          `
+        : ""}
     </div>
   `;
 }

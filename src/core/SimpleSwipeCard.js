@@ -120,6 +120,16 @@ export class SimpleSwipeCard extends LitElement {
     if (!Array.isArray(this._config.cards)) this._config.cards = [];
     if (this._config.show_pagination === undefined)
       this._config.show_pagination = true;
+    if (this._config.auto_hide_pagination === undefined) {
+      this._config.auto_hide_pagination = 0; // Default: disabled
+    } else {
+      const autoHideValue = parseInt(this._config.auto_hide_pagination);
+      if (isNaN(autoHideValue) || autoHideValue < 0) {
+        this._config.auto_hide_pagination = 0; // Invalid values default to disabled
+      } else {
+        this._config.auto_hide_pagination = Math.min(autoHideValue, 30000); // Max 30 seconds
+      }
+    }
     if (this._config.card_spacing === undefined) {
       this._config.card_spacing = 15;
     } else {

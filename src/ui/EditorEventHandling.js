@@ -376,7 +376,11 @@ export class EditorEventHandling {
    * Enhanced handler for nested card editor events
    * @param {Event} e - The event to handle
    */
-  _handleNestedCardEvents(e) {
+  _handleNestedCardEvents(extraData, e) {
+    if (extraData && extraData.option === "auto_hide_pagination") {
+      return; // Don't process auto-hide events as nested card events
+    }
+
     // Check for element editor events first to prioritize them
     if (this._isElementEditorEvent(e)) {
       logDebug(

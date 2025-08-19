@@ -31,6 +31,19 @@ export class EditorConfigManager {
       this.editor._config.cards = [];
     if (this.editor._config.show_pagination === undefined)
       this.editor._config.show_pagination = true;
+    if (this.editor._config.auto_hide_pagination === undefined) {
+      this.editor._config.auto_hide_pagination = 0; // Default: disabled
+    } else {
+      const autoHideValue = parseInt(this.editor._config.auto_hide_pagination);
+      if (isNaN(autoHideValue) || autoHideValue < 0) {
+        this.editor._config.auto_hide_pagination = 0; // Invalid values default to disabled
+      } else {
+        this.editor._config.auto_hide_pagination = Math.min(
+          autoHideValue,
+          30000,
+        ); // Max 30 seconds
+      }
+    }
     if (this.editor._config.card_spacing === undefined) {
       this.editor._config.card_spacing = 15;
     } else {
@@ -211,6 +224,13 @@ export class EditorConfigManager {
       value = ev.detail.value || null;
     } else if (target.localName === "ha-switch") {
       value = target.checked;
+    } else if (target.localName === "ha-slider") {
+      // Special handling for ha-slider component
+      value = target.value;
+      if (value === undefined || value === null) {
+        // Fallback: try to get from event detail
+        value = ev.detail?.value || 0;
+      }
     } else if (
       target.localName === "ha-textfield" &&
       target.type === "number"
@@ -231,6 +251,18 @@ export class EditorConfigManager {
       }
     } else {
       value = target.value;
+    }
+
+    // Special handling for auto_hide_pagination - convert seconds to milliseconds
+    if (finalOption === "auto_hide_pagination") {
+      value = parseFloat(value) * 1000; // Convert seconds to milliseconds
+      // Ensure valid range (0 to 30 seconds = 30000ms)
+      if (isNaN(value) || value < 0) {
+        value = 0;
+      } else if (value > 30000) {
+        value = 30000;
+      }
+      logDebug("EDITOR", `Auto-hide pagination: ${value / 1000}s = ${value}ms`);
     }
 
     // Guard against redundant updates earlier to prevent unnecessary work
@@ -388,6 +420,7 @@ export class EditorConfigManager {
       "swipe_direction",
       "swipe_behavior",
       "show_pagination",
+      "auto_hide_pagination",
     ];
 
     // Advanced Options section (matches UI order)

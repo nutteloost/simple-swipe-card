@@ -138,6 +138,7 @@ This card can be configured using the visual editor or YAML.
 | view_mode | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
 | card_min_width | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
 | show_pagination | boolean | true | Show/hide pagination dots |
+| auto_hide_pagination | number | 0 | Auto-hide pagination dots after inactivity in milliseconds (0 = disabled, max 30000ms). Dots reappear on hover/touch |
 | card_spacing | number | 15 | Space between cards in pixels |
 | loop_mode | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
 | swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
@@ -167,6 +168,7 @@ cards:
   - type: media-control
     entity: media_player.living_room
 show_pagination: true
+auto_hide_pagination: 3000
 card_spacing: 15
 loop_mode: infinite
 swipe_direction: horizontal
@@ -350,6 +352,15 @@ All CSS variables listed below can be used in both Home Assistant themes and car
 --simple-swipe-card-pagination-padding: 4px 8px;                                /* Padding around the pagination dots */
 --simple-swipe-card-pagination-bottom: 8px;                                     /* Distance from bottom edge (horizontal mode) */
 --simple-swipe-card-pagination-right: 8px;                                      /* Distance from right edge (vertical mode) */
+```
+
+#### Pagination Auto-Hide Animation
+
+```yaml
+--simple-swipe-card-pagination-fade-duration: 600ms;                            /* Duration of each dot's fade animation */
+--simple-swipe-card-pagination-animation-type: 'fade';                          /* Animation pattern: 'fade', 'left-to-right', 'right-to-left', 'center-out', 'edges-in', 'random' */
+--simple-swipe-card-pagination-animation-delay: 50ms;                           /* Delay between individual dot animations (ignored for 'fade' pattern) */
+--simple-swipe-card-pagination-animation-easing: ease-out;                      /* CSS easing function for dot animations */
 ```
 
 #### Animation and Transition Effects

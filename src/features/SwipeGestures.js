@@ -173,6 +173,8 @@ export class SwipeGestures {
       this._boundPreventPointerEvents,
       { capture: true },
     );
+
+    this._setupAutoHideListeners();
   }
 
   /**
@@ -232,6 +234,8 @@ export class SwipeGestures {
    */
   _handleSwipeStart(e) {
     logDebug("SWIPE", "Swipe Start:", e.type);
+
+    this.card.pagination?.showPagination();
 
     if (this._isDragging || (e.type === "mousedown" && e.button !== 0)) {
       logDebug(
@@ -576,6 +580,10 @@ export class SwipeGestures {
         this.card.updateSlider();
       }
     });
+
+    setTimeout(() => {
+      this.card.pagination?.showAndStartTimer();
+    }, 100); // Small delay to ensure swipe is fully complete
   }
 
   /**
@@ -797,5 +805,78 @@ export class SwipeGestures {
     }
 
     return false;
+  }
+
+  /**
+   * Sets up auto-hide pagination event listeners
+   * Call this from setupGestures()
+   * @private
+   */
+  _setupAutoHideListeners() {
+    if (
+      !this.card._config.show_pagination ||
+      !this.card._config.auto_hide_pagination
+    ) {
+      return; // Only setup if auto-hide is enabled
+    }
+
+    const element = this.card.cardContainer;
+    if (!element) return;
+
+    // Mouse events for desktop
+    element.addEventListener("mouseenter", this._handleMouseEnter.bind(this), {
+      passive: true,
+    });
+    element.addEventListener("mouseleave", this._handleMouseLeave.bind(this), {
+      passive: true,
+    });
+
+    // Touch events for mobile (non-swipe touches)
+    element.addEventListener("touchstart", this._handleTouchStart.bind(this), {
+      passive: true,
+    });
+    element.addEventListener("touchend", this._handleTouchEnd.bind(this), {
+      passive: true,
+    });
+  }
+
+  /**
+   * Handle mouse enter - show pagination
+   * @private
+   */
+  _handleMouseEnter() {
+    this.card.pagination?.showPagination();
+  }
+
+  /**
+   * Handle mouse leave - start auto-hide timer
+   * @private
+   */
+  _handleMouseLeave() {
+    // Only start timer if not currently swiping
+    if (!this._isDragging) {
+      this.card.pagination?.showAndStartTimer();
+    }
+  }
+
+  /**
+   * Handle touch start - show pagination
+   * @private
+   */
+  _handleTouchStart() {
+    this.card.pagination?.showPagination();
+  }
+
+  /**
+   * Handle touch end - start auto-hide timer if not swiping
+   * @private
+   */
+  _handleTouchEnd() {
+    // Small delay to see if this becomes a swipe
+    setTimeout(() => {
+      if (!this._isDragging) {
+        this.card.pagination?.showAndStartTimer();
+      }
+    }, 50);
   }
 }

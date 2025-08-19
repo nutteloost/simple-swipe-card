@@ -921,4 +921,37 @@ export const getEditorStyles = () => css`
     align-items: center;
     justify-content: center;
   }
+
+  /* AUTO-HIDE PAGINATION CONTROL */
+  .auto-hide-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .auto-hide-value {
+    min-width: 50px;
+    text-align: right;
+    font-weight: 500;
+    color: var(--primary-color);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .auto-hide-control ha-slider {
+    flex: 1;
+    --paper-slider-knob-color: var(--primary-color);
+    --paper-slider-active-color: var(--primary-color);
+    --paper-slider-pin-color: var(--primary-color);
+    margin-right: -10px;
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: var(--secondary-text-color);
+    font-style: italic;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
 `;
