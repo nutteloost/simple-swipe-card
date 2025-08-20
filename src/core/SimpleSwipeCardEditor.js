@@ -228,6 +228,18 @@ export class SimpleSwipeCardEditor extends LitElement {
   }
 
   setConfig(config) {
+    // Ensure managers are initialized before using them
+    if (!this.configManager) {
+      logDebug("EDITOR", "Reinitializing managers in setConfig");
+      this.uiManager = new EditorUIManager(this);
+      this.configManager = new EditorConfigManager(this);
+      this.cardManagement = new EditorCardManagement(this);
+      this.eventHandling = new EditorEventHandling(this);
+
+      // Initialize the editor UI
+      this.uiManager.initializeEditor();
+    }
+
     this.configManager.setConfig(config);
   }
 
@@ -427,10 +439,10 @@ export class SimpleSwipeCardEditor extends LitElement {
       // Clean up event listeners
       this.eventHandling?.removeEventListeners();
 
-      // Clear editor-specific state
+      // Clear editor-specific state without setting to null to prevent errors
       if (this._activeChildEditors) {
         this._activeChildEditors.clear();
-        this._activeChildEditors = null;
+        // Don't set to null - leave as empty Set to prevent errors
       }
 
       // Clear editor ID reference

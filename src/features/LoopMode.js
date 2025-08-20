@@ -47,12 +47,27 @@ export class LoopMode {
     this.isInfiniteMode = this.isInfinite();
 
     if (this.isInfiniteMode) {
-      logDebug("LOOP", "Infinite loop mode initialized");
+      logDebug(
+        "LOOP",
+        "Infinite loop mode initialized for",
+        this.card.visibleCardIndices.length,
+        "visible cards",
+      );
     } else {
       // Reset infinite mode state for other modes
       this.virtualIndex = 0;
       this.realIndex = 0;
       this.totalRealCards = 0;
+
+      const mode = this.getMode();
+      if (mode === "infinite") {
+        logDebug(
+          "LOOP",
+          "Infinite loop mode disabled - only",
+          this.card.visibleCardIndices.length,
+          "visible card(s)",
+        );
+      }
     }
   }
 
@@ -61,6 +76,17 @@ export class LoopMode {
    * @returns {number} Number of cards to duplicate at each end
    */
   getDuplicateCount() {
+    // No duplicates needed if infinite mode is not active
+    if (!this.isInfiniteMode) {
+      return 0;
+    }
+
+    // No duplicates needed if there's only 1 visible card
+    const totalVisibleCards = this.card.visibleCardIndices.length;
+    if (totalVisibleCards <= 1) {
+      return 0;
+    }
+
     const viewMode = this.card._config.view_mode || "single";
     const swipeBehavior = this.card._config.swipe_behavior || "single";
 
@@ -114,13 +140,24 @@ export class LoopMode {
     const duplicateCount = this.getDuplicateCount();
     const totalVisibleCards = visibleCardIndices.length;
 
-    // Add leading duplicates (copies of last cards) with proper wrapping
+    // Add leading duplicates (copies arranged to match seamless jump expectations)
     for (let i = 0; i < duplicateCount; i++) {
-      // Start from last card and work backwards, with proper wrapping
-      const sourceVisibleIndex =
-        (totalVisibleCards - 1 - (i % totalVisibleCards) + totalVisibleCards) %
-        totalVisibleCards;
-      const originalIndex = visibleCardIndices[sourceVisibleIndex];
+      // Calculate which card content should be at this position to align with seamless jump
+      // When virtual index (i - duplicateCount) is used, it should show the same card
+      // that the seamless jump will eventually show
+      const virtualIndex = i - duplicateCount;
+
+      // Use the same logic as seamless jump to determine target card
+      let targetCardIndex;
+      if (virtualIndex < 0) {
+        targetCardIndex =
+          ((virtualIndex % totalVisibleCards) + totalVisibleCards) %
+          totalVisibleCards;
+      } else {
+        targetCardIndex = virtualIndex % totalVisibleCards;
+      }
+
+      const originalIndex = visibleCardIndices[targetCardIndex];
       cardsToLoad.push({
         config: configCards[originalIndex],
         visibleIndex: i - duplicateCount, // Negative index for leading duplicates

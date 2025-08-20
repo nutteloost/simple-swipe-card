@@ -20,6 +20,27 @@ export function getStyles() {
         background: transparent;
      }
 
+     :host([data-vertical-no-grid]:not([data-editor-mode])) {
+       height: 250px; /* Set a reasonable default height for the whole card */
+     }
+
+     :host([data-vertical-no-grid]:not([data-editor-mode])) .card-container {
+       height: 100%;
+       max-height: 100%;
+     }
+
+     :host([data-vertical-no-grid]:not([data-editor-mode])) .slider[data-swipe-direction="vertical"] {
+       height: 100%;
+       max-height: 100%;
+     }
+
+     :host([data-vertical-no-grid]:not([data-editor-mode])) .slider[data-swipe-direction="vertical"] .slide {
+       height: 100%;
+       min-height: 100%;
+       max-height: 100%;
+       flex: 0 0 100%;
+     } 
+
      /* --- START PREVIEW STYLES --- */
      .preview-container {
         display: flex;
@@ -89,6 +110,10 @@ export function getStyles() {
      /* Vertical slider */
      .slider[data-swipe-direction="vertical"] {
         flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        overflow: visible; /* Allow transforms to move content outside */
+        flex-wrap: nowrap;
      }
      
      .slide {
@@ -849,6 +874,14 @@ export const getEditorStyles = () => css`
     background-color: color-mix(
       in srgb,
       var(--info-color, #2196f3) 40%,
+      transparent
+    );
+  }
+
+  .option-info.warning {
+    background-color: color-mix(
+      in srgb,
+      var(--warning-color, #ff9800) 40%,
       transparent
     );
   }

@@ -161,7 +161,7 @@ export class CardBuilder {
     logDebug("INIT", `Building cards:`, {
       totalVisible: this.card.visibleCardIndices.length,
       totalToLoad: cardsToLoad.length,
-      infiniteMode: this.card.isInfiniteMode,
+      infiniteMode: this.card.loopMode.isInfiniteMode,
     });
 
     const cardPromises = cardsToLoad.map((cardInfo) => {

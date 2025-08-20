@@ -196,6 +196,20 @@ export function renderDisplayOptions(config, valueChanged) {
               <span>Carousel mode supports horizontal swiping only</span>
             </div>
           `}
+      ${viewMode === "single" &&
+      swipeDirection === "vertical" &&
+      !config.grid_options
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>
+                Vertical swiping without grid_options configured will use a
+                default height of 250px. For better control, configure
+                grid_options in the Layout tab or add it to your YAML.
+              </span>
+            </div>
+          `
+        : ""}
 
       <!-- Only show swipe behavior when infinite loop mode is selected -->
       ${config.loop_mode === "infinite"

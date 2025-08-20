@@ -131,6 +131,9 @@ You can edit the added cards by clicking on the :pencil2: icon.
 ## Configuration
 This card can be configured using the visual editor or YAML.
 
+> [!IMPORTANT]  
+> When using `swipe_direction: "vertical"` without configuring `grid_options` in your dashboard layout, the card automatically applies a default height of 250px to prevent layout issues. For full height control with vertical swiping, configure `grid_options` in the layout tab of the visual editor or add it to the Yaml configuration
+
 ### Options
 | Name | Type | Default | Description |
 |------|------|---------|-------------|

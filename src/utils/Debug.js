@@ -13,11 +13,22 @@ const DEBUG_CATEGORIES = {
   ERROR: true,
   INIT: true,
   SYSTEM: true,
-  ELEMENT: true,
+  ELEMENT: false,
   AUTO: false, // Reduced by default due to frequency
   CARD_MOD: true,
   VISIBILITY: true,
   RESET: true,
+};
+
+export const enableElementDebug = () => {
+  setDebugCategory("ELEMENT", true);
+  console.log(
+    "SimpleSwipeCard: Element editor debugging enabled. Use disableElementDebug() to turn off.",
+  );
+};
+
+export const disableElementDebug = () => {
+  setDebugCategory("ELEMENT", false);
 };
 
 // Rate limiting for frequent messages

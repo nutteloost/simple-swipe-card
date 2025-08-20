@@ -61,10 +61,10 @@ export class CarouselView {
       return 0;
     }
 
-    // FIXED: Handle infinite mode properly for carousel - use real DOM positioning
+    // Handle infinite mode properly for carousel - use real DOM positioning
     let domPosition;
 
-    if (loopMode === "infinite") {
+    if (loopMode === "infinite" && totalCards > 1) {
       // For carousel infinite mode, also use real DOM positioning like single mode
       const duplicateCount = this.card.loopMode.getDuplicateCount();
       domPosition = targetIndex + duplicateCount;
@@ -78,7 +78,7 @@ export class CarouselView {
         duplicateCount,
       );
     } else {
-      // Original logic for non-infinite modes
+      // Original logic for non-infinite modes or single card
       domPosition = Math.min(targetIndex, Math.max(0, totalCards - 1));
     }
 

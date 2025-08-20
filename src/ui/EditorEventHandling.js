@@ -24,6 +24,10 @@ export class EditorEventHandling {
       timestamp: null,
       savedState: null,
     };
+
+    // Throttling for element editor events to prevent spam
+    this._lastElementEditorLogTime = 0;
+    this._elementEditorLogThrottle = 1000; // Log at most once per second
   }
 
   /**
@@ -140,7 +144,7 @@ export class EditorEventHandling {
       if (e.target && e.target.tagName === "HUI-DIALOG-EDIT-CARD") {
         const dialog = e.target;
         logDebug("EDITOR", "A HUI-DIALOG-EDIT-CARD closed", {
-          tracked: this.editor._activeChildEditors.has(dialog),
+          tracked: this.editor._activeChildEditors?.has(dialog) || false,
           isActions: this._isActionsCardDialog(dialog),
           handlingElementEdit: dialog._handlingElementEdit,
         });
@@ -162,7 +166,7 @@ export class EditorEventHandling {
           }
         }
 
-        if (this.editor._activeChildEditors.has(dialog)) {
+        if (this.editor._activeChildEditors?.has(dialog)) {
           // Check if it's one we are tracking
           this.editor._activeChildEditors.delete(dialog);
           this.editor.requestUpdate(); // Update our own UI
@@ -257,6 +261,14 @@ export class EditorEventHandling {
    * @returns {boolean} True if the event is from an element editor
    */
   _isElementEditorEvent(e) {
+    if (!e) {
+      return false;
+    }
+
+    const now = Date.now();
+    const shouldLog =
+      now - this._lastElementEditorLogTime > this._elementEditorLogThrottle;
+
     // First check: Look for obvious markers in the event
     if (e.detail) {
       if (
@@ -265,7 +277,10 @@ export class EditorEventHandling {
         e.detail.elementToEdit ||
         e.detail.element
       ) {
-        logDebug("ELEMENT", "Element editor detected through event detail");
+        if (shouldLog) {
+          logDebug("ELEMENT", "Element editor detected through event detail");
+          this._lastElementEditorLogTime = now;
+        }
         return true;
       }
     }
@@ -275,17 +290,21 @@ export class EditorEventHandling {
     for (const node of path) {
       if (!node || !node.localName) continue;
 
-      // Direct tag name checks
+      // Direct tag name checks - added hui-card-element-editor
       if (
         node.localName === "hui-element-editor" ||
         node.localName === "hui-dialog-edit-element" ||
+        node.localName === "hui-card-element-editor" ||
         node.localName.includes("element-editor")
       ) {
-        logDebug(
-          "ELEMENT",
-          "Element editor detected through path node localName:",
-          node.localName,
-        );
+        if (shouldLog) {
+          logDebug(
+            "ELEMENT",
+            "Element editor detected through path node localName:",
+            node.localName,
+          );
+          this._lastElementEditorLogTime = now;
+        }
         return true;
       }
 
@@ -374,11 +393,45 @@ export class EditorEventHandling {
 
   /**
    * Enhanced handler for nested card editor events
-   * @param {Event} e - The event to handle
+   * @param {Event|Object} eventOrExtraData - The event object or extra data
+   * @param {Event} [optionalEvent] - The event object when first param is extra data
    */
-  _handleNestedCardEvents(extraData, e) {
+  _handleNestedCardEvents(eventOrExtraData, optionalEvent) {
+    // Determine if this is called as event listener or with extra data
+    let e, extraData;
+
+    if (
+      eventOrExtraData &&
+      typeof eventOrExtraData.preventDefault === "function"
+    ) {
+      // Called as event listener - first param is the event
+      e = eventOrExtraData;
+      extraData = null;
+    } else {
+      // Called with extra data - first param is extra data, second is event
+      extraData = eventOrExtraData;
+      e = optionalEvent;
+    }
+
+    // Guard against undefined event
+    if (!e) {
+      return;
+    }
+
     if (extraData && extraData.option === "auto_hide_pagination") {
       return; // Don't process auto-hide events as nested card events
+    }
+
+    // Check for our own events to prevent loops
+    if (
+      e.detail &&
+      (e.detail.fromSwipeCardEditor ||
+        e.detail.fromElementEditor ||
+        e.detail.elementEditorEvent ||
+        e.detail.maintainEditorState)
+    ) {
+      logDebug("ELEMENT", "Skipping our own generated event to prevent loop");
+      return;
     }
 
     // Check for element editor events first to prioritize them
@@ -389,8 +442,10 @@ export class EditorEventHandling {
       );
 
       // Determine if this is related to our card stack
+      // Add safety check for _activeChildEditors
       const isRelatedToOurStack =
         e.composedPath &&
+        this.editor._activeChildEditors &&
         e.composedPath().some((node) => {
           return (
             this.editor._activeChildEditors.has(node) ||

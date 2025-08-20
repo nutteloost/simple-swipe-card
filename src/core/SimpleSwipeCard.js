@@ -179,6 +179,23 @@ export class SimpleSwipeCard extends LitElement {
       this._config.swipe_direction = "horizontal";
     }
 
+    // After setting swipe direction, check for grid options
+    if (this._config.swipe_direction === "vertical" && !config.grid_options) {
+      this.setAttribute("data-vertical-no-grid", "");
+    } else {
+      this.removeAttribute("data-vertical-no-grid");
+    }
+
+    // Detect if we're in editor mode to avoid applying layout fixes there
+    if (
+      this.closest("hui-card-preview") ||
+      this.closest("hui-card-element-editor")
+    ) {
+      this.setAttribute("data-editor-mode", "");
+    } else {
+      this.removeAttribute("data-editor-mode");
+    }
+
     // Set default for swipe_behavior and validate based on loop_mode
     if (this._config.swipe_behavior === undefined) {
       this._config.swipe_behavior = "single";
@@ -1361,7 +1378,7 @@ export class SimpleSwipeCard extends LitElement {
     // Calculate the DOM position from the logical index
     let domPosition = this.currentIndex;
 
-    if (loopMode === "infinite") {
+    if (loopMode === "infinite" && totalVisibleCards > 1) {
       // For single mode infinite, we need to offset by duplicateCount to show real cards
       const duplicateCount = this.loopMode.getDuplicateCount();
       domPosition = this.currentIndex + duplicateCount;
@@ -1371,7 +1388,7 @@ export class SimpleSwipeCard extends LitElement {
         `Infinite mode: logical index ${this.currentIndex} -> DOM position ${domPosition}`,
       );
     } else {
-      // For non-infinite modes, ensure currentIndex is valid
+      // For non-infinite modes or single visible card, ensure currentIndex is valid
       if (loopMode !== "none" && totalVisibleCards > 1) {
         if (this.currentIndex < 0) {
           this.currentIndex = totalVisibleCards - 1;
