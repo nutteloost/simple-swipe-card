@@ -347,6 +347,11 @@ export class SwipeGestures {
         `${isHorizontal ? "Horizontal" : "Vertical"} move detected`,
       );
 
+      // Prevent default browser behavior for mouse events during valid swipe gestures**
+      if (!isTouch) {
+        e.preventDefault();
+      }
+
       // Update current position based on swipe direction
       if (isHorizontal) {
         this._currentX = clientX;
