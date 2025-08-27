@@ -30,6 +30,13 @@ export class Pagination {
         this.card.visibleCardIndices.length,
         "visible cards",
       );
+
+      // Check shadowRoot exists before creating pagination
+      if (!this.card.shadowRoot) {
+        logDebug("ERROR", "Cannot create pagination without shadowRoot");
+        return;
+      }
+
       this.paginationElement = document.createElement("div");
       this.paginationElement.className = `pagination ${this.card._swipeDirection}`;
 
@@ -58,7 +65,14 @@ export class Pagination {
         });
         this.paginationElement.appendChild(dot);
       }
-      this.card.shadowRoot.appendChild(this.paginationElement);
+
+      // CRITICAL FIX: Double-check shadowRoot before appendChild
+      if (this.card.shadowRoot) {
+        this.card.shadowRoot.appendChild(this.paginationElement);
+      } else {
+        logDebug("ERROR", "shadowRoot became null while creating pagination");
+        return;
+      }
 
       if (this.card._cardModConfig) {
         this.card._applyCardModStyles();

@@ -62,9 +62,29 @@ export class CardBuilder {
     this.card.swipeGestures?.removeGestures();
     this.card.autoSwipe?.stop();
     this.card.resetAfter?.stopTimer();
+
+    // CRITICAL FIX: Ensure shadowRoot exists before proceeding
+    if (!this.card._ensureShadowRootExists()) {
+      logDebug("ERROR", "Cannot build without shadowRoot, aborting");
+      this.card.building = false;
+      this.card.initialized = false;
+      return;
+    }
+
     if (this.card.shadowRoot) this.card.shadowRoot.innerHTML = "";
 
     const root = this.card.shadowRoot;
+
+    // CRITICAL FIX: Double-check shadowRoot before any appendChild operations
+    if (!root) {
+      logDebug(
+        "ERROR",
+        "shadowRoot is still null after creation attempt, aborting build",
+      );
+      this.card.building = false;
+      this.card.initialized = false;
+      return;
+    }
 
     const helpers = await getHelpers();
     if (!helpers) {
@@ -215,50 +235,57 @@ export class CardBuilder {
     await Promise.allSettled(otherPromises);
     logDebug("INIT", "All background cards loaded");
 
-    // Sort and append cards
-    this.card.cards
-      .filter(Boolean)
-      .sort((a, b) => a.visibleIndex - b.visibleIndex)
-      .forEach((cardData) => {
-        if (cardData.slide) {
-          // Add data attributes for debugging
-          cardData.slide.setAttribute("data-index", cardData.originalIndex);
-          cardData.slide.setAttribute(
-            "data-visible-index",
-            cardData.visibleIndex,
-          );
-          if (cardData.isDuplicate) {
-            cardData.slide.setAttribute("data-duplicate", "true");
-          }
-          if (cardData.config && cardData.config.type) {
-            cardData.slide.setAttribute("data-card-type", cardData.config.type);
-          }
-          this.card.sliderElement.appendChild(cardData.slide);
-        }
-      });
-
-    // Apply state sync initial positioning BEFORE pagination is created
-    // Only set initial position on first build (when still at default position)
-    if (
-      wasAtDefaultPosition &&
-      this.card._config.state_entity &&
-      this.card._hass
-    ) {
-      this.card.currentIndex = this._getStateSyncInitialIndex();
+    // Set initial state based on configuration
+    if (this.card._config.state_entity && this.card._hass) {
+      const targetIndex = this._getStateSyncInitialIndex();
+      if (targetIndex !== this.card.currentIndex) {
+        logDebug(
+          "STATE",
+          "Setting initial index from state sync:",
+          targetIndex,
+        );
+        this.card.currentIndex = targetIndex;
+      }
     }
 
-    this.card.pagination?.create();
-    this.card._applyCardModStyles();
+    // Ensure cards are in the DOM (appendChild to sliderElement)
+    this.card.cards.forEach((cardData) => {
+      if (
+        cardData.slide &&
+        cardData.slide.parentElement !== this.card.sliderElement
+      ) {
+        this.card.sliderElement.appendChild(cardData.slide);
+      }
+    });
 
-    // Defer layout and gestures until next frame
-    requestAnimationFrame(() => this.finishBuildLayout());
+    // Create pagination
+    this.card.pagination.create();
 
-    this.card.initialized = true;
+    logDebug("INIT", "All cards initialized.");
+
+    // Initialize if needed
+    if (!this.card.initialized) {
+      this.card.initialized = true;
+      if (wasAtDefaultPosition) {
+        // INITIAL BUILD - just finish layout
+        requestAnimationFrame(() => {
+          this.finishBuildLayout();
+        });
+      } else {
+        // REBUILD - finish layout (might jump to preserved state)
+        requestAnimationFrame(() => {
+          this.finishBuildLayout();
+        });
+      }
+    } else {
+      // Re-initialization case
+      requestAnimationFrame(() => {
+        this.finishBuildLayout();
+      });
+    }
+
     this.card.building = false;
-    logDebug("INIT", "Build finished - all cards loaded.");
-
-    // Restore reset-after state after rebuild
-    this.card.resetAfter?.restoreState();
+    logDebug("INIT", "Build completed successfully");
   }
 
   /**

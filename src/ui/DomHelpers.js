@@ -190,56 +190,80 @@ export function applyCardModStyles(
     // Remove any existing card-mod styles first
     const existingStyle = shadowRoot.querySelector("#card-mod-styles");
     if (existingStyle) {
-      shadowRoot.removeChild(existingStyle);
+      try {
+        shadowRoot.removeChild(existingStyle);
+      } catch (error) {
+        logDebug("CARD_MOD", "Error removing existing style:", error);
+      }
     }
 
-    // Add the new style element
-    shadowRoot.appendChild(cardModStyle);
+    // Add additional shadowRoot validation before appendChild
+    try {
+      if (!shadowRoot || !shadowRoot.appendChild) {
+        logDebug("ERROR", "shadowRoot is invalid for appendChild operation");
+        return;
+      }
+
+      // Add the new style element
+      shadowRoot.appendChild(cardModStyle);
+    } catch (error) {
+      logDebug("ERROR", "Failed to append card-mod styles:", error);
+      return;
+    }
 
     // Forward CSS variables from host to shadow root for pagination styling
     if (host) {
       logDebug("CARD_MOD", "Forwarding CSS variables from host to shadow DOM");
-      const hostStyles = window.getComputedStyle(host);
-      const shadowElements = [
-        shadowRoot.querySelector(".card-container"),
-        sliderElement,
-        paginationElement,
-      ].filter(Boolean);
 
-      // List of specific variables we want to forward
-      const variablesToForward = [
-        "--simple-swipe-card-pagination-dot-inactive-color",
-        "--simple-swipe-card-pagination-dot-active-color",
-        "--simple-swipe-card-pagination-dot-inactive-opacity",
-        "--simple-swipe-card-pagination-dot-active-opacity",
-        "--simple-swipe-card-pagination-dot-size",
-        "--simple-swipe-card-pagination-dot-active-size",
-        "--simple-swipe-card-pagination-border-radius",
-        "--simple-swipe-card-pagination-dot-spacing",
-        "--simple-swipe-card-pagination-background",
-        "--simple-swipe-card-pagination-padding",
-        "--simple-swipe-card-pagination-bottom",
-        "--simple-swipe-card-pagination-right",
-        "--simple-swipe-card-transition-speed",
-        "--simple-swipe-card-transition-easing",
-        "--simple-swipe-card-pagination-fade-duration",
-        "--simple-swipe-card-pagination-animation-type",
-        "--simple-swipe-card-pagination-animation-delay",
-        "--simple-swipe-card-pagination-animation-easing",
-      ];
+      try {
+        const hostStyles = window.getComputedStyle(host);
+        const shadowElements = [
+          shadowRoot.querySelector(".card-container"),
+          sliderElement,
+          paginationElement,
+        ].filter(Boolean);
 
-      shadowElements.forEach((element) => {
-        if (!element) return;
+        // List of specific variables we want to forward
+        const variablesToForward = [
+          "--simple-swipe-card-pagination-dot-inactive-color",
+          "--simple-swipe-card-pagination-dot-active-color",
+          "--simple-swipe-card-pagination-dot-inactive-opacity",
+          "--simple-swipe-card-pagination-dot-active-opacity",
+          "--simple-swipe-card-pagination-dot-size",
+          "--simple-swipe-card-pagination-dot-active-size",
+          "--simple-swipe-card-pagination-border-radius",
+          "--simple-swipe-card-pagination-dot-spacing",
+          "--simple-swipe-card-pagination-background",
+          "--simple-swipe-card-pagination-padding",
+          "--simple-swipe-card-pagination-bottom",
+          "--simple-swipe-card-pagination-right",
+          "--simple-swipe-card-transition-speed",
+          "--simple-swipe-card-transition-easing",
+          "--simple-swipe-card-pagination-fade-duration",
+          "--simple-swipe-card-pagination-animation-type",
+          "--simple-swipe-card-pagination-animation-delay",
+          "--simple-swipe-card-pagination-animation-easing",
+        ];
 
-        // Forward all matching CSS variables
-        variablesToForward.forEach((variable) => {
-          const value = hostStyles.getPropertyValue(variable);
-          if (value) {
-            logDebug("CARD_MOD", `Forwarding ${variable}: ${value}`);
-            element.style.setProperty(variable, value);
-          }
+        shadowElements.forEach((element) => {
+          if (!element) return;
+
+          // Forward all matching CSS variables
+          variablesToForward.forEach((variable) => {
+            try {
+              const value = hostStyles.getPropertyValue(variable);
+              if (value) {
+                logDebug("CARD_MOD", `Forwarding ${variable}: ${value}`);
+                element.style.setProperty(variable, value);
+              }
+            } catch (error) {
+              logDebug("CARD_MOD", `Error forwarding ${variable}:`, error);
+            }
+          });
         });
-      });
+      } catch (error) {
+        logDebug("ERROR", "Error forwarding CSS variables:", error);
+      }
     }
   }
 }

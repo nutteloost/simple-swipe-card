@@ -34,14 +34,10 @@ export class SimpleSwipeCard extends LitElement {
   constructor() {
     super();
 
-    // LitElement should create shadowRoot automatically, but ensure it exists
-    // This is needed because our build method runs before LitElement's first update
-    if (!this.shadowRoot) {
-      this.attachShadow({ mode: "open" });
-      logDebug("INIT", "Created shadowRoot for manual DOM manipulation");
-    }
-
     logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
+
+    // Enhanced shadowRoot creation with better error handling
+    this._ensureShadowRoot();
 
     this._config = {};
     this._hass = null;
@@ -75,18 +71,72 @@ export class SimpleSwipeCard extends LitElement {
     this.carouselView = new CarouselView(this);
     this.loopMode = new LoopMode(this);
     this.swipeBehavior = new SwipeBehavior(this);
-    this._performingSeamlessJump = false;
 
-    this._visibilityUpdateTimeout = null;
-    this._visibilityRebuildTimeout = null;
-    this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
-    this._originalDimensions = null;
+    // Dropdown overflow management (added for v2.5.6 fix)
+    this._dropdownFixApplied = false;
+    this._dropdownListenerAdded = false;
+    this._boundRestoreLayout = null;
+    this._lastDropdownTrigger = null;
 
-    // Generate unique instance ID
-    this._instanceId = Math.random().toString(36).substring(2, 15);
-
-    // Initialize global dialog stack
+    // Initialize global dialog stack for picture-elements card support
     initializeGlobalDialogStack();
+
+    // Bind event handlers
+    this._handleConfigChanged = this._handleConfigChanged.bind(this);
+
+    logDebug("INIT", "SimpleSwipeCard Constructor completed successfully.");
+  }
+
+  /**
+   * Enhanced shadowRoot creation method with retry logic
+   * @private
+   */
+  _ensureShadowRoot() {
+    // If shadowRoot already exists (created by LitElement), use it
+    if (this.shadowRoot) {
+      logDebug("INIT", "shadowRoot already exists from LitElement");
+      return;
+    }
+
+    // LitElement should create shadowRoot automatically, but ensure it exists
+    // This is needed because our build method runs before LitElement's first update
+    try {
+      this.attachShadow({ mode: "open" });
+      logDebug("INIT", "Created shadowRoot for manual DOM manipulation");
+    } catch (error) {
+      // If attachShadow fails (rare), try to work around it
+      logDebug("ERROR", "Failed to attach shadowRoot in constructor:", error);
+
+      // Schedule a retry for after the element is connected
+      this._needsShadowRootRetry = true;
+    }
+  }
+
+  /**
+   * Ensures shadowRoot exists, with retry logic for edge cases
+   * Called from critical methods like build() and connectedCallback()
+   * @returns {boolean} True if shadowRoot is available
+   * @private
+   */
+  _ensureShadowRootExists() {
+    // If we already have a shadowRoot, we're good
+    if (this.shadowRoot) {
+      return true;
+    }
+
+    logDebug("INIT", "shadowRoot missing, attempting to create");
+
+    try {
+      // Try to create shadowRoot
+      if (!this.shadowRoot) {
+        this.attachShadow({ mode: "open" });
+        logDebug("INIT", "Successfully created shadowRoot on retry");
+      }
+      return this.shadowRoot !== null;
+    } catch (error) {
+      logDebug("ERROR", "Failed to create shadowRoot on retry:", error);
+      return false;
+    }
   }
 
   /**
@@ -937,6 +987,22 @@ export class SimpleSwipeCard extends LitElement {
     console.log("DROPDOWN_FIX: 🚀 SimpleSwipeCard connectedCallback started");
     logDebug("INIT", "connectedCallback");
 
+    // Ensure shadowRoot exists before proceeding
+    if (!this._ensureShadowRootExists()) {
+      logDebug("ERROR", "Cannot proceed without shadowRoot, scheduling retry");
+      // Schedule a retry after a short delay
+      setTimeout(() => {
+        if (this.isConnected && !this.shadowRoot) {
+          logDebug(
+            "INIT",
+            "Retrying connectedCallback after shadowRoot creation delay",
+          );
+          this.connectedCallback();
+        }
+      }, 50);
+      return;
+    }
+
     // Safety mechanism: Reset any stuck seamless jump flag
     if (this._performingSeamlessJump) {
       logDebug("INIT", "Clearing stuck seamless jump flag on connect");
@@ -950,25 +1016,34 @@ export class SimpleSwipeCard extends LitElement {
     );
 
     if (!this.initialized && this._config?.cards) {
-      console.log("DROPDOWN_FIX: 📍 Branch 1: Not initialized, building card");
+      console.log("DROPDOWN_FIX: 🏗 Branch 1: Not initialized, building card");
       logDebug("INIT", "connectedCallback: Initializing build.");
 
       // Use .then() to ensure the dropdown handler is attached only after the build is complete.
-      this.cardBuilder.build().then(() => {
-        // Check if the card is still connected to the DOM before attaching listeners.
-        if (this.isConnected) {
-          console.log(
-            "DROPDOWN_FIX: 🔧 Build finished, calling _handleDropdownOverflow (branch 1)",
+      this.cardBuilder
+        .build()
+        .then(() => {
+          // Check if the card is still connected to the DOM before attaching listeners.
+          if (this.isConnected) {
+            console.log(
+              "DROPDOWN_FIX: 🔧 Build finished, calling _handleDropdownOverflow (branch 1)",
+            );
+            this._handleDropdownOverflow();
+            console.log(
+              "DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 1)",
+            );
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "SimpleSwipeCard: Build failed in connectedCallback:",
+            error,
           );
-          this._handleDropdownOverflow();
-          console.log(
-            "DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 1)",
-          );
-        }
-      });
+          logDebug("ERROR", "Build failed, card may not function properly");
+        });
     } else if (this.initialized && this.cardContainer) {
       console.log(
-        "DROPDOWN_FIX: 📍 Branch 2: Already initialized, setting up observers",
+        "DROPDOWN_FIX: 🏗 Branch 2: Already initialized, setting up observers",
       );
       logDebug(
         "INIT",
@@ -999,10 +1074,10 @@ export class SimpleSwipeCard extends LitElement {
       this._handleDropdownOverflow();
       console.log("DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 2)");
     } else {
-      console.log("DROPDOWN_FIX: 📍 Branch 3: Other condition");
+      console.log("DROPDOWN_FIX: 🏗 Branch 3: Other condition");
     }
 
-    console.log("DROPDOWN_FIX: 🏁 connectedCallback finished");
+    console.log("DROPDOWN_FIX: 🎯 connectedCallback finished");
   }
 
   /**
@@ -1013,6 +1088,27 @@ export class SimpleSwipeCard extends LitElement {
     super.disconnectedCallback();
 
     logDebug("INIT", "disconnectedCallback - Enhanced cleanup starting");
+
+    // Clean up dropdown restore timeout and listener
+    if (this._dropdownRestoreTimeout) {
+      clearTimeout(this._dropdownRestoreTimeout);
+      this._dropdownRestoreTimeout = null;
+    }
+
+    if (this._clickRestoreListener && this.cardContainer) {
+      this.cardContainer.removeEventListener(
+        "click",
+        this._clickRestoreListener,
+        { capture: true },
+      );
+      this._clickRestoreListener = null;
+    }
+
+    // Clean up delay timeout
+    if (this._dropdownDelayTimeout) {
+      clearTimeout(this._dropdownDelayTimeout);
+      this._dropdownDelayTimeout = null;
+    }
 
     // If the card is removed while the fix is active, restore the layout.
     if (this._dropdownFixApplied) {
@@ -1569,8 +1665,8 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Final, corrected fix for dropdown overflow. This preserves the container's
-   * dimensions AND immediately hides adjacent cards using CSS to prevent visual glitches.
+   * Click-controlled dropdown overflow fix.
+   * Restores layout immediately after any user click (with micro-delay for selection processing).
    * @private
    */
   _handleDropdownOverflow() {
@@ -1599,15 +1695,14 @@ export class SimpleSwipeCard extends LitElement {
 
         logDebug(
           "SYSTEM",
-          "Dropdown trigger detected. Immediately hiding adjacent cards using CSS.",
+          "Dropdown trigger detected. Applying layout fix with click-controlled restoration.",
         );
         this._dropdownFixApplied = true;
 
-        // Clear any existing restoration listener to prevent duplicates
-        if (this._boundRestoreLayout) {
-          window.removeEventListener("pointerdown", this._boundRestoreLayout, {
-            capture: true,
-          });
+        // Clear any existing timeout
+        if (this._dropdownRestoreTimeout) {
+          clearTimeout(this._dropdownRestoreTimeout);
+          this._dropdownRestoreTimeout = null;
         }
 
         // 1. Disable swipe gestures to prevent interaction conflicts.
@@ -1671,14 +1766,60 @@ export class SimpleSwipeCard extends LitElement {
         this.shadowRoot.host.style.overflow = "visible";
         this.cardContainer.style.overflow = "visible";
 
-        // 4. Listen for the next click anywhere to restore the original layout.
-        window.addEventListener("pointerdown", this._boundRestoreLayout, {
-          once: true,
-          capture: true,
-        });
+        // 4. Add click-controlled restoration with delay to avoid catching the opening click
+        // Store the timeout for cleanup
+        this._dropdownDelayTimeout = setTimeout(() => {
+          if (this._dropdownFixApplied && this.isConnected) {
+            // Add isConnected check
+            this._addClickRestoreListener();
+            logDebug(
+              "SYSTEM",
+              "Click restoration listener added. Will restore after next click.",
+            );
+          }
+        }, 300);
+
+        logDebug(
+          "SYSTEM",
+          "Layout fix applied. Click listener will be added in 300ms.",
+        );
       },
       { capture: true },
     );
+  }
+
+  /**
+   * Adds a listener that restores layout after any click (with micro-delay for processing)
+   * @private
+   */
+  _addClickRestoreListener() {
+    if (!this.cardContainer) return;
+
+    const restoreAfterClick = (e) => {
+      logDebug(
+        "SYSTEM",
+        "Click detected, restoring layout in 200ms (allowing selection to complete)",
+      );
+
+      // Remove this listener immediately (one-time use)
+      this.cardContainer.removeEventListener("click", restoreAfterClick, {
+        capture: true,
+      });
+
+      // Small delay to allow dropdown selection to complete, then restore
+      this._dropdownRestoreTimeout = setTimeout(() => {
+        logDebug("SYSTEM", "Click processing complete, restoring layout now");
+        this._restoreLayout();
+      }, 200); // 200ms - just enough time for dropdown selection to process
+    };
+
+    // Listen for the next click anywhere in the card
+    this.cardContainer.addEventListener("click", restoreAfterClick, {
+      capture: true,
+    });
+
+    // Store reference for cleanup
+    this._clickRestoreListener = restoreAfterClick;
   }
 
   /**
@@ -1693,6 +1834,22 @@ export class SimpleSwipeCard extends LitElement {
     this._dropdownFixApplied = false;
 
     logDebug("SYSTEM", "Restoring layout and card visibility.");
+
+    // Clean up timeout
+    if (this._dropdownRestoreTimeout) {
+      clearTimeout(this._dropdownRestoreTimeout);
+      this._dropdownRestoreTimeout = null;
+    }
+
+    // Clean up click restore listener
+    if (this._clickRestoreListener && this.cardContainer) {
+      this.cardContainer.removeEventListener(
+        "click",
+        this._clickRestoreListener,
+        { capture: true },
+      );
+      this._clickRestoreListener = null;
+    }
 
     // 1. Restore the original layout styles.
     if (this.sliderElement && this.cardContainer) {
