@@ -55,7 +55,7 @@ export class SimpleSwipeCard extends LitElement {
     this.initialized = false;
     this.building = false;
     this.resizeObserver = null;
-    this._swipeDirection = "horizontal"; // Default swipe direction
+    this._swipeDirection = "horizontal";
 
     // Pagination animation tracking
     this._previousIndex = undefined;
@@ -80,6 +80,7 @@ export class SimpleSwipeCard extends LitElement {
     this._visibilityUpdateTimeout = null;
     this._visibilityRebuildTimeout = null;
     this._debouncedUpdateVisibility = this._debounceVisibilityUpdate.bind(this);
+    this._originalDimensions = null;
 
     // Generate unique instance ID
     this._instanceId = Math.random().toString(36).substring(2, 15);
@@ -928,9 +929,12 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Called when element is connected to DOM
+   * Called when element is connected to DOM.
    */
   connectedCallback() {
+    super.connectedCallback();
+
+    console.log("DROPDOWN_FIX: 🚀 SimpleSwipeCard connectedCallback started");
     logDebug("INIT", "connectedCallback");
 
     // Safety mechanism: Reset any stuck seamless jump flag
@@ -939,16 +943,33 @@ export class SimpleSwipeCard extends LitElement {
       this._performingSeamlessJump = false;
     }
 
-    // Add event listeners for editor integration
+    // Add event listeners for editor integration.
     this.addEventListener(
       "config-changed",
       this._handleConfigChanged.bind(this),
     );
 
     if (!this.initialized && this._config?.cards) {
+      console.log("DROPDOWN_FIX: 📍 Branch 1: Not initialized, building card");
       logDebug("INIT", "connectedCallback: Initializing build.");
-      this.cardBuilder.build();
+
+      // Use .then() to ensure the dropdown handler is attached only after the build is complete.
+      this.cardBuilder.build().then(() => {
+        // Check if the card is still connected to the DOM before attaching listeners.
+        if (this.isConnected) {
+          console.log(
+            "DROPDOWN_FIX: 🔧 Build finished, calling _handleDropdownOverflow (branch 1)",
+          );
+          this._handleDropdownOverflow();
+          console.log(
+            "DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 1)",
+          );
+        }
+      });
     } else if (this.initialized && this.cardContainer) {
+      console.log(
+        "DROPDOWN_FIX: 📍 Branch 2: Already initialized, setting up observers",
+      );
       logDebug(
         "INIT",
         "connectedCallback: Re-initializing observers and gestures.",
@@ -961,45 +982,71 @@ export class SimpleSwipeCard extends LitElement {
         }, 50);
       }
 
-      // Apply card-mod styles when connected to DOM
+      // Apply card-mod styles when connected to DOM.
       if (this._cardModConfig) {
         this._applyCardModStyles();
         this._setupCardModObserver();
       }
 
-      // Initialize or resume auto-swipe and reset-after if enabled
+      // Initialize or resume auto-swipe and reset-after if enabled.
       this.autoSwipe.manage();
       this.resetAfter.manage();
       this.stateSynchronization.manage();
+
+      console.log(
+        "DROPDOWN_FIX: 🔧 About to call _handleDropdownOverflow (branch 2)",
+      );
+      this._handleDropdownOverflow();
+      console.log("DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 2)");
+    } else {
+      console.log("DROPDOWN_FIX: 📍 Branch 3: Other condition");
     }
+
+    console.log("DROPDOWN_FIX: 🏁 connectedCallback finished");
   }
 
   /**
-   * Called when element is disconnected from DOM
+   * Called when element is disconnected from DOM.
    */
   disconnectedCallback() {
+    // Call the parent class's method first.
+    super.disconnectedCallback();
+
     logDebug("INIT", "disconnectedCallback - Enhanced cleanup starting");
 
-    // Remove the config-changed event listener
+    // If the card is removed while the fix is active, restore the layout.
+    if (this._dropdownFixApplied) {
+      this._restoreLayout();
+    }
+    // Remove the global event listener to prevent memory leaks.
+    if (this._boundRestoreLayout) {
+      window.removeEventListener("pointerdown", this._boundRestoreLayout, {
+        capture: true,
+      });
+    }
+    // Reset the flag so the listener can be re-added if the card reconnects.
+    this._dropdownListenerAdded = false;
+
+    // Remove the config-changed event listener.
     this.removeEventListener(
       "config-changed",
       this._handleConfigChanged.bind(this),
     );
 
     try {
-      // Clear all timeouts and intervals with better logging
+      // Clear all timeouts and intervals with better logging.
       this._clearAllTimeouts();
 
-      // Clean up feature managers (but don't destroy core state)
+      // Clean up feature managers (but don't destroy core state).
       this._cleanupFeatureManagers();
 
-      // Clean up DOM references and observers, but preserve cards array
+      // Clean up DOM references and observers, but preserve cards array.
       this._cleanupDOMAndObservers();
 
-      // Clean up card-mod observer
+      // Clean up card-mod observer.
       this._cleanupCardModObserver();
 
-      // Clear any remaining event listeners
+      // Clear any remaining event listeners.
       this._clearRemainingEventListeners();
     } catch (error) {
       console.warn("Error during cleanup:", error);
@@ -1519,5 +1566,284 @@ export class SimpleSwipeCard extends LitElement {
     }
     logDebug("CONFIG", "Calculated card size:", maxSize);
     return Math.max(3, maxSize);
+  }
+
+  /**
+   * Final, corrected fix for dropdown overflow. This preserves the container's
+   * dimensions AND immediately hides adjacent cards using CSS to prevent visual glitches.
+   * @private
+   */
+  _handleDropdownOverflow() {
+    if (!this.cardContainer || this._dropdownListenerAdded) return;
+    this._dropdownListenerAdded = true;
+    this._boundRestoreLayout = this._restoreLayout.bind(this);
+
+    this.cardContainer.addEventListener(
+      "pointerdown",
+      (e) => {
+        // DEBOUNCING: Prevent rapid successive triggers
+        if (this._dropdownFixApplied) return;
+
+        // Add a small debounce to prevent double-triggering
+        const now = Date.now();
+        if (
+          this._lastDropdownTrigger &&
+          now - this._lastDropdownTrigger < 100
+        ) {
+          return;
+        }
+        this._lastDropdownTrigger = now;
+
+        const target = this._getActualEventTarget(e);
+        if (!this._isDropdownTrigger(target)) return;
+
+        logDebug(
+          "SYSTEM",
+          "Dropdown trigger detected. Immediately hiding adjacent cards using CSS.",
+        );
+        this._dropdownFixApplied = true;
+
+        // Clear any existing restoration listener to prevent duplicates
+        if (this._boundRestoreLayout) {
+          window.removeEventListener("pointerdown", this._boundRestoreLayout, {
+            capture: true,
+          });
+        }
+
+        // 1. Disable swipe gestures to prevent interaction conflicts.
+        this.swipeGestures.removeGestures();
+
+        // 2. Apply the layout fix
+        if (this.sliderElement && this.cardContainer) {
+          // Store original dimensions to prevent container collapse.
+          const containerRect = this.cardContainer.getBoundingClientRect();
+          const sliderRect = this.sliderElement.getBoundingClientRect();
+          this._originalDimensions = {
+            containerHeight: containerRect.height,
+            sliderWidth: sliderRect.width,
+          };
+          // Explicitly set container height to prevent it from collapsing.
+          this.cardContainer.style.height = `${this._originalDimensions.containerHeight}px`;
+
+          // Store the original transform for later restoration.
+          this._originalTransform = this.sliderElement.style.transform;
+
+          // Calculate the current card position BEFORE applying any changes
+          const currentCardIndex = this.currentIndex;
+
+          let domPosition = currentCardIndex;
+
+          if (
+            this._config.loop_mode === "infinite" &&
+            this.visibleCardIndices.length > 1
+          ) {
+            const duplicateCount = this.loopMode.getDuplicateCount();
+            domPosition = currentCardIndex + duplicateCount;
+          }
+
+          // Apply CSS classes to hide adjacent cards
+          this.sliderElement.classList.add("dropdown-fix-active");
+          this.sliderElement.classList.add("dropdown-fix-active-hide-adjacent");
+
+          // IMMEDIATELY clear the transform to prevent double-offset issue
+          this.sliderElement.style.transform = "none";
+
+          // Mark the correct slide as active and hide others
+          const slides = this.sliderElement.querySelectorAll(".slide");
+
+          slides.forEach((slide, index) => {
+            if (index === domPosition) {
+              slide.classList.add("current-active");
+            } else {
+              slide.classList.remove("current-active");
+            }
+          });
+
+          // Apply absolute positioning to show the current card in the correct position
+          // Since we cleared the transform, we need to position at 0,0 to show the current card
+          this.sliderElement.style.position = "absolute";
+          this.sliderElement.style.width = `${this._originalDimensions.sliderWidth}px`;
+          this.sliderElement.style.left = "0px";
+          this.sliderElement.style.top = "0px";
+        }
+
+        // 3. Allow overflow so the dropdown is visible outside the card's bounds.
+        this.shadowRoot.host.style.overflow = "visible";
+        this.cardContainer.style.overflow = "visible";
+
+        // 4. Listen for the next click anywhere to restore the original layout.
+        window.addEventListener("pointerdown", this._boundRestoreLayout, {
+          once: true,
+          capture: true,
+        });
+      },
+      { capture: true },
+    );
+  }
+
+  /**
+   * Restores the layout by removing all temporary styles, making all cards
+   * visible again, and re-enabling gestures.
+   * @private
+   */
+  _restoreLayout() {
+    if (!this._dropdownFixApplied) return;
+
+    // Prevent double restoration
+    this._dropdownFixApplied = false;
+
+    logDebug("SYSTEM", "Restoring layout and card visibility.");
+
+    // 1. Restore the original layout styles.
+    if (this.sliderElement && this.cardContainer) {
+      // MINIMAL FIX: Temporarily disable transitions on the slider element only
+      const originalTransition = this.sliderElement.style.transition;
+      this.sliderElement.style.transition = "none";
+
+      // Remove CSS classes that hide adjacent cards
+      this.sliderElement.classList.remove("dropdown-fix-active");
+      this.sliderElement.classList.remove("dropdown-fix-active-hide-adjacent");
+
+      // Remove current-active class from all slides
+      const slides = this.sliderElement.querySelectorAll(".slide");
+      slides.forEach((slide) => {
+        slide.classList.remove("current-active");
+      });
+
+      this.sliderElement.style.position = "";
+      this.sliderElement.style.left = "";
+      this.sliderElement.style.top = "";
+      this.sliderElement.style.width = "";
+      this.cardContainer.style.height = "";
+      this._originalDimensions = null;
+
+      // Restore the original transform
+      if (this._originalTransform !== undefined) {
+        this.sliderElement.style.transform = this._originalTransform;
+        this._originalTransform = undefined;
+      }
+
+      // Re-enable transitions after a tiny delay
+      setTimeout(() => {
+        if (this.sliderElement) {
+          this.sliderElement.style.transition = originalTransition || "";
+        }
+      }, 10); // Very small delay, just enough to prevent animation
+    }
+
+    // 2. Restore the original overflow clipping.
+    this.shadowRoot.host.style.overflow = "";
+    if (this.cardContainer) {
+      this.cardContainer.style.overflow = "";
+    }
+
+    // 3. Re-enable swipe gestures after a brief delay.
+    setTimeout(() => {
+      if (this.isConnected) {
+        if (this.visibleCardIndices.length > 1) {
+          this.swipeGestures.addGestures();
+        }
+      }
+      // Reset the debounce timer
+      this._lastDropdownTrigger = null;
+    }, 150);
+  }
+
+  /**
+   * A more precise helper to determine if a clicked element is part of a dropdown menu.
+   * Enhanced to properly detect mushroom-select-card components
+   * @param {HTMLElement} element The element that was clicked.
+   * @returns {boolean} True if the element is a dropdown trigger.
+   * @private
+   */
+  _isDropdownTrigger(element) {
+    if (!element) return false;
+
+    // Check the element and its parents (increased depth for mushroom cards)
+    let current = element;
+    for (let i = 0; i < 8 && current && current !== this.cardContainer; i++) {
+      const tagName = current.tagName?.toLowerCase();
+      const className = current.className || "";
+      const role = current.getAttribute && current.getAttribute("role");
+
+      // Check for specific dropdown component tag names
+      if (
+        tagName === "ha-select" ||
+        tagName === "mwc-select" ||
+        tagName === "mushroom-select" ||
+        tagName === "mushroom-select-card"
+      ) {
+        console.log("DROPDOWN_FIX: 🎯 Found dropdown tag:", tagName);
+        return true;
+      }
+
+      // The 'combobox' role is a very reliable indicator of a dropdown activator
+      if (role === "combobox") {
+        console.log("DROPDOWN_FIX: 🎯 Found combobox role");
+        return true;
+      }
+
+      // Check for Material Web Components classes
+      if (current.classList?.contains("mdc-select")) {
+        console.log("DROPDOWN_FIX: 🎯 Found mdc-select class");
+        return true;
+      }
+
+      // Enhanced mushroom card detection
+      if (typeof className === "string") {
+        // Check for mushroom card classes
+        if (
+          className.includes("mushroom-select") ||
+          className.includes("mushroom-card") ||
+          className.includes("mdc-menu") ||
+          className.includes("mdc-list-item") ||
+          className.includes("mdc-select__anchor") ||
+          className.includes("mdc-select__selected-text")
+        ) {
+          console.log("DROPDOWN_FIX: 🎯 Found mushroom/mdc class:", className);
+          return true;
+        }
+      }
+
+      // Check if current element has data attributes that suggest it's a select
+      if (
+        current.hasAttribute &&
+        (current.hasAttribute("data-mdc-select") ||
+          current.hasAttribute("aria-haspopup"))
+      ) {
+        console.log("DROPDOWN_FIX: 🎯 Found dropdown data attributes");
+        return true;
+      }
+
+      current = current.parentElement;
+    }
+
+    // Additional check: look for mushroom-select-card ancestor
+    let mushroomCard = element;
+    while (mushroomCard && mushroomCard !== this.cardContainer) {
+      if (mushroomCard.tagName?.toLowerCase() === "mushroom-select-card") {
+        console.log("DROPDOWN_FIX: 🎯 Found mushroom-select-card ancestor");
+        return true;
+      }
+      mushroomCard = mushroomCard.parentElement;
+    }
+
+    console.log(
+      "DROPDOWN_FIX: ❌ No dropdown trigger detected for:",
+      element.tagName,
+      element.className,
+    );
+    return false;
+  }
+
+  /**
+   * Gets the actual event target, accounting for Shadow DOM.
+   * @param {Event} e The event object.
+   * @returns {Element} The actual target element.
+   * @private
+   */
+  _getActualEventTarget(e) {
+    if (e.composedPath && e.composedPath().length) return e.composedPath()[0];
+    return e.target;
   }
 }

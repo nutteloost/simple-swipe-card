@@ -164,17 +164,56 @@ export class CardBuilder {
       infiniteMode: this.card.loopMode.isInfiniteMode,
     });
 
-    const cardPromises = cardsToLoad.map((cardInfo) => {
-      return this.createCard(
-        cardInfo.config,
-        cardInfo.visibleIndex,
-        cardInfo.originalIndex,
+    // Load current slide first, others staggered
+    const currentIndex = this.card.currentIndex || 0;
+    const currentCard =
+      cardsToLoad.find((card) => card.visibleIndex === currentIndex) ||
+      cardsToLoad[0];
+    const otherCards = cardsToLoad.filter((card) => card !== currentCard);
+
+    logDebug(
+      "INIT",
+      `Priority loading: current slide ${currentIndex} immediately, ${otherCards.length} others staggered`,
+    );
+
+    // Load current card immediately (zero delay)
+    if (currentCard) {
+      await this.createCard(
+        currentCard.config,
+        currentCard.visibleIndex,
+        currentCard.originalIndex,
         helpers,
-        cardInfo.isDuplicate,
+        currentCard.isDuplicate,
       );
+      logDebug("INIT", "Current card loaded");
+    }
+
+    // Load other cards with 20ms stagger
+    const otherPromises = otherCards.map((cardInfo, index) => {
+      return new Promise((resolve) => {
+        setTimeout(
+          async () => {
+            try {
+              const result = await this.createCard(
+                cardInfo.config,
+                cardInfo.visibleIndex,
+                cardInfo.originalIndex,
+                helpers,
+                cardInfo.isDuplicate,
+              );
+              resolve(result);
+            } catch (error) {
+              console.error("Error loading background card:", error);
+              resolve(null); // Don't fail entire build
+            }
+          },
+          (index + 1) * 20,
+        ); // 20ms stagger between each card
+      });
     });
 
-    await Promise.allSettled(cardPromises);
+    await Promise.allSettled(otherPromises);
+    logDebug("INIT", "All background cards loaded");
 
     // Sort and append cards
     this.card.cards

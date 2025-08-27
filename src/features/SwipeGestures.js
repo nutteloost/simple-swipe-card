@@ -228,7 +228,7 @@ export class SwipeGestures {
   }
 
   /**
-   * Enhanced swipe start handler - simplified
+   * Enhanced swipe start handler with Shadow DOM support
    * @param {Event} e - Touch or mouse event
    * @private
    */
@@ -245,8 +245,25 @@ export class SwipeGestures {
       return;
     }
 
-    if (this._isInteractiveOrScrollable(e.target)) {
-      logDebug("SWIPE", "Swipe Start ignored (interactive element):", e.target);
+    // SHADOW DOM FIX: Get the actual clicked element through shadow DOM boundaries
+    const actualTarget = this._getActualEventTarget(e);
+
+    console.log("DROPDOWN_FIX: 🎯 DEBUG - Actual target:", actualTarget);
+    console.log(
+      "DROPDOWN_FIX: 🎯 DEBUG - Actual target tag:",
+      actualTarget?.tagName,
+    );
+    console.log(
+      "DROPDOWN_FIX: 🎯 DEBUG - Actual target class:",
+      actualTarget?.className,
+    );
+
+    if (this._isInteractiveOrScrollable(actualTarget)) {
+      logDebug(
+        "SWIPE",
+        "Swipe Start ignored (interactive element):",
+        actualTarget,
+      );
       return;
     }
 
@@ -644,7 +661,7 @@ export class SwipeGestures {
   }
 
   /**
-   * Checks if an element is interactive or scrollable
+   * Checks if an element is interactive or scrollable - SIMPLIFIED with robust slider detection
    * @param {Element} element - The element to check
    * @returns {boolean} True if the element is interactive or scrollable
    * @private
@@ -657,67 +674,78 @@ export class SwipeGestures {
     )
       return false;
 
-    // Expanded list of interactive elements
-    const interactiveTags = [
-      "input",
-      "textarea",
-      "select",
-      "button",
-      "a",
-      "audio",
-      "video",
-      "ha-switch",
-      "ha-checkbox",
-      "mwc-checkbox",
-      "paper-checkbox",
-      "ha-textfield",
-      "ha-slider",
-      "paper-slider",
-      "ha-control-button",
-      "ha-control-select",
-      "ha-control-slider",
-      "ha-control-button-group",
-      "ha-text-input",
-      "mwc-button",
-      "paper-button",
-      "ha-icon-button",
-      "paper-icon-button",
-      "ha-select",
-      "paper-dropdown-menu",
-      "vaadin-combo-box",
-      "ha-card",
-      "hui-entity-button",
-      "more-info-content",
-    ];
-
+    // SIMPLE & ROBUST: Detect slider-like elements by common patterns
     const tagName = element.localName?.toLowerCase();
+    const className = element.className || "";
+    const id = element.id || "";
     const role = element.getAttribute("role");
 
-    // Check basic interactive elements
+    // 1. Check for slider-related class names, IDs, or roles
     if (
-      interactiveTags.includes(tagName) ||
-      (role &&
-        [
-          "button",
-          "checkbox",
-          "switch",
-          "slider",
-          "link",
-          "menuitem",
-          "textbox",
-          "combobox",
-          "option",
-        ].includes(role))
+      className.includes("slider") ||
+      id.includes("slider") ||
+      role === "slider" ||
+      role === "range"
     ) {
       logDebug(
         "SWIPE",
-        "_isInteractiveOrScrollable: Found interactive tag/role:",
-        tagName || role,
+        "_isInteractiveOrScrollable: Found slider element:",
+        element,
       );
       return true;
     }
 
-    // Check for clickable elements (elements that might open more-info dialogs)
+    // 2. Check for touch-action: pan-y (common on sliders)
+    try {
+      const style = window.getComputedStyle(element);
+      if (style.touchAction && style.touchAction.includes("pan-y")) {
+        logDebug(
+          "SWIPE",
+          "_isInteractiveOrScrollable: Found touch-action pan-y element:",
+          element,
+        );
+        return true;
+      }
+    } catch (e) {
+      // Ignore style errors
+    }
+
+    // 3. Check basic interactive HTML elements
+    if (
+      ["input", "textarea", "select", "a", "audio", "video"].includes(tagName)
+    ) {
+      logDebug(
+        "SWIPE",
+        "_isInteractiveOrScrollable: Found basic interactive element:",
+        tagName,
+      );
+      return true;
+    }
+
+    // 4. Check for interactive roles
+    if (
+      role &&
+      [
+        "checkbox",
+        "switch",
+        "slider",
+        "link",
+        "menuitem",
+        "textbox",
+        "combobox",
+        "option",
+        "range",
+      ].includes(role)
+    ) {
+      logDebug(
+        "SWIPE",
+        "_isInteractiveOrScrollable: Found interactive role:",
+        role,
+      );
+      return true;
+    }
+
+    // 5. Check for clickable elements
     if (
       element.classList.contains("clickable") ||
       element.hasAttribute("clickable") ||
@@ -728,27 +756,7 @@ export class SwipeGestures {
       return true;
     }
 
-    // Check common HA interactive components
-    if (
-      element.closest(
-        `
-            ha-control-button, ha-control-select, ha-control-slider, ha-control-button-group, 
-            ha-alert[action], ha-more-info-control, hui-buttons-base, ha-form, ha-formfield, 
-            ha-icon-button, mwc-list-item, paper-item, ha-list-item, hui-entity-button,
-            more-info-content, ha-card[clickable], .clickable
-        `
-          .replace(/\s+/g, " ")
-          .trim(),
-      )
-    ) {
-      logDebug(
-        "SWIPE",
-        "_isInteractiveOrScrollable: Found interactive ancestor component.",
-      );
-      return true;
-    }
-
-    // Check for scrollable overflow
+    // 6. Check for scrollable overflow
     let current = element;
     let depth = 0;
     while (
@@ -776,16 +784,18 @@ export class SwipeGestures {
             return true;
           }
 
-          // Check specific known-scrollable cards
+          // Check for slider-like elements in parent chain
+          const currentClassName = current.className || "";
+          const currentId = current.id || "";
           if (
-            current.localName === "ha-logbook" ||
-            current.localName === "hui-logbook-card" ||
-            current.localName === "hui-history-graph-card"
+            currentClassName.includes("slider") ||
+            currentClassName.includes("control") ||
+            currentId.includes("slider")
           ) {
             logDebug(
               "SWIPE",
-              "_isInteractiveOrScrollable: Found specific scrollable card type:",
-              current.localName,
+              "_isInteractiveOrScrollable: Found slider-like ancestor:",
+              current,
             );
             return true;
           }
@@ -799,7 +809,7 @@ export class SwipeGestures {
         }
       }
 
-      // Traverse up
+      // Traverse up including through shadow DOM
       current =
         current.assignedSlot ||
         current.parentNode ||
@@ -810,6 +820,29 @@ export class SwipeGestures {
     }
 
     return false;
+  }
+
+  /**
+   * Gets the actual event target, accounting for Shadow DOM
+   * @param {Event} e - The event
+   * @returns {Element} The actual target element
+   * @private
+   */
+  _getActualEventTarget(e) {
+    // Try to get the composed path (works through shadow DOM)
+    if (e.composedPath && typeof e.composedPath === "function") {
+      const composedPath = e.composedPath();
+      if (composedPath && composedPath.length > 0) {
+        // Return the first element in the path (the actual clicked element)
+        const actualTarget = composedPath[0];
+        if (actualTarget && actualTarget.nodeType === Node.ELEMENT_NODE) {
+          return actualTarget;
+        }
+      }
+    }
+
+    // Fallback to regular target for browsers that don't support composedPath
+    return e.target;
   }
 
   /**

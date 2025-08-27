@@ -101,6 +101,22 @@ export function getStyles() {
         will-change: transform;
         background: transparent;
      }
+
+     .slider.dropdown-fix-active {
+        transform: none !important;
+        will-change: auto !important;
+        transition: none !important;
+     }
+
+     /* Immediately hide all slides except the current one during dropdown fix */
+     .slider.dropdown-fix-active-hide-adjacent .slide {
+       display: none !important;
+     }
+
+     /* Show only the current slide during dropdown fix */
+     .slider.dropdown-fix-active-hide-adjacent .slide.current-active {
+       display: flex !important;
+     }     
      
      /* Horizontal slider (default) */
      .slider[data-swipe-direction="horizontal"] {
