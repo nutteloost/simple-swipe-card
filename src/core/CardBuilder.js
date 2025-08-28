@@ -303,11 +303,6 @@ export class CardBuilder {
 
   /**
    * Creates a card element and adds it to the slider
-   * @param {Object} cardConfig - Configuration for the card
-   * @param {number} visibleIndex - Index in the visible cards array (can be negative for infinite mode leading duplicates)
-   * @param {number} originalIndex - Original index in the full cards array
-   * @param {Object} helpers - Home Assistant card helpers
-   * @param {boolean} isDuplicate - Whether this is a duplicate card for infinite scrolling
    */
   async createCard(
     cardConfig,
@@ -328,8 +323,19 @@ export class CardBuilder {
     };
 
     try {
+      // Create the card element
       cardElement = await helpers.createCardElement(cardConfig);
-      if (this.card._hass) cardElement.hass = this.card._hass;
+
+      // Set hass IMMEDIATELY after creation, before any async operations
+      // This prevents race conditions with cards that need hass during initialization
+      if (this.card._hass) {
+        cardElement.hass = this.card._hass;
+        logDebug(
+          "INIT",
+          `Set hass immediately after creation for card ${visibleIndex} (type: ${cardConfig.type})`,
+        );
+      }
+
       cardData.element = cardElement;
 
       // Add special attribute for picture-elements cards to enhance tracking
@@ -351,6 +357,7 @@ export class CardBuilder {
           console.warn("Error applying post-creation logic:", e);
         }
       });
+
       slideDiv.appendChild(cardElement);
     } catch (e) {
       logDebug(
