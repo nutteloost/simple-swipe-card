@@ -745,18 +745,7 @@ export class SwipeGestures {
       return true;
     }
 
-    // 5. Check for clickable elements
-    if (
-      element.classList.contains("clickable") ||
-      element.hasAttribute("clickable") ||
-      element.getAttribute("data-domain") ||
-      element.closest(".entity, .clickable, [data-domain]")
-    ) {
-      logDebug("SWIPE", "_isInteractiveOrScrollable: Found clickable element");
-      return true;
-    }
-
-    // 6. Check for scrollable overflow
+    // 5. Check for scrollable overflow
     let current = element;
     let depth = 0;
     while (
