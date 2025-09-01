@@ -36,9 +36,6 @@ export class SimpleSwipeCard extends LitElement {
 
     logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
 
-    // Enhanced shadowRoot creation with better error handling
-    this._ensureShadowRoot();
-
     this._config = {};
     this._hass = null;
     this.cards = [];
@@ -85,58 +82,6 @@ export class SimpleSwipeCard extends LitElement {
     this._handleConfigChanged = this._handleConfigChanged.bind(this);
 
     logDebug("INIT", "SimpleSwipeCard Constructor completed successfully.");
-  }
-
-  /**
-   * Enhanced shadowRoot creation method with retry logic
-   * @private
-   */
-  _ensureShadowRoot() {
-    // If shadowRoot already exists (created by LitElement), use it
-    if (this.shadowRoot) {
-      logDebug("INIT", "shadowRoot already exists from LitElement");
-      return;
-    }
-
-    // LitElement should create shadowRoot automatically, but ensure it exists
-    // This is needed because our build method runs before LitElement's first update
-    try {
-      this.attachShadow({ mode: "open" });
-      logDebug("INIT", "Created shadowRoot for manual DOM manipulation");
-    } catch (error) {
-      // If attachShadow fails (rare), try to work around it
-      logDebug("ERROR", "Failed to attach shadowRoot in constructor:", error);
-
-      // Schedule a retry for after the element is connected
-      this._needsShadowRootRetry = true;
-    }
-  }
-
-  /**
-   * Ensures shadowRoot exists, with retry logic for edge cases
-   * Called from critical methods like build() and connectedCallback()
-   * @returns {boolean} True if shadowRoot is available
-   * @private
-   */
-  _ensureShadowRootExists() {
-    // If we already have a shadowRoot, we're good
-    if (this.shadowRoot) {
-      return true;
-    }
-
-    logDebug("INIT", "shadowRoot missing, attempting to create");
-
-    try {
-      // Try to create shadowRoot
-      if (!this.shadowRoot) {
-        this.attachShadow({ mode: "open" });
-        logDebug("INIT", "Successfully created shadowRoot on retry");
-      }
-      return this.shadowRoot !== null;
-    } catch (error) {
-      logDebug("ERROR", "Failed to create shadowRoot on retry:", error);
-      return false;
-    }
   }
 
   /**
@@ -986,22 +931,6 @@ export class SimpleSwipeCard extends LitElement {
 
     console.log("DROPDOWN_FIX: 🚀 SimpleSwipeCard connectedCallback started");
     logDebug("INIT", "connectedCallback");
-
-    // Ensure shadowRoot exists before proceeding
-    if (!this._ensureShadowRootExists()) {
-      logDebug("ERROR", "Cannot proceed without shadowRoot, scheduling retry");
-      // Schedule a retry after a short delay
-      setTimeout(() => {
-        if (this.isConnected && !this.shadowRoot) {
-          logDebug(
-            "INIT",
-            "Retrying connectedCallback after shadowRoot creation delay",
-          );
-          this.connectedCallback();
-        }
-      }, 50);
-      return;
-    }
 
     // Safety mechanism: Reset any stuck seamless jump flag
     if (this._performingSeamlessJump) {

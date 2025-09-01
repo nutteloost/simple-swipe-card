@@ -711,9 +711,7 @@ export class SwipeGestures {
     }
 
     // 3. Check basic interactive HTML elements
-    if (
-      ["input", "textarea", "select", "a", "audio", "video"].includes(tagName)
-    ) {
+    if (["input", "textarea", "select", "a", "audio"].includes(tagName)) {
       logDebug(
         "SWIPE",
         "_isInteractiveOrScrollable: Found basic interactive element:",

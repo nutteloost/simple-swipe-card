@@ -63,11 +63,15 @@ export class CardBuilder {
     this.card.autoSwipe?.stop();
     this.card.resetAfter?.stopTimer();
 
-    // CRITICAL FIX: Ensure shadowRoot exists before proceeding
-    if (!this.card._ensureShadowRootExists()) {
-      logDebug("ERROR", "Cannot build without shadowRoot, aborting");
+    // Wait for LitElement to create shadowRoot if not yet available
+    if (!this.card.shadowRoot) {
+      logDebug("INIT", "Waiting for LitElement to create shadowRoot...");
+      setTimeout(() => {
+        if (this.card.isConnected) {
+          this.build();
+        }
+      }, 10);
       this.card.building = false;
-      this.card.initialized = false;
       return;
     }
 
@@ -75,16 +79,7 @@ export class CardBuilder {
 
     const root = this.card.shadowRoot;
 
-    // CRITICAL FIX: Double-check shadowRoot before any appendChild operations
-    if (!root) {
-      logDebug(
-        "ERROR",
-        "shadowRoot is still null after creation attempt, aborting build",
-      );
-      this.card.building = false;
-      this.card.initialized = false;
-      return;
-    }
+    logDebug("INIT", "Building with shadowRoot:", !!root);
 
     const helpers = await getHelpers();
     if (!helpers) {
