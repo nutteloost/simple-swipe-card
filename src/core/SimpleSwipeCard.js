@@ -977,9 +977,35 @@ export class SimpleSwipeCard extends LitElement {
       this._handleConfigChanged.bind(this),
     );
 
-    // Only handle reconnection case - first connection handled by firstUpdated
-    if (this.initialized && this.cardContainer) {
-      logDebug("LIFECYCLE", "connectedCallback: Handling reconnection");
+    // Check for reconnection scenario: we have cards/config but no DOM structure
+    const isReconnection =
+      this.cards &&
+      this.cards.length > 0 &&
+      !this.cardContainer &&
+      this._config;
+
+    if (isReconnection) {
+      logDebug("LIFECYCLE", "Detected reconnection scenario - rebuilding card");
+
+      // Trigger a complete rebuild since DOM structure was cleared
+      this.cardBuilder
+        .build()
+        .then(() => {
+          if (this.isConnected) {
+            logDebug("LIFECYCLE", "Reconnection build completed");
+            this._handleDropdownOverflow();
+          }
+        })
+        .catch((error) => {
+          console.error("SimpleSwipeCard: Reconnection build failed:", error);
+          logDebug("ERROR", "Reconnection build failed, swipe may not work");
+        });
+    } else if (this.initialized && this.cardContainer) {
+      // Original reconnection logic for cases where DOM is still intact
+      logDebug(
+        "LIFECYCLE",
+        "connectedCallback: Handling reconnection with intact DOM",
+      );
 
       this._setupResizeObserver();
       if (this.visibleCardIndices.length > 1) {
