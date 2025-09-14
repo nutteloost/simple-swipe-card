@@ -674,9 +674,18 @@ export class SwipeGestures {
     )
       return false;
 
-    // SIMPLE & ROBUST: Detect slider-like elements by common patterns
+    // CHART FIX: Allow swiping on chart elements (SVG, Canvas)
     const tagName = element.localName?.toLowerCase();
-    const className = element.className || "";
+    if (tagName === "svg" || tagName === "canvas") {
+      logDebug("SWIPE", "Allowing swipe on chart element:", tagName);
+      return false; // Allow swiping on charts
+    }
+
+    // SIMPLE & ROBUST: Detect slider-like elements by common patterns
+    const className =
+      element.className && typeof element.className === "string"
+        ? element.className
+        : element.className?.toString() || "";
     const id = element.id || "";
     const role = element.getAttribute("role");
 
@@ -772,7 +781,10 @@ export class SwipeGestures {
           }
 
           // Check for slider-like elements in parent chain
-          const currentClassName = current.className || "";
+          const currentClassName =
+            current.className && typeof current.className === "string"
+              ? current.className
+              : current.className?.toString() || "";
           const currentId = current.id || "";
           if (
             currentClassName.includes("slider") ||

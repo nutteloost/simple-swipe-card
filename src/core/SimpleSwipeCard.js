@@ -85,6 +85,40 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
+   * LitElement lifecycle - called after first render
+   * Handle one-time initialization for the wrapper card
+   */
+  firstUpdated(changedProps) {
+    logDebug("LIFECYCLE", "firstUpdated called for wrapper card");
+
+    // Move the initial build logic here from connectedCallback
+    if (!this.initialized && this._config?.cards) {
+      logDebug("INIT", "firstUpdated: Initializing build.");
+
+      // Use .then() to ensure the dropdown handler is attached only after the build is complete
+      this.cardBuilder
+        .build()
+        .then(() => {
+          // Check if the card is still connected to the DOM before attaching listeners
+          if (this.isConnected) {
+            logDebug(
+              "LIFECYCLE",
+              "Build finished in firstUpdated, setting up features",
+            );
+            this._handleDropdownOverflow();
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "SimpleSwipeCard: Build failed in firstUpdated:",
+            error,
+          );
+          logDebug("ERROR", "Build failed, card may not function properly");
+        });
+    }
+  }
+
+  /**
    * Gets the config element for the Lovelace editor
    * @returns {Promise<HTMLElement>} The editor element
    */
@@ -924,13 +958,12 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Called when element is connected to DOM.
+   * Called when element is connected to DOM - simplified for proper lifecycle
    */
   connectedCallback() {
     super.connectedCallback();
 
-    console.log("DROPDOWN_FIX: 🚀 SimpleSwipeCard connectedCallback started");
-    logDebug("INIT", "connectedCallback");
+    logDebug("LIFECYCLE", "connectedCallback - simplified for wrapper card");
 
     // Safety mechanism: Reset any stuck seamless jump flag
     if (this._performingSeamlessJump) {
@@ -938,46 +971,16 @@ export class SimpleSwipeCard extends LitElement {
       this._performingSeamlessJump = false;
     }
 
-    // Add event listeners for editor integration.
+    // Add event listeners for editor integration
     this.addEventListener(
       "config-changed",
       this._handleConfigChanged.bind(this),
     );
 
-    if (!this.initialized && this._config?.cards) {
-      console.log("DROPDOWN_FIX: 🏗 Branch 1: Not initialized, building card");
-      logDebug("INIT", "connectedCallback: Initializing build.");
+    // Only handle reconnection case - first connection handled by firstUpdated
+    if (this.initialized && this.cardContainer) {
+      logDebug("LIFECYCLE", "connectedCallback: Handling reconnection");
 
-      // Use .then() to ensure the dropdown handler is attached only after the build is complete.
-      this.cardBuilder
-        .build()
-        .then(() => {
-          // Check if the card is still connected to the DOM before attaching listeners.
-          if (this.isConnected) {
-            console.log(
-              "DROPDOWN_FIX: 🔧 Build finished, calling _handleDropdownOverflow (branch 1)",
-            );
-            this._handleDropdownOverflow();
-            console.log(
-              "DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 1)",
-            );
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "SimpleSwipeCard: Build failed in connectedCallback:",
-            error,
-          );
-          logDebug("ERROR", "Build failed, card may not function properly");
-        });
-    } else if (this.initialized && this.cardContainer) {
-      console.log(
-        "DROPDOWN_FIX: 🏗 Branch 2: Already initialized, setting up observers",
-      );
-      logDebug(
-        "INIT",
-        "connectedCallback: Re-initializing observers and gestures.",
-      );
       this._setupResizeObserver();
       if (this.visibleCardIndices.length > 1) {
         this.swipeGestures.removeGestures();
@@ -986,27 +989,25 @@ export class SimpleSwipeCard extends LitElement {
         }, 50);
       }
 
-      // Apply card-mod styles when connected to DOM.
+      // Apply card-mod styles when connected to DOM
       if (this._cardModConfig) {
         this._applyCardModStyles();
         this._setupCardModObserver();
       }
 
-      // Initialize or resume auto-swipe and reset-after if enabled.
+      // Initialize or resume auto-swipe and reset-after if enabled
       this.autoSwipe.manage();
       this.resetAfter.manage();
       this.stateSynchronization.manage();
 
-      console.log(
-        "DROPDOWN_FIX: 🔧 About to call _handleDropdownOverflow (branch 2)",
+      logDebug(
+        "LIFECYCLE",
+        "About to call _handleDropdownOverflow (reconnection)",
       );
       this._handleDropdownOverflow();
-      console.log("DROPDOWN_FIX: ✅ _handleDropdownOverflow called (branch 2)");
-    } else {
-      console.log("DROPDOWN_FIX: 🏗 Branch 3: Other condition");
     }
 
-    console.log("DROPDOWN_FIX: 🎯 connectedCallback finished");
+    logDebug("LIFECYCLE", "connectedCallback finished");
   }
 
   /**
