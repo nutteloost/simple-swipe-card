@@ -307,8 +307,44 @@ export class LoopMode {
       return;
     }
 
-    // Use custom duration if provided, otherwise use default
-    const transitionDuration = customDuration || 400;
+    let transitionDuration;
+
+    if (customDuration !== null) {
+      // Use custom duration if provided
+      transitionDuration = customDuration;
+    } else {
+      // Read actual CSS transition duration instead of using hardcoded fallback
+      try {
+        const transitionStyle = this.card._getTransitionStyle(true);
+        logDebug("LOOP", "DEBUG: transitionStyle =", transitionStyle);
+        
+        // Parse duration from "transform 5s ease-out" format
+        const match = transitionStyle.match(/transform\s+([\d.]+)([a-z]*)\s/);
+        logDebug("LOOP", "DEBUG: regex match =", match);
+        
+        if (match) {
+          const duration = parseFloat(match[1]);
+          const unit = match[2] || 's';
+          logDebug("LOOP", "DEBUG: parsed duration =", duration, "unit =", unit);
+          
+          // Convert to milliseconds
+          if (unit === 's') {
+            transitionDuration = duration * 1000;
+          } else if (unit === 'ms') {
+            transitionDuration = duration;
+          } else {
+            transitionDuration = 400; // fallback
+          }
+          logDebug("LOOP", "DEBUG: final transitionDuration =", transitionDuration);
+        } else {
+          logDebug("LOOP", "DEBUG: regex match failed, using fallback");
+          transitionDuration = 400; // fallback if parsing fails
+        }
+      } catch (error) {
+        logDebug("LOOP", "Error reading CSS transition duration:", error);
+        transitionDuration = 400; // fallback
+      }
+    }
 
     logDebug(
       "LOOP",

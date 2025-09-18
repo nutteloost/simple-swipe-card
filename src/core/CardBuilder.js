@@ -458,6 +458,15 @@ export class CardBuilder {
     this.card.autoSwipe?.manage();
     this.card.resetAfter?.manage();
     this.card.stateSynchronization?.manage();
+
+    // Apply card-mod styles after layout is complete
+    if (this.card._cardModConfig) {
+      logDebug("CARD_MOD", "Applying card-mod styles in finishBuildLayout");
+      this.card._applyCardModStyles();
+      this.card._setupCardModObserver();
+    } else {
+      logDebug("CARD_MOD", "No card-mod config found in finishBuildLayout");
+    }
   }
 
   /**

@@ -1433,7 +1433,7 @@ export class SimpleSwipeCard extends LitElement {
       this.sliderElement.style.gap = `${cardSpacing}px`;
 
       // Handle custom animation duration for free swipe behavior in carousel mode
-      let animationDuration = animate ? 300 : 0; // Default, or 0 if not animating
+      let animationDuration = animate ? null : 0; // Let scheduleSeamlessJump read CSS duration
 
       if (
         animate &&
@@ -1515,7 +1515,7 @@ export class SimpleSwipeCard extends LitElement {
     }
 
     // Handle custom animation duration for free swipe behavior
-    let animationDuration = 300; // Default
+    let animationDuration = null; // Let scheduleSeamlessJump read CSS duration
 
     if (
       animate &&
@@ -1560,7 +1560,7 @@ export class SimpleSwipeCard extends LitElement {
 
     // Schedule seamless jump for infinite mode with proper timing
     // Only schedule if we're animating and have a valid duration
-    if (animate && animationDuration > 0) {
+    if (animate && (animationDuration > 0 || animationDuration === null)) {
       this.loopMode.scheduleSeamlessJump(this.currentIndex, animationDuration);
     }
   }
