@@ -317,25 +317,35 @@ export class LoopMode {
       try {
         const transitionStyle = this.card._getTransitionStyle(true);
         logDebug("LOOP", "DEBUG: transitionStyle =", transitionStyle);
-        
+
         // Parse duration from "transform 5s ease-out" format
         const match = transitionStyle.match(/transform\s+([\d.]+)([a-z]*)\s/);
         logDebug("LOOP", "DEBUG: regex match =", match);
-        
+
         if (match) {
           const duration = parseFloat(match[1]);
-          const unit = match[2] || 's';
-          logDebug("LOOP", "DEBUG: parsed duration =", duration, "unit =", unit);
-          
+          const unit = match[2] || "s";
+          logDebug(
+            "LOOP",
+            "DEBUG: parsed duration =",
+            duration,
+            "unit =",
+            unit,
+          );
+
           // Convert to milliseconds
-          if (unit === 's') {
+          if (unit === "s") {
             transitionDuration = duration * 1000;
-          } else if (unit === 'ms') {
+          } else if (unit === "ms") {
             transitionDuration = duration;
           } else {
             transitionDuration = 400; // fallback
           }
-          logDebug("LOOP", "DEBUG: final transitionDuration =", transitionDuration);
+          logDebug(
+            "LOOP",
+            "DEBUG: final transitionDuration =",
+            transitionDuration,
+          );
         } else {
           logDebug("LOOP", "DEBUG: regex match failed, using fallback");
           transitionDuration = 400; // fallback if parsing fails
