@@ -788,7 +788,6 @@ export class SwipeGestures {
           const currentId = current.id || "";
           if (
             currentClassName.includes("slider") ||
-            currentClassName.includes("control") ||
             currentId.includes("slider")
           ) {
             logDebug(
