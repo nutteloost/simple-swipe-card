@@ -233,13 +233,36 @@ automation:
 </details>
 
 
-
 ## Visibility Conditions
 
 Individual cards within the Simple Swipe Card can be conditionally shown or hidden using visibility conditions. Multiple conditions use AND logic (all must be true).
 
 > [!IMPORTANT]  
 > Visibility conditions are added to individual cards within your Simple Swipe Card configuration, not to the Simple Swipe Card configuration itself. 
+
+
+## Known Limitations & Troubleshooting
+
+### Card Picker Loading
+
+Due to Home Assistant's architecture, the card picker may not load immediately when first opening the Simple Swipe Card editor after clearing browser cache.
+
+**Simple Fix:** If you see an empty card picker section:
+1. Click the "+" (Add Card) button on your dashboard once
+2. Close the dialog that opens  
+3. Return to editing your Simple Swipe Card - the card picker will now work perfectly
+
+This only needs to be done once per browser session.
+
+### Interactive iframe-based Cards
+
+Simple Swipe Card intercepts mouse and touch events to enable swipe gestures, which can interfere with interactive iframe-based cards that require direct user interaction.
+
+**Affected card types include:**
+- Custom cards that embed external websites or services
+- Cards with embedded video players requiring direct controls
+- Third-party widgets that use iframe elements
+- Any card that relies on complex mouse interactions
 
 
 ## Customizing with Theme Variables
