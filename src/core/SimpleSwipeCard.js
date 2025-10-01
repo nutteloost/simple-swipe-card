@@ -554,7 +554,6 @@ export class SimpleSwipeCard extends LitElement {
       }
     });
   }
-
   /**
    * Evaluates a single conditional card condition
    * @param {Object} condition - The condition to evaluate
@@ -587,6 +586,115 @@ export class SimpleSwipeCard extends LitElement {
         : null);
 
     switch (actualConditionType) {
+      case "and": {
+        // All nested conditions must be true
+        if (!condition.conditions || !Array.isArray(condition.conditions)) {
+          logDebug(
+            "VISIBILITY",
+            "Conditional card AND condition missing 'conditions' array",
+          );
+          return false;
+        }
+
+        if (condition.conditions.length === 0) {
+          logDebug(
+            "VISIBILITY",
+            "Conditional card AND condition has empty 'conditions' array",
+          );
+          return true; // Empty AND is considered true
+        }
+
+        const result = condition.conditions.every((nestedCondition) => {
+          try {
+            return this._evaluateSingleCondition(nestedCondition);
+          } catch (error) {
+            logDebug(
+              "VISIBILITY",
+              "Error evaluating nested conditional card AND condition:",
+              nestedCondition,
+              error,
+            );
+            return false; // Fail the AND on any error
+          }
+        });
+
+        logDebug(
+          "VISIBILITY",
+          `Conditional card AND condition result: ${result} (${condition.conditions.length} nested conditions)`,
+        );
+        return result;
+      }
+
+      case "or": {
+        // At least one nested condition must be true
+        if (!condition.conditions || !Array.isArray(condition.conditions)) {
+          logDebug(
+            "VISIBILITY",
+            "Conditional card OR condition missing 'conditions' array",
+          );
+          return false;
+        }
+
+        if (condition.conditions.length === 0) {
+          logDebug(
+            "VISIBILITY",
+            "Conditional card OR condition has empty 'conditions' array",
+          );
+          return false; // Empty OR is considered false
+        }
+
+        const result = condition.conditions.some((nestedCondition) => {
+          try {
+            return this._evaluateSingleCondition(nestedCondition);
+          } catch (error) {
+            logDebug(
+              "VISIBILITY",
+              "Error evaluating nested conditional card OR condition:",
+              nestedCondition,
+              error,
+            );
+            return false; // Ignore errors in OR, continue with other conditions
+          }
+        });
+
+        logDebug(
+          "VISIBILITY",
+          `Conditional card OR condition result: ${result} (${condition.conditions.length} nested conditions)`,
+        );
+        return result;
+      }
+
+      case "not": {
+        // The nested condition must be false
+        if (!condition.condition) {
+          logDebug(
+            "VISIBILITY",
+            "Conditional card NOT condition missing 'condition' property",
+          );
+          return false;
+        }
+
+        try {
+          const nestedResult = this._evaluateSingleCondition(
+            condition.condition,
+          );
+          const result = !nestedResult;
+          logDebug(
+            "VISIBILITY",
+            `Conditional card NOT condition result: ${result} (nested was ${nestedResult})`,
+          );
+          return result;
+        } catch (error) {
+          logDebug(
+            "VISIBILITY",
+            "Error evaluating nested conditional card NOT condition:",
+            condition.condition,
+            error,
+          );
+          return false; // Default to false on error
+        }
+      }
+
       case "state": {
         if (!entity || !this._hass.states[entity]) {
           logDebug(
@@ -660,7 +768,7 @@ export class SimpleSwipeCard extends LitElement {
           const result = mediaQuery.matches;
           logDebug(
             "VISIBILITY",
-            `Screen condition: ${media}, result: ${result}`,
+            `Conditional card screen condition: ${media}, result: ${result}`,
           );
           return result;
         }
@@ -675,7 +783,7 @@ export class SimpleSwipeCard extends LitElement {
             const result = condition.users.includes(currentUser.id);
             logDebug(
               "VISIBILITY",
-              `User condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`,
+              `Conditional card user condition: current user ${currentUser.id}, allowed users: ${condition.users}, result: ${result}`,
             );
             return result;
           }
@@ -695,7 +803,7 @@ export class SimpleSwipeCard extends LitElement {
         }
         logDebug(
           "VISIBILITY",
-          `Unknown condition type: ${actualConditionType}`,
+          `Unknown conditional card condition type: ${actualConditionType}`,
         );
         return true; // Unknown conditions without entity default to visible
     }
@@ -1462,7 +1570,7 @@ export class SimpleSwipeCard extends LitElement {
       this._lastSkipCount = 1;
 
       // Only schedule seamless jump if we're animating and have a valid duration
-      if (animate && animationDuration > 0) {
+      if (animate && (animationDuration > 0 || animationDuration === null)) {
         this.loopMode.scheduleSeamlessJump(
           this.currentIndex,
           animationDuration,

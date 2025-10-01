@@ -45,6 +45,98 @@ function evaluateSingleCondition(condition, hass) {
   const { condition: conditionType, entity, state, state_not } = condition;
 
   switch (conditionType) {
+    case "and": {
+      // All nested conditions must be true
+      if (!condition.conditions || !Array.isArray(condition.conditions)) {
+        logDebug("VISIBILITY", "AND condition missing 'conditions' array");
+        return false;
+      }
+
+      if (condition.conditions.length === 0) {
+        logDebug("VISIBILITY", "AND condition has empty 'conditions' array");
+        return true; // Empty AND is considered true
+      }
+
+      const result = condition.conditions.every((nestedCondition) => {
+        try {
+          return evaluateSingleCondition(nestedCondition, hass);
+        } catch (error) {
+          logDebug(
+            "VISIBILITY",
+            "Error evaluating nested AND condition:",
+            nestedCondition,
+            error,
+          );
+          return false; // Fail the AND on any error
+        }
+      });
+
+      logDebug(
+        "VISIBILITY",
+        `AND condition result: ${result} (${condition.conditions.length} nested conditions)`,
+      );
+      return result;
+    }
+
+    case "or": {
+      // At least one nested condition must be true
+      if (!condition.conditions || !Array.isArray(condition.conditions)) {
+        logDebug("VISIBILITY", "OR condition missing 'conditions' array");
+        return false;
+      }
+
+      if (condition.conditions.length === 0) {
+        logDebug("VISIBILITY", "OR condition has empty 'conditions' array");
+        return false; // Empty OR is considered false
+      }
+
+      const result = condition.conditions.some((nestedCondition) => {
+        try {
+          return evaluateSingleCondition(nestedCondition, hass);
+        } catch (error) {
+          logDebug(
+            "VISIBILITY",
+            "Error evaluating nested OR condition:",
+            nestedCondition,
+            error,
+          );
+          return false; // Ignore errors in OR, continue with other conditions
+        }
+      });
+
+      logDebug(
+        "VISIBILITY",
+        `OR condition result: ${result} (${condition.conditions.length} nested conditions)`,
+      );
+      return result;
+    }
+
+    case "not": {
+      // The nested condition must be false
+      if (!condition.condition) {
+        logDebug("VISIBILITY", "NOT condition missing 'condition' property");
+        return false;
+      }
+
+      try {
+        const nestedResult = evaluateSingleCondition(condition.condition, hass);
+        const result = !nestedResult;
+        logDebug(
+          "VISIBILITY",
+          `NOT condition result: ${result} (nested was ${nestedResult})`,
+        );
+        return result;
+      } catch (error) {
+        logDebug(
+          "VISIBILITY",
+          "Error evaluating nested NOT condition:",
+          condition.condition,
+          error,
+        );
+        return false; // Default to false on error
+      }
+    }
+
     case "state": {
       if (!entity || !hass.states[entity]) {
         logDebug(

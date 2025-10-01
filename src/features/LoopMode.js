@@ -285,9 +285,18 @@ export class LoopMode {
     if (!this.isInfiniteMode) return false;
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
-    // Only trigger jump when we've moved to virtual positions
-    // This allows the transition to complete first
-    return currentIndex < 0 || currentIndex >= totalVisibleCards;
+    const viewMode = this.card._config.view_mode || "single";
+
+    if (viewMode === "carousel") {
+      // For carousel mode, jump as soon as we go past the real cards
+      // This ensures the user never sees duplicate cards and gets true infinite scrolling
+      return currentIndex >= totalVisibleCards || currentIndex < 0;
+    } else {
+      // For single mode, use the original logic
+      // Only trigger jump when we've moved to virtual positions
+      // This allows the transition to complete first
+      return currentIndex < 0 || currentIndex >= totalVisibleCards;
+    }
   }
 
   /**
