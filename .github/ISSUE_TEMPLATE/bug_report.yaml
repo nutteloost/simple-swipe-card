@@ -66,6 +66,24 @@ body:
       required: true
 
   - type: dropdown
+    id: device-platform
+    attributes:
+      label: Device/Platform Running Home Assistant
+      description: What hardware/platform is Home Assistant running on?
+      options:
+        - Raspberry Pi
+        - Intel NUC
+        - Virtual Machine (VMware/VirtualBox/etc.)
+        - Docker Container
+        - Physical Server/Desktop
+        - Home Assistant Yellow
+        - Home Assistant Green
+        - Other
+      default: 0
+    validations:
+      required: false      
+
+  - type: dropdown
     id: component
     attributes:
       label: Affected Feature
