@@ -20,28 +20,48 @@ export class CarouselView {
   calculateTransform(targetIndex) {
     if (!this.card.cards || this.card.cards.length === 0) return 0;
 
-    // Support both responsive and legacy approaches
-    let cardsVisible;
     const containerWidth = this.card.cardContainer.offsetWidth;
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
 
-    if (this.card._config.cards_visible !== undefined) {
-      // Legacy approach - use fixed cards_visible for backwards compatibility
-      cardsVisible = this.card._config.cards_visible;
-      logDebug("SWIPE", "Using legacy cards_visible approach:", cardsVisible);
+    // Use stored dimensions if available (set during layout), otherwise recalculate
+    let cardWidth, cardsVisible;
+
+    if (this.card._carouselCardWidth && this.card._carouselCardsVisible) {
+      cardWidth = this.card._carouselCardWidth;
+      cardsVisible = this.card._carouselCardsVisible;
+      logDebug("SWIPE", "Using stored carousel dimensions:", {
+        cardWidth: cardWidth.toFixed(2),
+        cardsVisible: cardsVisible.toFixed(2),
+      });
     } else {
-      // Responsive approach - calculate fractional cards_visible from card_min_width
-      const minWidth = this.card._config.card_min_width || 200;
-      const rawCardsVisible =
-        (containerWidth + cardSpacing) / (minWidth + cardSpacing);
-      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
-      logDebug("SWIPE", "Using responsive approach:", {
-        minWidth,
-        containerWidth,
-        cardSpacing,
-        rawCardsVisible: rawCardsVisible.toFixed(2),
-        finalCardsVisible: cardsVisible,
+      // Fallback: read from CSS or recalculate
+      const computedWidth = getComputedStyle(this.card)
+        .getPropertyValue("--carousel-card-width")
+        .trim();
+
+      if (computedWidth && computedWidth !== "" && computedWidth !== "auto") {
+        cardWidth = parseFloat(computedWidth);
+        cardsVisible =
+          (containerWidth + cardSpacing) / (cardWidth + cardSpacing);
+      } else {
+        // Calculate from config
+        if (this.card._config.cards_visible !== undefined) {
+          cardsVisible = this.card._config.cards_visible;
+        } else {
+          const minWidth = this.card._config.card_min_width || 200;
+          const rawCardsVisible =
+            (containerWidth + cardSpacing) / (minWidth + cardSpacing);
+          cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10);
+        }
+
+        const totalSpacing = (cardsVisible - 1) * cardSpacing;
+        cardWidth = (containerWidth - totalSpacing) / cardsVisible;
+      }
+
+      logDebug("SWIPE", "Recalculated carousel dimensions:", {
+        cardWidth: cardWidth.toFixed(2),
+        cardsVisible: cardsVisible.toFixed(2),
       });
     }
 
@@ -49,7 +69,6 @@ export class CarouselView {
     const loopMode = this.card._config.loop_mode || "none";
 
     // Edge case: If we have fewer cards than cards_visible, don't transform at all
-    // BUT: In infinite mode, we always have enough cards due to duplicates
     if (
       totalCards <= Math.floor(cardsVisible) &&
       this.card._config.loop_mode !== "infinite"
@@ -65,7 +84,6 @@ export class CarouselView {
     let domPosition;
 
     if (loopMode === "infinite" && totalCards > 1) {
-      // For carousel infinite mode, also use real DOM positioning like single mode
       const duplicateCount = this.card.loopMode.getDuplicateCount();
       domPosition = targetIndex + duplicateCount;
       logDebug(
@@ -78,13 +96,8 @@ export class CarouselView {
         duplicateCount,
       );
     } else {
-      // Original logic for non-infinite modes or single card
       domPosition = Math.min(targetIndex, Math.max(0, totalCards - 1));
     }
-
-    // Calculate individual card width (same logic as in CardBuilder)
-    const totalSpacing = (cardsVisible - 1) * cardSpacing;
-    const cardWidth = (containerWidth - totalSpacing) / cardsVisible;
 
     // In carousel mode, we move by single card width + spacing
     const moveDistance = cardWidth + cardSpacing;

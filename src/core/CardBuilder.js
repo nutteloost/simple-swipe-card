@@ -464,6 +464,13 @@ export class CardBuilder {
       logDebug("CARD_MOD", "Applying card-mod styles in finishBuildLayout");
       this.card._applyCardModStyles();
       this.card._setupCardModObserver();
+
+      // Recalculate layout after card-mod applies (small delay to ensure styles are applied)
+      setTimeout(() => {
+        if (this.card.isConnected) {
+          this.recalculateCarouselLayout();
+        }
+      }, 100);
     } else {
       logDebug("CARD_MOD", "No card-mod config found in finishBuildLayout");
     }
@@ -530,31 +537,57 @@ export class CardBuilder {
   }
 
   /**
-   * Sets up carousel mode layout and sizing
+   * Gets the actual carousel card width from CSS or calculates it
    * @param {number} containerWidth - Container width
+   * @param {number} cardSpacing - Spacing between cards
+   * @returns {Object} Object with cardWidth and cardsVisible
    * @private
    */
-  _setupCarouselLayout(containerWidth) {
-    // Support both responsive and legacy approaches
+  _getCarouselDimensions(containerWidth, cardSpacing) {
+    // First, check if CSS variable is already set (e.g., by card-mod)
+    const computedWidth = getComputedStyle(this.card)
+      .getPropertyValue("--carousel-card-width")
+      .trim();
+
+    // DEBUG: Log what we found
+    logDebug("INIT", "Checking for CSS override:", {
+      computedWidth,
+      hasValue: !!computedWidth,
+      isEmpty: computedWidth === "",
+      isAuto: computedWidth === "auto",
+    });
+
+    if (computedWidth && computedWidth !== "" && computedWidth !== "auto") {
+      // CSS override exists - use it and calculate cardsVisible from it
+      const cardWidth = parseFloat(computedWidth);
+      const cardsVisible =
+        (containerWidth + cardSpacing) / (cardWidth + cardSpacing);
+
+      logDebug("INIT", "✅ Using CSS-overridden card width:", {
+        cardWidth: cardWidth.toFixed(2),
+        cardsVisible: cardsVisible.toFixed(2),
+        source: "card-mod or CSS",
+      });
+
+      return { cardWidth, cardsVisible: Math.max(1.1, cardsVisible) };
+    }
+
+    // No CSS override - calculate from config
+    logDebug("INIT", "❌ No CSS override found, calculating from config");
+
     let cardsVisible;
-    const cardSpacing =
-      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
 
     if (this.card._config.cards_visible !== undefined) {
-      // Legacy approach - use fixed cards_visible (backwards compatibility)
+      // Legacy approach
       cardsVisible = this.card._config.cards_visible;
-      logDebug(
-        "INIT",
-        "Carousel layout using legacy cards_visible approach:",
-        cardsVisible,
-      );
+      logDebug("INIT", "Using legacy cards_visible approach:", cardsVisible);
     } else {
-      // Responsive approach - calculate fractional cards_visible from card_min_width
+      // Responsive approach
       const minWidth = this.card._config.card_min_width || 200;
       const rawCardsVisible =
         (containerWidth + cardSpacing) / (minWidth + cardSpacing);
-      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10); // Round to 1 decimal
-      logDebug("INIT", "Carousel layout using responsive approach:", {
+      cardsVisible = Math.max(1.1, Math.round(rawCardsVisible * 10) / 10);
+      logDebug("INIT", "Using responsive approach:", {
         minWidth,
         containerWidth,
         cardSpacing,
@@ -563,21 +596,74 @@ export class CardBuilder {
       });
     }
 
-    // Calculate individual card width
-    // Total spacing = (cards_visible - 1) * cardSpacing (spacing between visible cards)
+    // Calculate card width from cardsVisible
     const totalSpacing = (cardsVisible - 1) * cardSpacing;
     const cardWidth = (containerWidth - totalSpacing) / cardsVisible;
+
+    return { cardWidth, cardsVisible };
+  }
+
+  /**
+   * Recalculates carousel layout (called after card-mod applies styles)
+   */
+  recalculateCarouselLayout() {
+    const viewMode = this.card._config.view_mode || "single";
+    if (viewMode !== "carousel") return;
+
+    const containerWidth = this.card.cardContainer?.offsetWidth;
+    if (!containerWidth) return;
+
+    logDebug("INIT", "🔄 Recalculating carousel layout after card-mod");
+    this._setupCarouselLayout(containerWidth);
+
+    // Update the slider position with new dimensions
+    this.card.updateSlider(false);
+  }
+
+  /**
+   * Sets up carousel mode layout and sizing
+   * @param {number} containerWidth - Container width
+   * @private
+   */
+  _setupCarouselLayout(containerWidth) {
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    // Get dimensions (respecting CSS overrides)
+    const { cardWidth, cardsVisible } = this._getCarouselDimensions(
+      containerWidth,
+      cardSpacing,
+    );
 
     logDebug("INIT", "Carousel layout setup:", {
       containerWidth,
       cardsVisible: cardsVisible.toFixed(2),
       cardSpacing,
-      totalSpacing,
       cardWidth: cardWidth.toFixed(2),
     });
 
-    // Set CSS custom property for card width
-    this.card.style.setProperty("--carousel-card-width", `${cardWidth}px`);
+    // Only set CSS custom property if not already overridden by card-mod
+    const existingWidth = getComputedStyle(this.card)
+      .getPropertyValue("--carousel-card-width")
+      .trim();
+    if (!existingWidth || existingWidth === "" || existingWidth === "auto") {
+      this.card.style.setProperty("--carousel-card-width", `${cardWidth}px`);
+      logDebug(
+        "INIT",
+        "Set --carousel-card-width to calculated value:",
+        `${cardWidth}px`,
+      );
+    } else {
+      logDebug(
+        "INIT",
+        "Skipping CSS variable set - already overridden:",
+        existingWidth,
+      );
+    }
+
+    // Store for use by other components
+    this.card._carouselCardWidth = cardWidth;
+    this.card._carouselCardsVisible = cardsVisible;
 
     // Add carousel data attribute to slider and container
     this.card.sliderElement.setAttribute("data-view-mode", "carousel");
