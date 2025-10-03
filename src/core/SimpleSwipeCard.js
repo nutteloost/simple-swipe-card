@@ -1378,21 +1378,34 @@ export class SimpleSwipeCard extends LitElement {
 
     this.resizeObserver = setupResizeObserver(
       this.cardContainer,
-      (newWidth, newHeight) => {
-        if (
-          (newWidth > 0 && Math.abs(newWidth - this.slideWidth) > 1) ||
-          (newHeight > 0 && Math.abs(newHeight - this.slideHeight) > 1)
-        ) {
-          logDebug("INIT", "Resize detected, recalculating layout.", {
-            oldWidth: this.slideWidth,
-            newWidth,
-            oldHeight: this.slideHeight,
-            newHeight,
-          });
-          this.cardBuilder.finishBuildLayout();
-        }
-      },
+      () => this.recalculateLayout(), // ← Updated to use the new method
     );
+  }
+
+  /**
+   * Recalculates layout due to resize
+   * @private
+   */
+  recalculateLayout() {
+    if (!this.cardContainer || !this.isConnected) return;
+
+    const newWidth = this.cardContainer.offsetWidth;
+    const newHeight = this.cardContainer.offsetHeight;
+
+    if (
+      (newWidth > 0 && Math.abs(newWidth - this.slideWidth) > 1) ||
+      (newHeight > 0 && Math.abs(newHeight - this.slideHeight) > 1)
+    ) {
+      logDebug("SYSTEM", "Recalculating layout due to resize.", {
+        oldWidth: this.slideWidth,
+        newWidth,
+        oldHeight: this.slideHeight,
+        newHeight,
+      });
+      this.slideWidth = newWidth;
+      this.slideHeight = newHeight;
+      this.updateSlider(false);
+    }
   }
 
   /**

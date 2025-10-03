@@ -427,8 +427,12 @@ export class CardBuilder {
     // Apply matching border radius to all loaded slides
     applyBorderRadiusToSlides(this.card.cards, this.card.cardContainer);
 
-    this.card.updateSlider(false);
+    // START INVISIBLE: Hide slider during initial layout to prevent visible jump
+    if (this.card.sliderElement) {
+      this.card.sliderElement.style.opacity = "0";
+    }
 
+    this.card.updateSlider(false);
     this.card._setupResizeObserver();
 
     // Add swipe gestures if needed (based on visible cards)
@@ -474,6 +478,43 @@ export class CardBuilder {
     } else {
       logDebug("CARD_MOD", "No card-mod config found in finishBuildLayout");
     }
+
+    // Catch layout shifts and fade in smoothly ---
+    setTimeout(() => {
+      if (
+        this.card.isConnected &&
+        this.card.cardContainer &&
+        this.card.sliderElement
+      ) {
+        const settledWidth = this.card.cardContainer.offsetWidth;
+        const settledHeight = this.card.cardContainer.offsetHeight;
+
+        // Check if dimensions changed since initial measurement
+        if (
+          Math.abs(settledWidth - this.card.slideWidth) > 1 ||
+          Math.abs(settledHeight - this.card.slideHeight) > 1
+        ) {
+          logDebug(
+            "INIT",
+            `Layout settled to new dimensions (${settledWidth}x${settledHeight}px), re-updating slider.`,
+          );
+          this.card.slideWidth = settledWidth;
+          this.card.slideHeight = settledHeight;
+          this.card.updateSlider(false);
+        }
+
+        // Fade in the slider smoothly after layout is settled
+        this.card.sliderElement.style.transition = "opacity 0.2s ease-in";
+        this.card.sliderElement.style.opacity = "1";
+
+        // Clean up transition after fade completes
+        setTimeout(() => {
+          if (this.card.sliderElement) {
+            this.card.sliderElement.style.transition = "";
+          }
+        }, 200);
+      }
+    }, 50);
   }
 
   /**

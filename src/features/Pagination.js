@@ -94,6 +94,15 @@ export class Pagination {
 
     // Wait for next frame to ensure styles are applied
     requestAnimationFrame(() => {
+      // Re-check element existence before getComputedStyle
+      if (!this.paginationElement || !this.paginationElement.isConnected) {
+        logDebug(
+          "PAGINATION",
+          "Pagination element no longer exists, skipping dimension setup",
+        );
+        return;
+      }
+
       // Read CSS custom properties from multiple potential sources
       const hostElement = this.card.shadowRoot?.host || this.card;
       const paginationStyle = getComputedStyle(this.paginationElement);
@@ -311,7 +320,7 @@ export class Pagination {
    * @private
    */
   _setupAutoHideCSS() {
-    if (!this.paginationElement) return;
+    if (!this.paginationElement || !this.paginationElement.isConnected) return;
 
     // Get animation type to determine which approach to use
     const animationType =
@@ -382,7 +391,12 @@ export class Pagination {
    * Hides pagination dots with configurable animation pattern
    */
   hidePagination() {
-    if (!this._isAutoHideEnabled || !this.paginationElement) return;
+    if (
+      !this._isAutoHideEnabled ||
+      !this.paginationElement ||
+      !this.paginationElement.isConnected
+    )
+      return;
 
     if (this._isPaginationVisible) {
       logDebug("PAGINATION", "Hiding pagination");
@@ -409,7 +423,12 @@ export class Pagination {
    * Shows pagination dots immediately
    */
   showPagination() {
-    if (!this._isAutoHideEnabled || !this.paginationElement) return;
+    if (
+      !this._isAutoHideEnabled ||
+      !this.paginationElement ||
+      !this.paginationElement.isConnected
+    )
+      return;
 
     if (!this._isPaginationVisible) {
       logDebug("PAGINATION", "Showing pagination");
@@ -440,6 +459,8 @@ export class Pagination {
    * @private
    */
   _applyHideAnimation() {
+    if (!this.paginationElement || !this.paginationElement.isConnected) return;
+
     const dots = this.paginationElement.querySelectorAll(".pagination-dot");
     const animationType =
       getComputedStyle(this.paginationElement)
@@ -472,6 +493,8 @@ export class Pagination {
    * @private
    */
   _applyShowAnimation() {
+    if (!this.paginationElement || !this.paginationElement.isConnected) return;
+
     const dots = this.paginationElement.querySelectorAll(".pagination-dot");
     const animationType =
       getComputedStyle(this.paginationElement)
