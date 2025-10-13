@@ -18,6 +18,7 @@ const DEBUG_CATEGORIES = {
   CARD_MOD: true,
   VISIBILITY: true,
   RESET: true,
+  AUTO_HEIGHT: true,
 };
 
 export const enableElementDebug = () => {
@@ -88,6 +89,7 @@ export const logDebug = (category, ...args) => {
     CARD_MOD: "color: #9932cc; font-weight: bold",
     VISIBILITY: "color: #ff5722; font-weight: bold",
     RESET: "color: #8bc34a; font-weight: bold",
+    AUTO_HEIGHT: "color: #ffc107; font-weight: bold",
   };
 
   const style = categoryColors[category] || categoryColors.DEFAULT;

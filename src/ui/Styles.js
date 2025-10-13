@@ -41,6 +41,30 @@ export function getStyles() {
        flex: 0 0 100%;
      } 
 
+     /* Auto Height Mode */
+     :host([data-auto-height]:not([data-editor-mode])) .card-container {
+       height: auto;
+       transition: height 0.2s ease-out;
+     }
+
+     :host([data-auto-height]:not([data-editor-mode])) .slider[data-swipe-direction="horizontal"] {
+       height: auto;
+       align-items: flex-start; /* prevents flex from stretching children */
+     }
+
+     :host([data-auto-height]:not([data-editor-mode])) .slider[data-swipe-direction="horizontal"] .slide {
+       height: auto;
+       min-height: 0;
+       max-height: none;
+       flex-basis: auto;
+     }
+
+     /* Override child card heights */
+     :host([data-auto-height]:not([data-editor-mode])) .slide > * > ha-card,
+     :host([data-auto-height]:not([data-editor-mode])) .slide > * > .card-content {
+       height: auto;
+     } 
+
      /* --- START PREVIEW STYLES --- */
      .preview-container {
         display: flex;
@@ -912,6 +936,11 @@ export const getEditorStyles = () => css`
     width: 16px;
     height: 16px;
     flex-shrink: 0;
+  }
+
+  .option-info .info-icon {
+    background: none;
+    border-radius: 0;
   }
 
   .version-display {

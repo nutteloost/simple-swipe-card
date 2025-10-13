@@ -113,6 +113,27 @@ export class EditorConfigManager {
       );
     }
 
+    // Set default for auto_height
+    if (this.editor._config.auto_height === undefined) {
+      this.editor._config.auto_height = false;
+    }
+
+    // Validate auto_height compatibility - auto-delete if incompatible
+    if (this.editor._config.auto_height === true) {
+      const isIncompatible =
+        this.editor._config.view_mode === "carousel" ||
+        this.editor._config.swipe_direction === "vertical" ||
+        this.editor._config.loop_mode === "infinite";
+
+      if (isIncompatible) {
+        delete this.editor._config.auto_height;
+        logDebug(
+          "CONFIG",
+          "auto_height removed: incompatible with current mode (carousel, vertical, or infinite loop)",
+        );
+      }
+    }
+
     // Set defaults for auto-swipe options
     if (this.editor._config.enable_auto_swipe === undefined)
       this.editor._config.enable_auto_swipe = false;
@@ -281,6 +302,14 @@ export class EditorConfigManager {
 
       if (value === "carousel") {
         delete newConfig.swipe_direction;
+        // Remove auto_height when switching to carousel
+        if (newConfig.auto_height) {
+          delete newConfig.auto_height;
+          logDebug(
+            "EDITOR",
+            "Removed auto_height (incompatible with carousel mode)",
+          );
+        }
         if (!newConfig.cards_visible && !newConfig.card_min_width) {
           newConfig.card_min_width = 200;
         }
@@ -325,6 +354,35 @@ export class EditorConfigManager {
         this.editor._config = { ...this.editor._config, [finalOption]: value };
       }
 
+      this.fireConfigChanged();
+      this._scheduleEditorUpdate();
+      return;
+    }
+
+    // Handle mode changes that affect auto_height compatibility
+    if (
+      (finalOption === "view_mode" && value === "carousel") ||
+      (finalOption === "swipe_direction" && value === "vertical") ||
+      (finalOption === "loop_mode" && value === "infinite")
+    ) {
+      logDebug(
+        "EDITOR",
+        `Mode change detected that affects auto_height: ${finalOption} = ${value}`,
+      );
+
+      // Create new config with the updated value
+      const newConfig = { ...this.editor._config, [finalOption]: value };
+
+      // Remove auto_height if it exists
+      if (newConfig.auto_height) {
+        delete newConfig.auto_height;
+        logDebug(
+          "EDITOR",
+          `Removed auto_height due to incompatible mode: ${finalOption} = ${value}`,
+        );
+      }
+
+      this.editor._config = newConfig;
       this.fireConfigChanged();
       this._scheduleEditorUpdate();
       return;
@@ -421,6 +479,7 @@ export class EditorConfigManager {
       "swipe_behavior",
       "show_pagination",
       "auto_hide_pagination",
+      "auto_height",
     ];
 
     // Advanced Options section (matches UI order)

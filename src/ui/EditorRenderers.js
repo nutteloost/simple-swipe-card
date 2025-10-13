@@ -133,6 +133,7 @@ export function renderDisplayOptions(config, valueChanged) {
   const swipeDirection = config.swipe_direction || "horizontal";
   const swipeBehavior = config.swipe_behavior || "single";
   const viewMode = config.view_mode || "single";
+  const autoHeight = config.auto_height === true;
 
   return html`
     <div class="section">
@@ -211,6 +212,86 @@ export function renderDisplayOptions(config, valueChanged) {
           `
         : ""}
 
+      <!-- AUTO HEIGHT TOGGLE - Always visible with smart disabling -->
+      <div class="option-row">
+        <div class="option-left">
+          <div class="option-label">Auto Height</div>
+          <div class="option-help">
+            ${viewMode === "single" &&
+            swipeDirection === "horizontal" &&
+            config.loop_mode !== "infinite"
+              ? "Automatically adjust card height to match each card's content"
+              : "Not available in current mode"}
+          </div>
+        </div>
+        <div class="option-control">
+          <ha-switch
+            .checked=${autoHeight}
+            data-option="auto_height"
+            @change=${valueChanged}
+            .disabled=${viewMode !== "single" ||
+            swipeDirection !== "horizontal" ||
+            config.loop_mode === "infinite"}
+          ></ha-switch>
+        </div>
+      </div>
+
+      <!-- Warning messages when auto_height incompatible -->
+      ${autoHeight && viewMode === "carousel"
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+              <span>
+                Auto height is not compatible with carousel mode and has been
+                disabled.
+              </span>
+            </div>
+          `
+        : ""}
+      ${autoHeight && swipeDirection === "vertical"
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+              <span>
+                Auto height is not compatible with vertical swiping and has been
+                disabled.
+              </span>
+            </div>
+          `
+        : ""}
+      ${autoHeight && config.loop_mode === "infinite"
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+              <span>
+                Auto height is not compatible with infinite loop mode and has
+                been disabled.
+              </span>
+            </div>
+          `
+        : ""}
+      ${autoHeight && config.grid_options?.rows !== undefined
+        ? html`
+            <div class="option-info warning" style="display: block;">
+              <div
+                style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"
+              >
+                <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+                <strong>Auto Height is blocked</strong>
+              </div>
+              <div style="font-size: 12px; line-height: 1.5;">
+                Your configuration has
+                <code>grid_options: rows: ${config.grid_options.rows}</code>
+                which prevents auto height from working. <br /><br />
+                Go to the Layout tab and remove
+                <strong><code>rows: ${config.grid_options.rows}</code></strong>
+                (or remove it from YAML). Keep only <code>columns</code> in
+                grid_options.
+              </div>
+            </div>
+          `
+        : ""}
+
       <!-- Only show swipe behavior when infinite loop mode is selected -->
       ${config.loop_mode === "infinite"
         ? html`
@@ -280,21 +361,23 @@ export function renderDisplayOptions(config, valueChanged) {
                 <div class="auto-hide-control">
                   <div class="auto-hide-value">
                     ${(config.auto_hide_pagination || 0) === 0
-                      ? "Never"
-                      : `${(config.auto_hide_pagination || 0) / 1000}s`}
+                      ? "Off"
+                      : `${(config.auto_hide_pagination / 1000).toFixed(1)}s`}
                   </div>
                   <ha-slider
+                    min="0"
+                    max="30"
+                    step="0.5"
                     .value=${(config.auto_hide_pagination || 0) / 1000}
-                    .min=${0}
-                    .max=${10}
-                    .step=${0.5}
                     data-option="auto_hide_pagination"
-                    @input=${valueChanged}
                     @change=${valueChanged}
-                    pin
                   ></ha-slider>
                 </div>
               </div>
+            </div>
+            <div class="info-text">
+              Pagination dots will automatically hide after the specified time
+              of inactivity. Set to 0 to disable auto-hide.
             </div>
           `
         : ""}

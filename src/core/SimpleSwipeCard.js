@@ -12,6 +12,7 @@ import { ResetAfter } from "../features/ResetAfter.js";
 import { Pagination } from "../features/Pagination.js";
 import { CardBuilder } from "./CardBuilder.js";
 import { StateSynchronization } from "../features/StateSynchronization.js";
+import { AutoHeight } from "../features/AutoHeight.js";
 import {
   setupResizeObserver,
   applyCardModStyles,
@@ -68,6 +69,7 @@ export class SimpleSwipeCard extends LitElement {
     this.carouselView = new CarouselView(this);
     this.loopMode = new LoopMode(this);
     this.swipeBehavior = new SwipeBehavior(this);
+    this.autoHeight = new AutoHeight(this);
 
     // Dropdown overflow management (added for v2.5.6 fix)
     this._dropdownFixApplied = false;
@@ -88,7 +90,7 @@ export class SimpleSwipeCard extends LitElement {
    * LitElement lifecycle - called after first render
    * Handle one-time initialization for the wrapper card
    */
-  firstUpdated(changedProps) {
+  firstUpdated() {
     logDebug("LIFECYCLE", "firstUpdated called for wrapper card");
 
     // Move the initial build logic here from connectedCallback
@@ -246,6 +248,27 @@ export class SimpleSwipeCard extends LitElement {
       );
     }
 
+    // Set default for auto_height
+    if (this._config.auto_height === undefined) {
+      this._config.auto_height = false;
+    }
+
+    // Validate auto_height compatibility - auto-delete if incompatible
+    if (this._config.auto_height === true) {
+      const isIncompatible =
+        this._config.view_mode === "carousel" ||
+        this._config.swipe_direction === "vertical" ||
+        this._config.loop_mode === "infinite";
+
+      if (isIncompatible) {
+        delete this._config.auto_height;
+        logDebug(
+          "CONFIG",
+          "auto_height removed: incompatible with current mode (carousel, vertical, or infinite loop)",
+        );
+      }
+    }
+
     // Set defaults for auto-swipe options
     if (this._config.enable_auto_swipe === undefined)
       this._config.enable_auto_swipe = false;
@@ -341,6 +364,12 @@ export class SimpleSwipeCard extends LitElement {
     this._viewMode = this._config.view_mode || "single";
 
     delete this._config.title;
+
+    // Initialize auto height AFTER all config is validated
+    this.autoHeight?.initialize();
+
+    // Fire initial config event
+    this.requestUpdate();
   }
 
   /**
@@ -1273,6 +1302,10 @@ export class SimpleSwipeCard extends LitElement {
         this.stateSynchronization.stop();
       }
 
+      if (this.autoHeight) {
+        this.autoHeight.cleanup();
+      }
+
       logDebug("INIT", "Feature managers cleaned up (state preserved)");
     } catch (error) {
       console.warn("Error cleaning up feature managers:", error);
@@ -1496,6 +1529,9 @@ export class SimpleSwipeCard extends LitElement {
 
     // Pass animate parameter to updateSlider
     this.updateSlider(animate);
+
+    // Update container height for auto height mode
+    this.autoHeight?.updateForCurrentCard();
 
     // Handle reset-after timer for manual user interactions
     if (!this.autoSwipe.isInProgress && !this.resetAfter.isInProgress) {

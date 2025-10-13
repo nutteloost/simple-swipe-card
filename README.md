@@ -137,25 +137,33 @@ This card can be configured using the visual editor or YAML.
 ### Options
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
-| cards | list | Required | List of cards to display |
-| view_mode | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
-| card_min_width | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
-| show_pagination | boolean | true | Show/hide pagination dots |
-| auto_hide_pagination | number | 0 | Auto-hide pagination dots after inactivity in milliseconds (0 = disabled, max 30000ms). Dots reappear on hover/touch |
-| card_spacing | number | 15 | Space between cards in pixels |
-| loop_mode | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
-| swipe_direction | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
-| swipe_behavior | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
-| enable_auto_swipe | boolean	| false | When enabled, the card will automatically swipe between slides |
-| auto_swipe_interval | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
-| enable_reset_after | boolean | false | Enable automatic return to target card after inactivity |
-| reset_after_timeout | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
-| reset_target_card | number | 1 | Index of card to return to (1 = first card) |
-| state_entity | string | null | Entity ID for state synchronization. Supports input_select and input_number entities |
+| `cards` | list | Required | List of cards to display |
+| `view_mode` | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
+| `card_min_width` | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
+| `auto_height` | boolean | false | Automatically adjust card height to match each card's content. Only available with single view mode, horizontal swiping, and non-infinite loop modes. Height changes are instant without animation |
+| `show_pagination` | boolean | true | Show/hide pagination dots |
+| `auto_hide_pagination` | number | 0 | Auto-hide pagination dots after inactivity in milliseconds (0 = disabled, max 30000ms). Dots reappear on hover/touch |
+| `card_spacing` | number | 15 | Space between cards in pixels |
+| `loop_mode` | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
+| `swipe_direction` | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
+| `swipe_behavior` | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
+| `enable_auto_swipe` | boolean	| false | When enabled, the card will automatically swipe between slides |
+| `auto_swipe_interval` | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if enable_auto_swipe is true |
+| `enable_reset_after` | boolean | false | Enable automatic return to target card after inactivity |
+| `reset_after_timeout` | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
+| `reset_target_card` | number | 1 | Index of card to return to (1 = first card) |
+| `state_entity` | string | null | Entity ID for state synchronization. Supports input_select and input_number entities |
 
 > [!WARNING]  
 > Infinite loop mode creates duplicate cards for a true seamless scrolling experience which can be resource-intensive with camera cards or complex cards. Consider using `loop_mode: loopback` for better performance
 
+> [!NOTE]  
+> **Auto Height Compatibility**: The `auto_height` feature is only available when using:
+> - View Mode: Single (not carousel)
+> - Swipe Direction: Horizontal (not vertical)
+> - Loop Mode: None or Loopback (not infinite)
+> 
+> When switching to an incompatible mode, `auto_height` will be automatically removed from your configuration.
 
 ### Example Configuration
 

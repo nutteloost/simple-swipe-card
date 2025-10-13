@@ -179,18 +179,157 @@ export class CardBuilder {
       infiniteMode: this.card.loopMode.isInfiniteMode,
     });
 
-    // Load all cards at once
-    const cardPromises = cardsToLoad.map((cardInfo) => {
-      return this.createCard(
-        cardInfo.config,
-        cardInfo.visibleIndex,
-        cardInfo.originalIndex,
-        helpers,
-        cardInfo.isDuplicate,
-      );
-    });
+    // === STAGGER LOADING IMPLEMENTATION ===
+    const viewMode = this.card._config.view_mode || "single";
 
-    await Promise.allSettled(cardPromises);
+    if (viewMode === "carousel") {
+      // CAROUSEL MODE: Create DOM structure immediately, load content progressively
+      logDebug(
+        "INIT",
+        "Carousel mode detected - creating DOM structure for layout, loading content progressively",
+      );
+
+      // Step 1: Create all slide containers immediately for proper carousel layout
+      cardsToLoad.forEach((cardInfo) => {
+        const slideDiv = createSlide();
+
+        // Add debug attributes
+        slideDiv.setAttribute("data-index", cardInfo.originalIndex);
+        slideDiv.setAttribute("data-visible-index", cardInfo.visibleIndex);
+        if (cardInfo.isDuplicate) {
+          slideDiv.setAttribute("data-duplicate", "true");
+        }
+        if (cardInfo.config?.type) {
+          slideDiv.setAttribute("data-card-type", cardInfo.config.type);
+        }
+
+        // Add to cards array with empty content initially
+        this.card.cards.push({
+          visibleIndex: cardInfo.visibleIndex,
+          originalIndex: cardInfo.originalIndex,
+          slide: slideDiv,
+          config: JSON.parse(JSON.stringify(cardInfo.config)),
+          error: false,
+          isDuplicate: cardInfo.isDuplicate,
+          element: null, // Will be populated later
+          contentLoaded: false,
+        });
+
+        // Add slide to DOM immediately
+        this.card.sliderElement.appendChild(slideDiv);
+
+        // Start observing slide for auto height (even if empty)
+        if (this.card.autoHeight?.enabled) {
+          this.card.autoHeight.observeSlide(slideDiv, cardInfo.visibleIndex);
+        }
+      });
+
+      // Sort cards by visibleIndex to maintain order
+      this.card.cards.sort((a, b) => a.visibleIndex - b.visibleIndex);
+
+      logDebug(
+        "INIT",
+        "Carousel DOM structure created, now loading content progressively",
+      );
+
+      // Step 2: Load card content progressively to prevent websocket overload
+      const batches = this._createPrioritizedBatches(cardsToLoad);
+
+      // Load first batch (visible cards) immediately
+      const firstBatch = batches[0] || [];
+      if (firstBatch.length > 0) {
+        await this._loadCarouselBatch(firstBatch, helpers, "priority");
+      }
+
+      // Load remaining batches with staggered delay
+      for (let i = 1; i < batches.length; i++) {
+        const batch = batches[i];
+        const delay = i * 150; // 150ms delay between batches
+
+        setTimeout(async () => {
+          if (!this.card.isConnected) return;
+          await this._loadCarouselBatch(batch, helpers, `batch-${i + 1}`);
+        }, delay);
+      }
+    } else {
+      // SINGLE MODE: Use original stagger loading
+      const batches = this._createPrioritizedBatches(cardsToLoad);
+
+      logDebug("INIT", "Single mode stagger loading strategy:", {
+        totalBatches: batches.length,
+        batchSizes: batches.map((batch) => batch.length),
+        firstBatchCards:
+          batches[0]?.map((c) => `${c.visibleIndex}(${c.originalIndex})`) || [],
+      });
+
+      // Load first batch (visible cards) immediately
+      const firstBatch = batches[0] || [];
+      if (firstBatch.length > 0) {
+        logDebug(
+          "INIT",
+          "Loading priority batch immediately:",
+          firstBatch.length,
+        );
+
+        const firstBatchPromises = firstBatch.map((cardInfo) =>
+          this.createCard(
+            cardInfo.config,
+            cardInfo.visibleIndex,
+            cardInfo.originalIndex,
+            helpers,
+            cardInfo.isDuplicate,
+          ).catch((error) => {
+            console.warn(
+              `Priority card ${cardInfo.visibleIndex} failed to load:`,
+              error,
+            );
+            return null;
+          }),
+        );
+
+        await Promise.allSettled(firstBatchPromises);
+        this._insertLoadedCardsIntoDom();
+        logDebug("INIT", "Priority batch loaded and displayed");
+      }
+
+      // Load remaining batches with staggered delay
+      for (let i = 1; i < batches.length; i++) {
+        const batch = batches[i];
+        const delay = i * 200; // 200ms delay between batches
+
+        setTimeout(async () => {
+          if (!this.card.isConnected) return;
+
+          logDebug(
+            "INIT",
+            `Loading batch ${i + 1}/${batches.length} after ${delay}ms`,
+          );
+
+          const batchPromises = batch.map((cardInfo) =>
+            this.createCard(
+              cardInfo.config,
+              cardInfo.visibleIndex,
+              cardInfo.originalIndex,
+              helpers,
+              cardInfo.isDuplicate,
+            ).catch((error) => {
+              console.warn(
+                `Background card ${cardInfo.visibleIndex} failed to load:`,
+                error,
+              );
+              return null;
+            }),
+          );
+
+          await Promise.allSettled(batchPromises);
+          this._insertLoadedCardsIntoDom();
+          logDebug("INIT", `Batch ${i + 1} completed`);
+        }, delay);
+      }
+
+      // Ensure priority cards are in the DOM immediately
+      this._insertLoadedCardsIntoDom();
+    }
 
     // Set initial state based on configuration
     if (this.card._config.state_entity && this.card._hass) {
@@ -204,16 +343,6 @@ export class CardBuilder {
         this.card.currentIndex = targetIndex;
       }
     }
-
-    // Ensure cards are in the DOM (appendChild to sliderElement)
-    this.card.cards.forEach((cardData) => {
-      if (
-        cardData.slide &&
-        cardData.slide.parentElement !== this.card.sliderElement
-      ) {
-        this.card.sliderElement.appendChild(cardData.slide);
-      }
-    });
 
     // Create pagination
     this.card.pagination.create();
@@ -243,19 +372,6 @@ export class CardBuilder {
 
     this.card.building = false;
     logDebug("INIT", "Build completed successfully");
-  }
-
-  /**
-   * Preloads adjacent cards when needed (now a no-op since all cards are loaded upfront)
-   * @param {number} currentVisibleIndex - The current visible card index
-   */
-  preloadAdjacentCards() {
-    // No-op: All cards are now loaded upfront, so no additional preloading needed
-    logDebug(
-      "INIT",
-      "preloadAdjacentCards called but all cards already loaded",
-    );
-    return;
   }
 
   /**
@@ -301,6 +417,19 @@ export class CardBuilder {
         slideDiv.setAttribute("data-has-picture-elements", "true");
       }
 
+      // Append card to slide
+      slideDiv.appendChild(cardElement);
+
+      // CRITICAL FIX FOR CARD-MOD:
+      // Wait for browser paint cycle, then give card-mod time to detect and process the card
+      // This ensures card-mod's MutationObserver can detect the card and apply styles
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          // After paint cycle, give card-mod's MutationObserver time to process
+          setTimeout(resolve, 30);
+        });
+      });
+
       // Special handling for specific card types
       requestAnimationFrame(() => {
         try {
@@ -314,8 +443,6 @@ export class CardBuilder {
           console.warn("Error applying post-creation logic:", e);
         }
       });
-
-      slideDiv.appendChild(cardElement);
     } catch (e) {
       logDebug(
         "ERROR",
@@ -714,6 +841,414 @@ export class CardBuilder {
     this.card.cards.forEach((cardData) => {
       if (cardData && cardData.slide) {
         cardData.slide.classList.add("carousel-mode");
+      }
+    });
+  }
+
+  /**
+   * Helper method to create prioritized batches for stagger loading
+   * @param {Array} cardsToLoad - Cards to load
+   * @returns {Array} Array of batches, with priority cards in first batch
+   * @private
+   */
+  _createPrioritizedBatches(cardsToLoad) {
+    const batchSize = 3; // Maximum cards per batch (for non-priority cards)
+    const currentIndex = this.card.currentIndex || 0;
+    const viewMode = this.card._config.view_mode || "single";
+    const isInfiniteMode = this.card.loopMode.isInfiniteMode;
+
+    logDebug("INIT", "Determining visible cards for stagger loading:", {
+      currentIndex,
+      viewMode,
+      isInfiniteMode,
+      totalCardsToLoad: cardsToLoad.length,
+    });
+
+    // Step 1: Determine which cards are actually visible right now
+    let visibleIndices = [];
+
+    if (isInfiniteMode) {
+      // INFINITE MODE: Need to map current position to actual DOM structure
+      visibleIndices = this._getInfiniteVisibleIndices(
+        currentIndex,
+        cardsToLoad,
+        viewMode,
+      );
+    } else {
+      // REGULAR MODE: Use standard visible range calculation
+      const totalVisibleCards = this.card.visibleCardIndices.length;
+
+      if (viewMode === "single") {
+        // Single mode: current card + 1 adjacent on each side
+        visibleIndices = [
+          currentIndex - 1,
+          currentIndex,
+          currentIndex + 1,
+        ].filter((idx) => idx >= 0 && idx < totalVisibleCards);
+      } else if (viewMode === "carousel") {
+        // Carousel mode: calculate exact visible range
+        const visibleRange = this._getCarouselVisibleRange(
+          currentIndex,
+          totalVisibleCards,
+        );
+        visibleIndices = [];
+        for (let i = visibleRange.startIndex; i <= visibleRange.endIndex; i++) {
+          visibleIndices.push(i);
+        }
+      } else {
+        visibleIndices = [currentIndex];
+      }
+    }
+
+    // Step 2: Separate cards into priority and regular based on visible indices
+    const priorityCards = [];
+    const regularCards = [];
+
+    cardsToLoad.forEach((card) => {
+      if (visibleIndices.includes(card.visibleIndex)) {
+        priorityCards.push(card);
+        logDebug(
+          "INIT",
+          `Priority card: visibleIndex ${card.visibleIndex}, originalIndex ${card.originalIndex}, isDuplicate: ${card.isDuplicate}`,
+        );
+      } else {
+        regularCards.push(card);
+      }
+    });
+
+    // Step 3: Sort priority cards by distance from current index
+    priorityCards.sort((a, b) => {
+      const aDistance = Math.abs(a.visibleIndex - currentIndex);
+      const bDistance = Math.abs(b.visibleIndex - currentIndex);
+      return aDistance - bDistance;
+    });
+
+    // Step 4: Create batches with priority cards first
+    const batches = [];
+
+    // CAROUSEL MODE: ALL priority cards in first batch (override batch size limit)
+    // SINGLE MODE: Use normal batch size limit
+    if (viewMode === "carousel" && priorityCards.length > 0) {
+      // Put ALL priority cards in first batch for carousel mode
+      batches.push(priorityCards);
+      logDebug(
+        "INIT",
+        `Carousel mode: All ${priorityCards.length} priority cards in first batch`,
+      );
+    } else {
+      // Single mode: Use batch size limit for priority cards too
+      for (let i = 0; i < priorityCards.length; i += batchSize) {
+        batches.push(priorityCards.slice(i, i + batchSize));
+      }
+    }
+
+    // Remaining batches: regular cards (always use batch size limit)
+    for (let i = 0; i < regularCards.length; i += batchSize) {
+      batches.push(regularCards.slice(i, i + batchSize));
+    }
+
+    logDebug("INIT", "Batch creation completed:", {
+      visibleIndices,
+      priorityCards: priorityCards.map(
+        (c) =>
+          `${c.visibleIndex}(${c.originalIndex}${c.isDuplicate ? "D" : ""})`,
+      ),
+      regularCards: regularCards.map(
+        (c) =>
+          `${c.visibleIndex}(${c.originalIndex}${c.isDuplicate ? "D" : ""})`,
+      ),
+      totalBatches: batches.length,
+      firstBatchSize: batches[0]?.length || 0,
+    });
+
+    return batches;
+  }
+
+  /**
+   * Helper method to determine visible indices in infinite mode
+   * @param {number} currentIndex - Current card index (virtual)
+   * @param {Array} cardsToLoad - All cards including duplicates
+   * @param {string} viewMode - View mode (single/carousel)
+   * @returns {Array} Array of visibleIndex values that are currently visible
+   * @private
+   */
+  _getInfiniteVisibleIndices(currentIndex, cardsToLoad, viewMode) {
+    const totalRealCards = this.card.visibleCardIndices.length;
+    const duplicateCount = this.card.loopMode.getDuplicateCount();
+
+    // Convert virtual current index to actual DOM position
+    const realDOMPosition = duplicateCount + currentIndex;
+
+    logDebug("INIT", "Infinite mode position mapping:", {
+      virtualCurrentIndex: currentIndex,
+      realDOMPosition,
+      duplicateCount,
+      totalRealCards,
+      totalCardsInDOM: cardsToLoad.length,
+    });
+
+    let visibleDOMPositions = [];
+
+    if (viewMode === "single") {
+      // Single mode: show current position + adjacent for preloading
+      visibleDOMPositions = [
+        realDOMPosition - 1,
+        realDOMPosition,
+        realDOMPosition + 1,
+      ].filter((pos) => pos >= 0 && pos < cardsToLoad.length);
+    } else if (viewMode === "carousel") {
+      // Carousel mode: calculate visible range around DOM position
+      const cardsVisible = this._getCarouselVisibleCount();
+
+      // CAROUSEL POSITIONING: Start from current position, don't center around it
+      let startDOM = realDOMPosition;
+      let endDOM = Math.min(
+        cardsToLoad.length - 1,
+        startDOM + Math.ceil(cardsVisible) - 1,
+      );
+
+      // Adjust if we hit the end (shouldn't happen often in infinite mode)
+      if (endDOM >= cardsToLoad.length) {
+        endDOM = cardsToLoad.length - 1;
+        startDOM = Math.max(0, endDOM - Math.ceil(cardsVisible) + 1);
+      }
+
+      for (let pos = startDOM; pos <= endDOM; pos++) {
+        visibleDOMPositions.push(pos);
+      }
+
+      logDebug("INIT", "Infinite carousel visible range calculation:", {
+        cardsVisible,
+        realDOMPosition,
+        startDOM,
+        endDOM,
+        visibleDOMPositions,
+        calculation: `Start from DOM ${realDOMPosition}, show ${Math.ceil(cardsVisible)} cards: ${startDOM} to ${endDOM}`,
+      });
+    } else {
+      visibleDOMPositions = [realDOMPosition];
+    }
+
+    // Map DOM positions back to visibleIndex values
+    const visibleIndices = [];
+    visibleDOMPositions.forEach((domPos) => {
+      if (domPos >= 0 && domPos < cardsToLoad.length) {
+        const cardAtPosition = cardsToLoad[domPos];
+        if (cardAtPosition) {
+          visibleIndices.push(cardAtPosition.visibleIndex);
+        }
+      }
+    });
+
+    return visibleIndices;
+  }
+
+  /**
+   * Helper method to get carousel visible card count
+   * @returns {number} Number of visible cards in carousel mode
+   * @private
+   */
+  _getCarouselVisibleCount() {
+    if (this.card._config.cards_visible !== undefined) {
+      return this.card._config.cards_visible;
+    }
+
+    const containerWidth = this.card.cardContainer?.offsetWidth || 300;
+    const minWidth = this.card._config.card_min_width || 200;
+    const cardSpacing =
+      Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
+
+    const calculatedVisible = Math.max(
+      1,
+      (containerWidth + cardSpacing) / (minWidth + cardSpacing),
+    );
+    return Math.max(1.1, Math.round(calculatedVisible * 10) / 10);
+  }
+
+  /**
+   * Helper method to calculate the exact visible range in carousel mode
+   * @param {number} currentIndex - Current card index
+   * @param {number} totalCards - Total number of cards
+   * @returns {Object} Visible range information
+   * @private
+   */
+  _getCarouselVisibleRange(currentIndex, totalCards) {
+    const cardsVisible = this._getCarouselVisibleCount();
+
+    if (totalCards <= Math.floor(cardsVisible)) {
+      return {
+        startIndex: 0,
+        endIndex: totalCards - 1,
+        cardsVisible,
+      };
+    }
+
+    const halfVisible = cardsVisible / 2;
+    let idealStart = currentIndex - Math.floor(halfVisible);
+
+    if (idealStart < 0) {
+      idealStart = 0;
+    }
+
+    let endIndex = idealStart + Math.ceil(cardsVisible) - 1;
+
+    if (endIndex >= totalCards) {
+      endIndex = totalCards - 1;
+      idealStart = Math.max(0, endIndex - Math.ceil(cardsVisible) + 1);
+    }
+
+    const startIndex = Math.max(0, Math.floor(idealStart));
+
+    return {
+      startIndex,
+      endIndex: Math.min(endIndex, totalCards - 1),
+      cardsVisible,
+    };
+  }
+
+  /**
+   * Helper method to load carousel batch content into existing slide containers
+   * @param {Array} batch - Array of card info objects to load
+   * @param {Object} helpers - Home Assistant card helpers
+   * @param {string} batchType - Type of batch for logging
+   * @private
+   */
+  async _loadCarouselBatch(batch, helpers, batchType) {
+    logDebug("INIT", `Loading carousel ${batchType} content:`, batch.length);
+
+    const contentPromises = batch.map(async (cardInfo) => {
+      try {
+        const cardData = this.card.cards.find(
+          (card) =>
+            card.visibleIndex === cardInfo.visibleIndex &&
+            card.originalIndex === cardInfo.originalIndex,
+        );
+
+        if (!cardData || cardData.contentLoaded) {
+          return null;
+        }
+
+        const cardElement = await helpers.createCardElement(cardInfo.config);
+
+        if (this.card._hass) {
+          cardElement.hass = this.card._hass;
+        }
+
+        if (cardInfo.config.type === "picture-elements") {
+          cardElement.setAttribute("data-swipe-card-picture-elements", "true");
+          cardData.slide.setAttribute("data-has-picture-elements", "true");
+        }
+
+        requestAnimationFrame(() => {
+          try {
+            if (cardInfo.config.type === "todo-list") {
+              const textField =
+                cardElement.shadowRoot?.querySelector("ha-textfield");
+              const inputElement =
+                textField?.shadowRoot?.querySelector("input");
+              if (inputElement) inputElement.enterKeyHint = "done";
+            }
+          } catch (e) {
+            console.warn("Error applying post-creation logic:", e);
+          }
+        });
+
+        cardData.slide.appendChild(cardElement);
+        cardData.element = cardElement;
+        cardData.contentLoaded = true;
+
+        return cardElement;
+      } catch (error) {
+        logDebug(
+          "ERROR",
+          `Error loading carousel card ${cardInfo.visibleIndex}:`,
+          error,
+        );
+
+        const cardData = this.card.cards.find(
+          (card) =>
+            card.visibleIndex === cardInfo.visibleIndex &&
+            card.originalIndex === cardInfo.originalIndex,
+        );
+
+        if (cardData) {
+          cardData.error = true;
+          cardData.contentLoaded = true;
+
+          try {
+            const errorCard = await helpers.createErrorCardElement(
+              {
+                type: "error",
+                error: `Failed to create card: ${error.message}`,
+                origConfig: cardInfo.config,
+              },
+              this.card._hass,
+            );
+            cardData.slide.appendChild(errorCard);
+            cardData.element = errorCard;
+          } catch (errorCardError) {
+            console.error("Failed to create error card:", errorCardError);
+          }
+        }
+
+        return null;
+      }
+    });
+
+    await Promise.allSettled(contentPromises);
+    logDebug("INIT", `Carousel ${batchType} content loading completed`);
+  }
+
+  /**
+   * Helper method to insert loaded cards into DOM (for single mode)
+   * @private
+   */
+  _insertLoadedCardsIntoDom() {
+    const cardsToInsert = this.card.cards
+      .filter(
+        (cardData) =>
+          cardData && cardData.slide && !cardData.slide.parentElement,
+      )
+      .sort((a, b) => a.visibleIndex - b.visibleIndex);
+
+    cardsToInsert.forEach((cardData) => {
+      cardData.slide.setAttribute("data-index", cardData.originalIndex);
+      cardData.slide.setAttribute("data-visible-index", cardData.visibleIndex);
+      if (cardData.isDuplicate) {
+        cardData.slide.setAttribute("data-duplicate", "true");
+      }
+      if (cardData.config?.type) {
+        cardData.slide.setAttribute("data-card-type", cardData.config.type);
+      }
+
+      const existingSlides = Array.from(this.card.sliderElement.children);
+      let insertPosition = existingSlides.length;
+
+      for (let i = 0; i < existingSlides.length; i++) {
+        const existingVisibleIndex = parseInt(
+          existingSlides[i].getAttribute("data-visible-index") || "0",
+        );
+        if (existingVisibleIndex > cardData.visibleIndex) {
+          insertPosition = i;
+          break;
+        }
+      }
+
+      if (insertPosition === existingSlides.length) {
+        this.card.sliderElement.appendChild(cardData.slide);
+      } else {
+        this.card.sliderElement.insertBefore(
+          cardData.slide,
+          existingSlides[insertPosition],
+        );
+      }
+
+      // Start observing slide for auto height after inserting into DOM
+      if (this.card.autoHeight?.enabled) {
+        this.card.autoHeight.observeSlide(
+          cardData.slide,
+          cardData.visibleIndex,
+        );
       }
     });
   }
