@@ -518,29 +518,46 @@ export class CardBuilder {
         logDebug("INIT", "Layout calculation skipped, element is hidden.");
         return;
       }
-      logDebug("INIT", "Container dimensions are 0, retrying layout...");
+      
       this.card._layoutRetryCount = (this.card._layoutRetryCount || 0) + 1;
+      
       if (this.card._layoutRetryCount < 5) {
+        logDebug("INIT", `Container dimensions are 0, retrying layout (attempt ${this.card._layoutRetryCount}/5)...`);
         setTimeout(
           () => requestAnimationFrame(() => this.finishBuildLayout()),
           100,
         );
+        return;
       } else {
-        console.error("SimpleSwipeCard: Failed to get container dimensions.");
+        // After 5 retries, proceed anyway with fallback dimensions
+        console.warn(
+          "SimpleSwipeCard: Failed to get container dimensions after 5 retries. " +
+          "Proceeding with fallback dimensions. This may indicate a child card failed to load."
+        );
+        
+        // Use fallback dimensions to at least complete the build
+        const fallbackWidth = 300;
+        const fallbackHeight = 100;
+        
+        this.card.slideWidth = fallbackWidth;
+        this.card.slideHeight = fallbackHeight;
         this.card._layoutRetryCount = 0;
+        
+        // Continue with the rest of the build process using fallback dimensions
+        logDebug("INIT", `Using fallback dimensions: ${fallbackWidth}x${fallbackHeight}px`);
+        // Don't return - continue with the rest of the function
       }
-      return;
+    } else {
+      // Success - reset retry count and use actual dimensions
+      this.card._layoutRetryCount = 0;
+      this.card.slideWidth = containerWidth;
+      this.card.slideHeight = containerHeight;
     }
-    this.card._layoutRetryCount = 0;
-
-    // Set basic dimensions
-    this.card.slideWidth = containerWidth;
-    this.card.slideHeight = containerHeight;
 
     // Handle carousel mode layout
     const viewMode = this.card._config.view_mode || "single";
     if (viewMode === "carousel") {
-      this._setupCarouselLayout(containerWidth, containerHeight);
+      this._setupCarouselLayout(this.card.slideWidth, this.card.slideHeight);
     }
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
@@ -1204,6 +1221,11 @@ export class CardBuilder {
    * @private
    */
   _insertLoadedCardsIntoDom() {
+    if (!this.card.sliderElement) {
+      logDebug("ERROR", "_insertLoadedCardsIntoDom: sliderElement is null, skipping");
+      return;
+    }    
+    
     const cardsToInsert = this.card.cards
       .filter(
         (cardData) =>

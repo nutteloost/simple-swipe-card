@@ -140,6 +140,7 @@ export function getStyles() {
      /* Show only the current slide during dropdown fix */
      .slider.dropdown-fix-active-hide-adjacent .slide.current-active {
        display: flex !important;
+       overflow: visible !important;
      }     
      
      /* Horizontal slider (default) */

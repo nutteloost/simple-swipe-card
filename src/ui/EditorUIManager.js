@@ -187,36 +187,48 @@ export class EditorUIManager {
   _doEnsureCardPickerLoaded() {
     logDebug("EDITOR", "_ensureCardPickerLoaded called");
 
+    // Add robust null checks for shadowRoot
+    if (!this.editor.shadowRoot) {
+      logDebug("EDITOR", "shadowRoot not ready, skipping card picker load");
+      return;
+    }
+
     const container = this.editor.shadowRoot.querySelector(
       "#card-picker-container",
     );
-    if (container) {
-      container.style.display = "block";
+    
+    if (!container) {
+      logDebug("EDITOR", "Card picker container not found, skipping");
+      return;
+    }
 
-      // Only set up event barrier once
-      if (!container.hasAttribute("event-barrier-applied")) {
-        container.setAttribute("event-barrier-applied", "true");
+    container.style.display = "block";
 
-        // Add a comprehensive event barrier with optimized handling
-        container.addEventListener(
-          "config-changed",
-          (e) => {
-            this._handleCardPickerSelection(e);
-          },
-          { capture: true, passive: false },
-        );
+    // Only set up event barrier once
+    if (!container.hasAttribute("event-barrier-applied")) {
+      container.setAttribute("event-barrier-applied", "true");
+
+      // Add a comprehensive event barrier with optimized handling
+      container.addEventListener(
+        "config-changed",
+        (e) => {
+          this._handleCardPickerSelection(e);
+        },
+        { capture: true, passive: false },
+      );
+    }
+
+    const picker = container.querySelector("hui-card-picker");
+    if (picker) {
+      picker.style.display = "block";
+
+      // Only call requestUpdate if needed
+      if (picker.requestUpdate && !picker._hasRequestedUpdate) {
+        picker.requestUpdate();
+        picker._hasRequestedUpdate = true;
       }
-
-      const picker = container.querySelector("hui-card-picker");
-      if (picker) {
-        picker.style.display = "block";
-
-        // Only call requestUpdate if needed
-        if (picker.requestUpdate && !picker._hasRequestedUpdate) {
-          picker.requestUpdate();
-          picker._hasRequestedUpdate = true;
-        }
-      }
+    } else {
+      logDebug("EDITOR", "hui-card-picker element not found in container");
     }
 
     // Throttled requestUpdate

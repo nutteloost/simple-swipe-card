@@ -1879,7 +1879,25 @@ export class SimpleSwipeCard extends LitElement {
         this.shadowRoot.host.style.overflow = "visible";
         this.cardContainer.style.overflow = "visible";
 
-        // 4. Add click-controlled restoration with delay to avoid catching the opening click
+        // 4. Find and store the combobox element NOW (before shadow DOM makes it hard to find)
+        const clickedElement = this._getActualEventTarget(e);
+        let comboboxElement = null;
+
+        // Walk up from the clicked element to find the combobox
+        let current = clickedElement;
+        for (let i = 0; i < 10 && current && current !== this.cardContainer; i++) {
+          if (current.getAttribute && current.getAttribute('role') === 'combobox') {
+            comboboxElement = current;
+            logDebug("SYSTEM", "Found and stored combobox element for monitoring");
+            break;
+          }
+          current = current.parentElement;
+        }
+
+        // Store the combobox reference for the observer to use
+        this._monitoredCombobox = comboboxElement;
+
+        // 5. Add click-controlled restoration with delay to avoid catching the opening click
         // Store the timeout for cleanup
         this._dropdownDelayTimeout = setTimeout(() => {
           if (this._dropdownFixApplied && this.isConnected) {
@@ -1902,36 +1920,77 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Adds a listener that restores layout after any click (with micro-delay for processing)
+   * Monitors the dropdown state and restores when it closes
    * @private
    */
   _addClickRestoreListener() {
     if (!this.cardContainer) return;
 
-    const restoreAfterClick = (e) => {
-      logDebug(
-        "SYSTEM",
-        "Click detected, restoring layout in 200ms (allowing selection to complete)",
-      );
+    // Use the stored combobox element
+    const combobox = this._monitoredCombobox;
+    
+    if (!combobox) {
+      logDebug("SYSTEM", "No combobox stored, using fallback click listener");
+      this._addFallbackClickListener();
+      return;
+    }
 
-      // Remove this listener immediately (one-time use)
+    logDebug("SYSTEM", "Monitoring dropdown state via aria-expanded attribute on stored combobox");
+
+    // Use MutationObserver to watch for aria-expanded changes
+    this._dropdownObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'aria-expanded') {
+          const isExpanded = combobox.getAttribute('aria-expanded') === 'true';
+          
+          if (!isExpanded) {
+            logDebug("SYSTEM", "Dropdown closed detected via aria-expanded=false, restoring layout");
+            
+            // Cleanup observer
+            if (this._dropdownObserver) {
+              this._dropdownObserver.disconnect();
+              this._dropdownObserver = null;
+            }
+            
+            // Small delay to allow any final updates
+            this._dropdownRestoreTimeout = setTimeout(() => {
+              this._restoreLayout();
+            }, 100);
+          }
+        }
+      }
+    });
+
+    // Start observing
+    this._dropdownObserver.observe(combobox, {
+      attributes: true,
+      attributeFilter: ['aria-expanded']
+    });
+  }
+
+  /**
+   * Fallback click listener for dropdowns without combobox role
+   * @private
+   */
+  _addFallbackClickListener() {
+    if (!this.cardContainer) return;
+
+    const restoreAfterClick = (e) => {
+      logDebug("SYSTEM", "Click detected (fallback), restoring layout in 200ms");
+
       this.cardContainer.removeEventListener("click", restoreAfterClick, {
         capture: true,
       });
 
-      // Small delay to allow dropdown selection to complete, then restore
       this._dropdownRestoreTimeout = setTimeout(() => {
-        logDebug("SYSTEM", "Click processing complete, restoring layout now");
         this._restoreLayout();
-      }, 200); // 200ms - just enough time for dropdown selection to process
+      }, 200);
     };
 
-    // Listen for the next click anywhere in the card
     this.cardContainer.addEventListener("click", restoreAfterClick, {
       capture: true,
     });
 
-    // Store reference for cleanup
     this._clickRestoreListener = restoreAfterClick;
   }
 
@@ -1964,13 +2023,62 @@ export class SimpleSwipeCard extends LitElement {
       this._clickRestoreListener = null;
     }
 
+    // Clean up dropdown observer
+    if (this._dropdownObserver) {
+      this._dropdownObserver.disconnect();
+      this._dropdownObserver = null;
+    }
+
+    // Clear stored combobox reference
+    this._monitoredCombobox = null;
+
     // 1. Restore the original layout styles.
     if (this.sliderElement && this.cardContainer) {
-      // MINIMAL FIX: Temporarily disable transitions on the slider element only
+      // STEP 1: Disable transitions
       const originalTransition = this.sliderElement.style.transition;
       this.sliderElement.style.transition = "none";
 
-      // Remove CSS classes that hide adjacent cards
+      // STEP 2: Calculate and apply CORRECT transform (while still position: absolute)
+      if (this._originalTransform !== undefined) {
+        this._originalTransform = undefined;
+        
+        // Calculate the correct DOM position
+        const totalVisibleCards = this.visibleCardIndices.length;
+        const loopMode = this._config.loop_mode || "none";
+        let domPosition = this.currentIndex;
+        
+        if (loopMode === "infinite" && totalVisibleCards > 1) {
+          const duplicateCount = this.loopMode.getDuplicateCount();
+          domPosition = this.currentIndex + duplicateCount;
+        }
+        
+        // Calculate transform based on slide dimensions and spacing
+        const cardSpacing = this._config.card_spacing || 0;
+        const isHorizontal = (this._config.swipe_direction || "horizontal") === "horizontal";
+        let translateAmount = 0;
+        
+        if (isHorizontal) {
+          translateAmount = domPosition * (this.slideWidth + cardSpacing);
+        } else {
+          translateAmount = domPosition * (this.slideHeight + cardSpacing);
+        }
+        
+        const axis = isHorizontal ? "X" : "Y";
+        this.sliderElement.style.transform = `translate${axis}(-${translateAmount}px)`;
+        
+        logDebug("SYSTEM", `Set correct transform: translate${axis}(-${translateAmount}px) for index ${this.currentIndex}`);
+      }
+
+      // STEP 3: Clear positioning styles (transform is already correct)
+      this.sliderElement.style.position = "";
+      this.sliderElement.style.left = "";
+      this.sliderElement.style.top = "";
+      this.sliderElement.style.width = "";
+
+      // STEP 4: Force reflow to ensure transform is applied
+      this.sliderElement.offsetHeight;
+
+      // STEP 5: NOW it's safe to make other cards visible
       this.sliderElement.classList.remove("dropdown-fix-active");
       this.sliderElement.classList.remove("dropdown-fix-active-hide-adjacent");
 
@@ -1980,25 +2088,16 @@ export class SimpleSwipeCard extends LitElement {
         slide.classList.remove("current-active");
       });
 
-      this.sliderElement.style.position = "";
-      this.sliderElement.style.left = "";
-      this.sliderElement.style.top = "";
-      this.sliderElement.style.width = "";
+      // Clear container height
       this.cardContainer.style.height = "";
       this._originalDimensions = null;
 
-      // Restore the original transform
-      if (this._originalTransform !== undefined) {
-        this.sliderElement.style.transform = this._originalTransform;
-        this._originalTransform = undefined;
-      }
-
-      // Re-enable transitions after a tiny delay
-      setTimeout(() => {
+      // STEP 6: Re-enable transitions after everything is in place
+      requestAnimationFrame(() => {
         if (this.sliderElement) {
           this.sliderElement.style.transition = originalTransition || "";
         }
-      }, 10); // Very small delay, just enough to prevent animation
+      });
     }
 
     // 2. Restore the original overflow clipping.
@@ -2012,12 +2111,13 @@ export class SimpleSwipeCard extends LitElement {
       if (this.isConnected) {
         if (this.visibleCardIndices.length > 1) {
           this.swipeGestures.addGestures();
+          logDebug("SWIPE", "Swipe gestures re-enabled after dropdown restore");
         }
       }
       // Reset the debounce timer
       this._lastDropdownTrigger = null;
     }, 150);
-  }
+  }  
 
   /**
    * A more precise helper to determine if a clicked element is part of a dropdown menu.
