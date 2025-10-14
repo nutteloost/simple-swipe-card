@@ -196,7 +196,7 @@ export class EditorUIManager {
     const container = this.editor.shadowRoot.querySelector(
       "#card-picker-container",
     );
-    
+
     if (!container) {
       logDebug("EDITOR", "Card picker container not found, skipping");
       return;

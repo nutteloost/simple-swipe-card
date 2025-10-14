@@ -1885,10 +1885,20 @@ export class SimpleSwipeCard extends LitElement {
 
         // Walk up from the clicked element to find the combobox
         let current = clickedElement;
-        for (let i = 0; i < 10 && current && current !== this.cardContainer; i++) {
-          if (current.getAttribute && current.getAttribute('role') === 'combobox') {
+        for (
+          let i = 0;
+          i < 10 && current && current !== this.cardContainer;
+          i++
+        ) {
+          if (
+            current.getAttribute &&
+            current.getAttribute("role") === "combobox"
+          ) {
             comboboxElement = current;
-            logDebug("SYSTEM", "Found and stored combobox element for monitoring");
+            logDebug(
+              "SYSTEM",
+              "Found and stored combobox element for monitoring",
+            );
             break;
           }
           current = current.parentElement;
@@ -1928,30 +1938,36 @@ export class SimpleSwipeCard extends LitElement {
 
     // Use the stored combobox element
     const combobox = this._monitoredCombobox;
-    
+
     if (!combobox) {
       logDebug("SYSTEM", "No combobox stored, using fallback click listener");
       this._addFallbackClickListener();
       return;
     }
 
-    logDebug("SYSTEM", "Monitoring dropdown state via aria-expanded attribute on stored combobox");
+    logDebug(
+      "SYSTEM",
+      "Monitoring dropdown state via aria-expanded attribute on stored combobox",
+    );
 
     // Use MutationObserver to watch for aria-expanded changes
     this._dropdownObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.attributeName === 'aria-expanded') {
-          const isExpanded = combobox.getAttribute('aria-expanded') === 'true';
-          
+        if (mutation.attributeName === "aria-expanded") {
+          const isExpanded = combobox.getAttribute("aria-expanded") === "true";
+
           if (!isExpanded) {
-            logDebug("SYSTEM", "Dropdown closed detected via aria-expanded=false, restoring layout");
-            
+            logDebug(
+              "SYSTEM",
+              "Dropdown closed detected via aria-expanded=false, restoring layout",
+            );
+
             // Cleanup observer
             if (this._dropdownObserver) {
               this._dropdownObserver.disconnect();
               this._dropdownObserver = null;
             }
-            
+
             // Small delay to allow any final updates
             this._dropdownRestoreTimeout = setTimeout(() => {
               this._restoreLayout();
@@ -1964,7 +1980,7 @@ export class SimpleSwipeCard extends LitElement {
     // Start observing
     this._dropdownObserver.observe(combobox, {
       attributes: true,
-      attributeFilter: ['aria-expanded']
+      attributeFilter: ["aria-expanded"],
     });
   }
 
@@ -1976,7 +1992,10 @@ export class SimpleSwipeCard extends LitElement {
     if (!this.cardContainer) return;
 
     const restoreAfterClick = (e) => {
-      logDebug("SYSTEM", "Click detected (fallback), restoring layout in 200ms");
+      logDebug(
+        "SYSTEM",
+        "Click detected (fallback), restoring layout in 200ms",
+      );
 
       this.cardContainer.removeEventListener("click", restoreAfterClick, {
         capture: true,
@@ -2041,32 +2060,36 @@ export class SimpleSwipeCard extends LitElement {
       // STEP 2: Calculate and apply CORRECT transform (while still position: absolute)
       if (this._originalTransform !== undefined) {
         this._originalTransform = undefined;
-        
+
         // Calculate the correct DOM position
         const totalVisibleCards = this.visibleCardIndices.length;
         const loopMode = this._config.loop_mode || "none";
         let domPosition = this.currentIndex;
-        
+
         if (loopMode === "infinite" && totalVisibleCards > 1) {
           const duplicateCount = this.loopMode.getDuplicateCount();
           domPosition = this.currentIndex + duplicateCount;
         }
-        
+
         // Calculate transform based on slide dimensions and spacing
         const cardSpacing = this._config.card_spacing || 0;
-        const isHorizontal = (this._config.swipe_direction || "horizontal") === "horizontal";
+        const isHorizontal =
+          (this._config.swipe_direction || "horizontal") === "horizontal";
         let translateAmount = 0;
-        
+
         if (isHorizontal) {
           translateAmount = domPosition * (this.slideWidth + cardSpacing);
         } else {
           translateAmount = domPosition * (this.slideHeight + cardSpacing);
         }
-        
+
         const axis = isHorizontal ? "X" : "Y";
         this.sliderElement.style.transform = `translate${axis}(-${translateAmount}px)`;
-        
-        logDebug("SYSTEM", `Set correct transform: translate${axis}(-${translateAmount}px) for index ${this.currentIndex}`);
+
+        logDebug(
+          "SYSTEM",
+          `Set correct transform: translate${axis}(-${translateAmount}px) for index ${this.currentIndex}`,
+        );
       }
 
       // STEP 3: Clear positioning styles (transform is already correct)
@@ -2117,7 +2140,7 @@ export class SimpleSwipeCard extends LitElement {
       // Reset the debounce timer
       this._lastDropdownTrigger = null;
     }, 150);
-  }  
+  }
 
   /**
    * A more precise helper to determine if a clicked element is part of a dropdown menu.
