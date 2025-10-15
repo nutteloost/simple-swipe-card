@@ -192,6 +192,57 @@ export class CardBuilder {
     // === STAGGER LOADING IMPLEMENTATION ===
     const viewMode = this.card._config.view_mode || "single";
 
+    // LAYOUT-CARD COMPATIBILITY: Detect if inside layout-card
+    const isInsideLayoutCard = this._detectLayoutCard();
+
+    if (isInsideLayoutCard) {
+      logDebug(
+        "INIT",
+        "⚠️ Layout-card detected - using synchronous loading for compatibility",
+      );
+
+      // Load all cards synchronously to prevent layout-card calculation issues
+      const allCardsPromises = cardsToLoad.map((cardInfo) =>
+        this.createCard(
+          cardInfo.config,
+          cardInfo.visibleIndex,
+          cardInfo.originalIndex,
+          helpers,
+          cardInfo.isDuplicate,
+        ).catch((error) => {
+          console.warn(`Card ${cardInfo.visibleIndex} failed to load:`, error);
+          return null;
+        }),
+      );
+
+      await Promise.allSettled(allCardsPromises);
+      this._insertLoadedCardsIntoDom();
+
+      logDebug("INIT", "All cards loaded synchronously for layout-card");
+
+      // Initialize if needed
+      if (!this.card.initialized) {
+        this.card.initialized = true;
+        if (wasAtDefaultPosition) {
+          requestAnimationFrame(() => {
+            this.finishBuildLayout();
+          });
+        } else {
+          requestAnimationFrame(() => {
+            this.finishBuildLayout();
+          });
+        }
+      } else {
+        requestAnimationFrame(() => {
+          this.finishBuildLayout();
+        });
+      }
+
+      this.card.building = false;
+      logDebug("INIT", "Build completed successfully (layout-card mode)");
+      return; // Exit early - don't use stagger loading
+    }
+
     if (viewMode === "carousel") {
       // CAROUSEL MODE: Create DOM structure immediately, load content progressively
       logDebug(
@@ -1532,5 +1583,38 @@ export class CardBuilder {
         );
       }
     });
+  }
+
+  /**
+   * Detects if the card is inside a layout-card or similar layout container
+   * @returns {boolean} True if inside layout-card
+   * @private
+   */
+  _detectLayoutCard() {
+    let element = this.card;
+    let maxDepth = 10; // Prevent infinite loops
+
+    while (element && maxDepth > 0) {
+      element = element.parentElement || element.parentNode?.host;
+
+      if (!element) break;
+
+      // Check if this is a layout-card element
+      const tagName = element.tagName?.toLowerCase();
+      if (
+        tagName === "layout-card" ||
+        tagName === "masonry-layout" ||
+        tagName === "horizontal-layout" ||
+        tagName === "vertical-layout" ||
+        tagName === "grid-layout"
+      ) {
+        logDebug("INIT", `Detected parent layout container: ${tagName}`);
+        return true;
+      }
+
+      maxDepth--;
+    }
+
+    return false;
   }
 }

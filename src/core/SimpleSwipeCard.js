@@ -1747,6 +1747,25 @@ export class SimpleSwipeCard extends LitElement {
       return 3;
     }
 
+    // ENHANCED: If we're still building, return a stable estimated size
+    // This helps layout-card calculate layout correctly during initial load
+    if (this.building) {
+      // Try to get size from config height if available
+      if (this._config.min_height) {
+        const estimatedSize = Math.ceil(parseInt(this._config.min_height) / 50);
+        logDebug(
+          "CONFIG",
+          "Building - estimated card size from min_height:",
+          estimatedSize,
+        );
+        return estimatedSize;
+      }
+
+      // Return a reasonable default to prevent layout-card miscalculation
+      logDebug("CONFIG", "Building - using default estimated size: 5");
+      return 5;
+    }
+
     // Normal logic for actual cards
     let maxSize = 3;
     if (this.cards && this.cards.length > 0) {
