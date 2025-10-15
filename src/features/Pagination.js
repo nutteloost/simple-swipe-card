@@ -20,7 +20,11 @@ export class Pagination {
    * Creates the pagination dots
    */
   create() {
-    this.remove();
+    // Only remove if pagination already exists
+    if (this.paginationElement) {
+      this.remove();
+    }
+
     const showPagination = this.card._config.show_pagination !== false;
 
     if (showPagination && this.card.visibleCardIndices.length > 1) {
@@ -34,6 +38,34 @@ export class Pagination {
       // Check shadowRoot exists before creating pagination
       if (!this.card.shadowRoot) {
         logDebug("ERROR", "Cannot create pagination without shadowRoot");
+        return;
+      }
+
+      // CAdditional check for shadowRoot being connected
+      // This is essential for layout-card compatibility
+      if (
+        !this.card.shadowRoot.host ||
+        !this.card.shadowRoot.host.isConnected
+      ) {
+        logDebug(
+          "PAGINATION",
+          "shadowRoot host is not connected, deferring pagination creation",
+        );
+        // Defer pagination creation until the card is properly connected
+        requestAnimationFrame(() => {
+          if (
+            this.card.isConnected &&
+            this.card.shadowRoot &&
+            this.card.shadowRoot.host &&
+            this.card.shadowRoot.host.isConnected
+          ) {
+            logDebug(
+              "PAGINATION",
+              "Retrying pagination creation after deferral",
+            );
+            this.create();
+          }
+        });
         return;
       }
 
@@ -66,11 +98,29 @@ export class Pagination {
         this.paginationElement.appendChild(dot);
       }
 
-      // CRITICAL FIX: Double-check shadowRoot before appendChild
-      if (this.card.shadowRoot) {
+      // Triple-check shadowRoot before appendChild
+      // Verify both shadowRoot exists AND is still connected
+      if (
+        this.card.shadowRoot &&
+        this.card.shadowRoot.host &&
+        this.card.shadowRoot.host.isConnected
+      ) {
         this.card.shadowRoot.appendChild(this.paginationElement);
+        logDebug(
+          "PAGINATION",
+          "Successfully appended pagination to shadowRoot",
+          {
+            dotCount: this.card.visibleCardIndices.length,
+            direction: this.card._swipeDirection,
+          },
+        );
       } else {
-        logDebug("ERROR", "shadowRoot became null while creating pagination");
+        logDebug(
+          "ERROR",
+          "shadowRoot became null or disconnected while creating pagination",
+        );
+        // Clean up the pagination element we created
+        this.paginationElement = null;
         return;
       }
 

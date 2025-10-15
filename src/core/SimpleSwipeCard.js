@@ -90,33 +90,40 @@ export class SimpleSwipeCard extends LitElement {
    * LitElement lifecycle - called after first render
    * Handle one-time initialization for the wrapper card
    */
-  firstUpdated() {
+  async firstUpdated() {
     logDebug("LIFECYCLE", "firstUpdated called for wrapper card");
 
     // Move the initial build logic here from connectedCallback
-    if (!this.initialized && this._config?.cards) {
+    if (!this._firstUpdateCompleted && this._config?.cards) {
+      this._firstUpdateCompleted = true;
+
       logDebug("INIT", "firstUpdated: Initializing build.");
 
-      // Use .then() to ensure the dropdown handler is attached only after the build is complete
-      this.cardBuilder
-        .build()
-        .then(() => {
-          // Check if the card is still connected to the DOM before attaching listeners
-          if (this.isConnected) {
-            logDebug(
-              "LIFECYCLE",
-              "Build finished in firstUpdated, setting up features",
-            );
-            this._handleDropdownOverflow();
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "SimpleSwipeCard: Build failed in firstUpdated:",
-            error,
+      try {
+        // Attempt to build - but it might be skipped if not connected
+        const buildResult = await this.cardBuilder.build();
+
+        // If build was skipped due to disconnection, it will be retried in connectedCallback
+        if (buildResult === false) {
+          logDebug(
+            "LIFECYCLE",
+            "Build was skipped in firstUpdated (likely disconnected) - will retry on connect",
           );
-          logDebug("ERROR", "Build failed, card may not function properly");
-        });
+          return;
+        }
+
+        // Check if the card is still connected to the DOM before attaching listeners
+        if (this.isConnected && this.cardContainer) {
+          logDebug(
+            "LIFECYCLE",
+            "Build finished in firstUpdated, setting up features",
+          );
+          this._handleDropdownOverflow();
+        }
+      } catch (error) {
+        console.error("SimpleSwipeCard: Build failed in firstUpdated:", error);
+        logDebug("ERROR", "Build failed, card may not function properly");
+      }
     }
   }
 
@@ -1095,7 +1102,8 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Called when element is connected to DOM - simplified for proper lifecycle
+   * Called when element is connected to DOM.
+   * Handles reconnection scenarios and layout-card compatibility.
    */
   connectedCallback() {
     super.connectedCallback();
@@ -1114,6 +1122,45 @@ export class SimpleSwipeCard extends LitElement {
       this._handleConfigChanged.bind(this),
     );
 
+    // Check if we need to build
+    // This handles the case where firstUpdated ran while disconnected
+    const needsBuild =
+      this._config &&
+      this._config.cards &&
+      this._config.cards.length > 0 &&
+      !this.cardContainer;
+
+    if (needsBuild) {
+      logDebug(
+        "LIFECYCLE",
+        "Card needs build (firstUpdated may have run while disconnected) - triggering build",
+      );
+
+      // Defer build to next frame to ensure card is fully connected
+      requestAnimationFrame(() => {
+        if (this.isConnected) {
+          logDebug("LIFECYCLE", "Executing deferred build after reconnection");
+          this.cardBuilder
+            .build()
+            .then(() => {
+              if (this.isConnected) {
+                logDebug("LIFECYCLE", "Deferred build completed successfully");
+                this._handleDropdownOverflow();
+              }
+            })
+            .catch((error) => {
+              console.error("SimpleSwipeCard: Deferred build failed:", error);
+            });
+        }
+      });
+
+      logDebug(
+        "LIFECYCLE",
+        "connectedCallback finished (deferred build scheduled)",
+      );
+      return;
+    }
+
     // Check for reconnection scenario: we have cards/config but no DOM structure
     const isReconnection =
       this.cards &&
@@ -1131,6 +1178,13 @@ export class SimpleSwipeCard extends LitElement {
           if (this.isConnected) {
             logDebug("LIFECYCLE", "Reconnection build completed");
             this._handleDropdownOverflow();
+
+            // Ensure pagination is created after reconnection
+            requestAnimationFrame(() => {
+              if (this.isConnected) {
+                this.pagination.updateLayout();
+              }
+            });
           }
         })
         .catch((error) => {
@@ -1162,6 +1216,14 @@ export class SimpleSwipeCard extends LitElement {
       this.autoSwipe.manage();
       this.resetAfter.manage();
       this.stateSynchronization.manage();
+
+      // Re-create pagination after reconnection
+      logDebug("LIFECYCLE", "Re-creating pagination after reconnection");
+      requestAnimationFrame(() => {
+        if (this.isConnected) {
+          this.pagination.updateLayout();
+        }
+      });
 
       logDebug(
         "LIFECYCLE",

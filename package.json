@@ -1,6 +1,6 @@
 {
   "name": "simple-swipe-card",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "description": "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout",
   "main": "build/simple-swipe-card.js",
   "type": "module",
@@ -26,6 +26,7 @@
     "validate": "npm run version-check && npm run size-check",
     "pre-release": "npm run format && npm run lint && npm run deploy:prod && npm run validate",
     "release": "npm run clean && npm run pre-release && npm run deploy:minified && echo '🎉 Release ready! File: build/simple-swipe-card.js'",
+    "release:auto": "node scripts/release.js",
     "clean": "rimraf build/*.js *.map",
     "test:build": "npm run deploy:prod && echo '✅ Production build test passed'"
   },

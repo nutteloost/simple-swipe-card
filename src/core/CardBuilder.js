@@ -22,11 +22,12 @@ export class CardBuilder {
 
   /**
    * Builds or rebuilds the entire card
+   * @returns {Promise<boolean>} True if build succeeded, false if skipped
    */
   async build() {
     if (this.card.building) {
       logDebug("INIT", "Build already in progress, skipping.");
-      return;
+      return false;
     }
     if (
       !this.card._config ||
@@ -34,7 +35,7 @@ export class CardBuilder {
       !this.card.isConnected
     ) {
       logDebug("INIT", "Build skipped (no config/cards or not connected).");
-      return;
+      return false;
     }
 
     this.card.building = true;
@@ -77,7 +78,7 @@ export class CardBuilder {
         }
       }, 10);
       this.card.building = false;
-      return;
+      return false;
     }
 
     if (this.card.shadowRoot) this.card.shadowRoot.innerHTML = "";
@@ -92,7 +93,7 @@ export class CardBuilder {
       root.innerHTML = `<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>`;
       this.card.building = false;
       this.card.initialized = false;
-      return;
+      return false;
     }
 
     // Add styles
@@ -138,7 +139,7 @@ export class CardBuilder {
       this.card.initialized = true;
       this.card.building = false;
       // No layout finish needed for preview
-      return;
+      return true; // Preview is a successful build
     }
 
     // Handle case where no cards are visible - COMPLETELY HIDE THE CARD
@@ -153,7 +154,7 @@ export class CardBuilder {
 
       this.card.initialized = true;
       this.card.building = false;
-      return;
+      return true; // Successfully handled no visible cards state
     }
 
     // If we reach here, we have visible cards - ensure card is visible
@@ -240,7 +241,7 @@ export class CardBuilder {
 
       this.card.building = false;
       logDebug("INIT", "Build completed successfully (layout-card mode)");
-      return; // Exit early - don't use stagger loading
+      return true; // Layout-card build succeeded
     }
 
     if (viewMode === "carousel") {
@@ -433,6 +434,7 @@ export class CardBuilder {
 
     this.card.building = false;
     logDebug("INIT", "Build completed successfully");
+    return true; // Build succeeded
   }
 
   /**
@@ -641,6 +643,16 @@ export class CardBuilder {
     this.card.resetAfter?.manage();
     this.card.stateSynchronization?.manage();
 
+    // Update pagination after state sync to ensure active dot is set
+    // This ensures the correct dot is active after state synchronization runs
+    logDebug("PAGINATION", "Updating pagination after layout finalization");
+    requestAnimationFrame(() => {
+      if (this.card.isConnected && this.card.pagination) {
+        this.card.pagination.update(false); // Update without animation on initial load
+        logDebug("PAGINATION", "Pagination active state updated");
+      }
+    });
+
     // Apply card-mod styles after layout is complete
     if (this.card._cardModConfig) {
       logDebug("CARD_MOD", "Applying card-mod styles in finishBuildLayout");
@@ -655,11 +667,16 @@ export class CardBuilder {
           }
         });
       }
-    } else {
-      logDebug("CARD_MOD", "No card-mod config found in finishBuildLayout");
     }
 
-    // ENHANCED: Wait for dimensions to truly settle, then fade in smoothly
+    // Create/update pagination BEFORE fade-in
+    // This ensures pagination exists and is visible when card fades in
+    logDebug("INIT", "Creating/updating pagination before fade-in");
+    this.card.pagination.updateLayout();
+
+    // Give pagination one frame to render
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
     await this._fadeInAfterLayoutSettles();
   }
 

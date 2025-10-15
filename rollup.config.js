@@ -45,13 +45,17 @@ export default {
         
         // Preserve Home Assistant compatibility
         keep_fnames: /^(setConfig|connectedCallback|disconnectedCallback)$/,
-        keep_classnames: true
+        keep_classnames: true,
+
+        passes: 2,
+        pure_getters: true
       },
       
       // Output formatting
       format: {
         comments: /^!/,  // Keep comments starting with !
-        preserve_annotations: true  // Keep @license comments
+        preserve_annotations: true,  // Keep @license comments
+        quote_style: 1 
       },
       
       // Source map options
