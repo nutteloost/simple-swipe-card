@@ -40,6 +40,11 @@ export class CardBuilder {
     this.card.building = true;
     logDebug("INIT", "Starting build...");
 
+    // CLEAR CACHED CAROUSEL DIMENSIONS TO PREVENT STALE DATA
+    this.card._carouselCardWidth = null;
+    this.card._carouselCardsVisible = null;
+    logDebug("INIT", "Cleared cached carousel dimensions");
+
     // Preserve reset-after state before rebuild
     this.card.resetAfter?.preserveState();
 
@@ -106,6 +111,11 @@ export class CardBuilder {
       "data-swipe-direction",
       this.card._swipeDirection,
     );
+
+    // CRITICAL: Hide slider immediately to prevent flash of unstyled content
+    this.card.sliderElement.style.opacity = "0";
+    logDebug("INIT", "Slider hidden during build to prevent layout flash");
+
     this.card.cardContainer.appendChild(this.card.sliderElement);
     root.appendChild(this.card.cardContainer);
 
@@ -495,13 +505,13 @@ export class CardBuilder {
   /**
    * Finishes the build process by setting up layout and observers
    */
-  finishBuildLayout() {
+  async finishBuildLayout() {
     if (
       !this.card.cardContainer ||
       !this.card.isConnected ||
       this.card.building
     ) {
-      logDebug("INIT", "_finishBuildLayout skipped", {
+      logDebug("INIT", "finishBuildLayout skipped", {
         container: !!this.card.cardContainer,
         connected: this.card.isConnected,
         building: this.card.building,
@@ -510,60 +520,34 @@ export class CardBuilder {
     }
     logDebug("INIT", "Finishing build layout...");
 
-    const containerWidth = this.card.cardContainer.offsetWidth;
-    const containerHeight = this.card.cardContainer.offsetHeight;
+    // ENHANCED: Wait for stable dimensions with validation
+    const dimensions = await this._waitForStableDimensions();
 
-    if (containerWidth <= 0 || containerHeight <= 0) {
-      if (this.card.offsetParent === null) {
-        logDebug("INIT", "Layout calculation skipped, element is hidden.");
-        return;
-      }
-
-      this.card._layoutRetryCount = (this.card._layoutRetryCount || 0) + 1;
-
-      if (this.card._layoutRetryCount < 5) {
-        logDebug(
-          "INIT",
-          `Container dimensions are 0, retrying layout (attempt ${this.card._layoutRetryCount}/5)...`,
-        );
-        setTimeout(
-          () => requestAnimationFrame(() => this.finishBuildLayout()),
-          100,
-        );
-        return;
-      } else {
-        // After 5 retries, proceed anyway with fallback dimensions
-        console.warn(
-          "SimpleSwipeCard: Failed to get container dimensions after 5 retries. " +
-            "Proceeding with fallback dimensions. This may indicate a child card failed to load.",
-        );
-
-        // Use fallback dimensions to at least complete the build
-        const fallbackWidth = 300;
-        const fallbackHeight = 100;
-
-        this.card.slideWidth = fallbackWidth;
-        this.card.slideHeight = fallbackHeight;
-        this.card._layoutRetryCount = 0;
-
-        // Continue with the rest of the build process using fallback dimensions
-        logDebug(
-          "INIT",
-          `Using fallback dimensions: ${fallbackWidth}x${fallbackHeight}px`,
-        );
-        // Don't return - continue with the rest of the function
-      }
+    if (!dimensions) {
+      // Failed to get stable dimensions - use fallback but continue
+      console.warn(
+        "SimpleSwipeCard: Could not obtain stable dimensions after 3 seconds. " +
+          "Using fallback dimensions. The card may resize when content loads.",
+      );
+      this.card.slideWidth = 300;
+      this.card.slideHeight = 100;
     } else {
-      // Success - reset retry count and use actual dimensions
-      this.card._layoutRetryCount = 0;
-      this.card.slideWidth = containerWidth;
-      this.card.slideHeight = containerHeight;
+      this.card.slideWidth = dimensions.width;
+      this.card.slideHeight = dimensions.height;
+      logDebug("INIT", "Stable dimensions confirmed:", dimensions);
     }
 
-    // Handle carousel mode layout
+    // Handle carousel mode layout with dimension validation
     const viewMode = this.card._config.view_mode || "single";
     if (viewMode === "carousel") {
-      this._setupCarouselLayout(this.card.slideWidth, this.card.slideHeight);
+      const validDimensions = this._setupCarouselLayoutWithValidation(
+        this.card.slideWidth,
+      );
+      if (!validDimensions) {
+        console.warn(
+          "SimpleSwipeCard: Carousel layout calculation produced invalid dimensions",
+        );
+      }
     }
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
@@ -576,11 +560,6 @@ export class CardBuilder {
 
     // Apply matching border radius to all loaded slides
     applyBorderRadiusToSlides(this.card.cards, this.card.cardContainer);
-
-    // START INVISIBLE: Hide slider during initial layout to prevent visible jump
-    if (this.card.sliderElement) {
-      this.card.sliderElement.style.opacity = "0";
-    }
 
     this.card.updateSlider(false);
     this.card._setupResizeObserver();
@@ -606,8 +585,6 @@ export class CardBuilder {
       viewMode,
     );
 
-    // All cards are already loaded - no preloading needed
-
     // Setup auto-swipe and reset-after if enabled
     this.card.autoSwipe?.manage();
     this.card.resetAfter?.manage();
@@ -619,52 +596,257 @@ export class CardBuilder {
       this.card._applyCardModStyles();
       this.card._setupCardModObserver();
 
-      // Recalculate layout after card-mod applies (small delay to ensure styles are applied)
-      setTimeout(() => {
-        if (this.card.isConnected) {
-          this.recalculateCarouselLayout();
-        }
-      }, 100);
+      // Wait for CSS variable to actually change instead of fixed timeout
+      if (viewMode === "carousel") {
+        this._waitForCarouselStyleApplication().then(() => {
+          if (this.card.isConnected) {
+            this.recalculateCarouselLayout();
+          }
+        });
+      }
     } else {
       logDebug("CARD_MOD", "No card-mod config found in finishBuildLayout");
     }
 
-    // Catch layout shifts and fade in smoothly ---
-    setTimeout(() => {
-      if (
-        this.card.isConnected &&
-        this.card.cardContainer &&
-        this.card.sliderElement
-      ) {
-        const settledWidth = this.card.cardContainer.offsetWidth;
-        const settledHeight = this.card.cardContainer.offsetHeight;
+    // ENHANCED: Wait for dimensions to truly settle, then fade in smoothly
+    await this._fadeInAfterLayoutSettles();
+  }
 
-        // Check if dimensions changed since initial measurement
-        if (
-          Math.abs(settledWidth - this.card.slideWidth) > 1 ||
-          Math.abs(settledHeight - this.card.slideHeight) > 1
-        ) {
+  /**
+   * Waits for card-mod to apply carousel width styles
+   * Uses CSS variable watching with fallback timeout
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _waitForCarouselStyleApplication() {
+    const MAX_WAIT_TIME = 500; // 500ms maximum wait (generous for slow systems)
+    const CHECK_INTERVAL = 20; // Check every 20ms (frequent but not excessive)
+
+    // Get the initial CSS variable value
+    const initialWidth = getComputedStyle(this.card)
+      .getPropertyValue("--carousel-card-width")
+      .trim();
+
+    logDebug("CARD_MOD", "Waiting for carousel CSS variable application:", {
+      initialWidth,
+      maxWaitTime: MAX_WAIT_TIME,
+    });
+
+    // If CSS variable is already set (non-empty and not auto), consider it applied
+    if (initialWidth && initialWidth !== "" && initialWidth !== "auto") {
+      logDebug("CARD_MOD", "CSS variable already applied:", initialWidth);
+      return Promise.resolve();
+    }
+
+    const startTime = Date.now();
+
+    return new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        const currentWidth = getComputedStyle(this.card)
+          .getPropertyValue("--carousel-card-width")
+          .trim();
+
+        const elapsedTime = Date.now() - startTime;
+
+        // Check if CSS variable has been set
+        if (currentWidth && currentWidth !== "" && currentWidth !== "auto") {
+          clearInterval(checkInterval);
           logDebug(
-            "INIT",
-            `Layout settled to new dimensions (${settledWidth}x${settledHeight}px), re-updating slider.`,
+            "CARD_MOD",
+            "CSS variable detected after",
+            elapsedTime,
+            "ms:",
+            currentWidth,
           );
-          this.card.slideWidth = settledWidth;
-          this.card.slideHeight = settledHeight;
-          this.card.updateSlider(false);
+          resolve();
+          return;
         }
 
-        // Fade in the slider smoothly after layout is settled
-        this.card.sliderElement.style.transition = "opacity 0.2s ease-in";
-        this.card.sliderElement.style.opacity = "1";
+        // Safety timeout reached
+        if (elapsedTime >= MAX_WAIT_TIME) {
+          clearInterval(checkInterval);
+          logDebug(
+            "CARD_MOD",
+            "CSS variable watch timed out after",
+            MAX_WAIT_TIME,
+            "ms - using fallback",
+          );
+          resolve();
+        }
+      }, CHECK_INTERVAL);
+    });
+  }
 
-        // Clean up transition after fade completes
-        setTimeout(() => {
-          if (this.card.sliderElement) {
-            this.card.sliderElement.style.transition = "";
-          }
-        }, 200);
+  /**
+   * Waits for container dimensions to stabilize (OPTIMIZED FOR SPEED)
+   * Checks multiple times to ensure dimensions aren't changing
+   * @returns {Promise<Object|null>} Object with width/height, or null if failed
+   * @private
+   */
+  async _waitForStableDimensions() {
+    const MAX_ATTEMPTS = 30; // 30 checks max (failsafe)
+    const CHECK_INTERVAL = 50; // Check every 50ms (faster than before)
+    const STABILITY_THRESHOLD = 2; // Dimensions must be stable within 2px
+    const REQUIRED_STABLE_CHECKS = 2; // Must be stable for 2 consecutive checks
+
+    let previousWidth = 0;
+    let previousHeight = 0;
+    let stableCount = 0;
+    let attempt = 0;
+    let useRAF = true; // Use RAF for first few checks (faster)
+
+    logDebug("INIT", "Starting dimension stability check (optimized)...");
+
+    while (attempt < MAX_ATTEMPTS) {
+      // Check if element is still connected
+      if (!this.card.isConnected || !this.card.cardContainer) {
+        logDebug("INIT", "Card disconnected during dimension check");
+        return null;
       }
-    }, 50);
+
+      // Check if element is hidden
+      if (this.card.offsetParent === null) {
+        logDebug("INIT", "Element is hidden, skipping dimension check");
+        return null;
+      }
+
+      const currentWidth = this.card.cardContainer.offsetWidth;
+      const currentHeight = this.card.cardContainer.offsetHeight;
+
+      logDebug("INIT", `Dimension check ${attempt + 1}/${MAX_ATTEMPTS}:`, {
+        width: currentWidth,
+        height: currentHeight,
+        previousWidth,
+        previousHeight,
+        stableCount,
+      });
+
+      // Check if dimensions are valid (non-zero)
+      if (currentWidth > 0 && currentHeight > 0) {
+        // Check if dimensions are stable (within threshold)
+        const widthDiff = Math.abs(currentWidth - previousWidth);
+        const heightDiff = Math.abs(currentHeight - previousHeight);
+
+        if (
+          widthDiff <= STABILITY_THRESHOLD &&
+          heightDiff <= STABILITY_THRESHOLD
+        ) {
+          stableCount++;
+          logDebug(
+            "INIT",
+            `Dimensions stable (${stableCount}/${REQUIRED_STABLE_CHECKS})`,
+          );
+
+          if (stableCount >= REQUIRED_STABLE_CHECKS) {
+            logDebug("INIT", "Dimensions confirmed stable:", {
+              width: currentWidth,
+              height: currentHeight,
+              attempts: attempt + 1,
+              timeElapsed: `${attempt * CHECK_INTERVAL}ms`,
+            });
+            return { width: currentWidth, height: currentHeight };
+          }
+        } else {
+          // Dimensions changed - reset stable count
+          logDebug(
+            "INIT",
+            `⚡ Dimensions changed: width Δ${widthDiff}px, height Δ${heightDiff}px (resetting stability counter)`,
+          );
+          stableCount = 0;
+        }
+
+        previousWidth = currentWidth;
+        previousHeight = currentHeight;
+      } else {
+        logDebug(
+          "INIT",
+          `⏳ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
+        );
+        stableCount = 0; // Reset if dimensions go to zero
+      }
+
+      attempt++;
+
+      // OPTIMIZATION: Use RAF for first 3 checks (faster, synced with browser paint)
+      // Then fall back to setTimeout for remaining checks
+      if (useRAF && attempt < 3) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      } else {
+        useRAF = false; // Switch to setTimeout after first few RAF checks
+        await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL));
+      }
+    }
+
+    // Max attempts reached without stable dimensions
+    logDebug(
+      "INIT",
+      `Failed to get stable dimensions after ${MAX_ATTEMPTS * CHECK_INTERVAL}ms`,
+    );
+    return null;
+  }
+
+  /**
+   * Waits for layout to settle, then fades in the slider smoothly (OPTIMIZED)
+   * Performs a final dimension check before revealing content
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _fadeInAfterLayoutSettles() {
+    await new Promise((resolve) => setTimeout(resolve, 50)); // Reduced from 150ms to 50ms
+
+    if (
+      !this.card.isConnected ||
+      !this.card.cardContainer ||
+      !this.card.sliderElement
+    ) {
+      logDebug("INIT", "Card disconnected before fade-in");
+      return;
+    }
+
+    // Final dimension check
+    const finalWidth = this.card.cardContainer.offsetWidth;
+    const finalHeight = this.card.cardContainer.offsetHeight;
+
+    logDebug("INIT", "Final pre-fade dimension check:", {
+      currentStored: {
+        width: this.card.slideWidth,
+        height: this.card.slideHeight,
+      },
+      actualMeasured: { width: finalWidth, height: finalHeight },
+    });
+
+    // If dimensions changed significantly, update them one last time
+    if (
+      Math.abs(finalWidth - this.card.slideWidth) > 2 ||
+      Math.abs(finalHeight - this.card.slideHeight) > 2
+    ) {
+      logDebug(
+        "INIT",
+        "Final dimensions differ from stored - updating before fade-in",
+      );
+      this.card.slideWidth = finalWidth;
+      this.card.slideHeight = finalHeight;
+      this.card.updateSlider(false);
+
+      // Re-calculate carousel layout if needed
+      const viewMode = this.card._config.view_mode || "single";
+      if (viewMode === "carousel") {
+        this._setupCarouselLayoutWithValidation(finalWidth);
+      }
+    }
+
+    // Fade in smoothly (slightly faster animation)
+    logDebug("INIT", "Fading in slider");
+    this.card.sliderElement.style.transition = "opacity 0.15s ease-in";
+    this.card.sliderElement.style.opacity = "1";
+
+    // Clean up transition after fade completes
+    setTimeout(() => {
+      if (this.card.sliderElement) {
+        this.card.sliderElement.style.transition = "";
+        logDebug("INIT", "Fade-in complete, card fully initialized");
+      }
+    }, 150);
   }
 
   /**
@@ -754,7 +936,7 @@ export class CardBuilder {
       const cardsVisible =
         (containerWidth + cardSpacing) / (cardWidth + cardSpacing);
 
-      logDebug("INIT", "✅ Using CSS-overridden card width:", {
+      logDebug("INIT", "Using CSS-overridden card width:", {
         cardWidth: cardWidth.toFixed(2),
         cardsVisible: cardsVisible.toFixed(2),
         source: "card-mod or CSS",
@@ -764,7 +946,7 @@ export class CardBuilder {
     }
 
     // No CSS override - calculate from config
-    logDebug("INIT", "❌ No CSS override found, calculating from config");
+    logDebug("INIT", "No CSS override found, calculating from config");
 
     let cardsVisible;
 
@@ -804,7 +986,7 @@ export class CardBuilder {
     const containerWidth = this.card.cardContainer?.offsetWidth;
     if (!containerWidth) return;
 
-    logDebug("INIT", "🔄 Recalculating carousel layout after card-mod");
+    logDebug("INIT", "Recalculating carousel layout after card-mod");
     this._setupCarouselLayout(containerWidth);
 
     // Update the slider position with new dimensions
@@ -812,11 +994,12 @@ export class CardBuilder {
   }
 
   /**
-   * Sets up carousel mode layout and sizing
+   * Sets up carousel mode layout and sizing WITH VALIDATION
    * @param {number} containerWidth - Container width
+   * @returns {boolean} True if dimensions are valid, false otherwise
    * @private
    */
-  _setupCarouselLayout(containerWidth) {
+  _setupCarouselLayoutWithValidation(containerWidth) {
     const cardSpacing =
       Math.max(0, parseInt(this.card._config.card_spacing)) || 0;
 
@@ -826,7 +1009,23 @@ export class CardBuilder {
       cardSpacing,
     );
 
-    logDebug("INIT", "Carousel layout setup:", {
+    // VALIDATION: Check if calculated dimensions are sane
+    const isValid = this._validateCarouselDimensions(
+      cardWidth,
+      cardsVisible,
+      containerWidth,
+    );
+
+    if (!isValid) {
+      logDebug("INIT", "Carousel dimensions failed validation:", {
+        cardWidth,
+        cardsVisible,
+        containerWidth,
+      });
+      return false;
+    }
+
+    logDebug("INIT", "Carousel layout setup (validated):", {
       containerWidth,
       cardsVisible: cardsVisible.toFixed(2),
       cardSpacing,
@@ -862,10 +1061,61 @@ export class CardBuilder {
 
     // Apply carousel class to all card slides
     this.card.cards.forEach((cardData) => {
-      if (cardData && cardData.slide) {
+      if (cardData.slide) {
         cardData.slide.classList.add("carousel-mode");
       }
     });
+
+    return true;
+  }
+
+  /**
+   * Validates carousel dimension calculations
+   * @param {number} cardWidth - Calculated card width
+   * @param {number} cardsVisible - Calculated visible cards
+   * @param {number} containerWidth - Container width
+   * @returns {boolean} True if dimensions are valid
+   * @private
+   */
+  _validateCarouselDimensions(cardWidth, cardsVisible, containerWidth) {
+    // Check for NaN or invalid numbers
+    if (
+      !isFinite(cardWidth) ||
+      !isFinite(cardsVisible) ||
+      !isFinite(containerWidth)
+    ) {
+      logDebug("INIT", "Validation failed: Non-finite numbers detected");
+      return false;
+    }
+
+    // Check for zero or negative values
+    if (cardWidth <= 0 || cardsVisible <= 0 || containerWidth <= 0) {
+      logDebug("INIT", "Validation failed: Zero or negative values");
+      return false;
+    }
+
+    // Check if cardWidth is unreasonably large (shouldn't be more than container)
+    if (cardWidth > containerWidth * 1.5) {
+      logDebug(
+        "INIT",
+        "Validation failed: Card width exceeds container significantly",
+      );
+      return false;
+    }
+
+    // Check if cardWidth is unreasonably small
+    if (cardWidth < 50) {
+      logDebug("INIT", "Validation failed: Card width too small (< 50px)");
+      return false;
+    }
+
+    // Check if cardsVisible makes sense
+    if (cardsVisible > 20) {
+      logDebug("INIT", "Validation failed: Too many visible cards (> 20)");
+      return false;
+    }
+
+    return true;
   }
 
   /**

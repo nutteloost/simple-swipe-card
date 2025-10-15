@@ -286,15 +286,26 @@ export class LoopMode {
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
     const viewMode = this.card._config.view_mode || "single";
+    const swipeBehavior = this.card._config.swipe_behavior || "single";
 
     if (viewMode === "carousel") {
-      // For carousel mode, jump as soon as we go past the real cards
-      // This ensures the user never sees duplicate cards and gets true infinite scrolling
-      return currentIndex >= totalVisibleCards || currentIndex < 0;
+      // AGGRESSIVE JUMP TRIGGER for free swipe behavior
+      if (swipeBehavior === "free") {
+        // Jump earlier - when we're within 30% of running out of duplicates
+        const duplicateCount = this.getDuplicateCount();
+        const threshold = Math.floor(duplicateCount * 0.3);
+
+        // Trigger jump if we're getting close to the edge
+        const distanceFromStart = currentIndex - 0;
+        const distanceFromEnd = totalVisibleCards - 1 - currentIndex;
+
+        return distanceFromStart < threshold || distanceFromEnd < threshold;
+      } else {
+        // Original logic for single swipe
+        return currentIndex >= totalVisibleCards || currentIndex < 0;
+      }
     } else {
-      // For single mode, use the original logic
-      // Only trigger jump when we've moved to virtual positions
-      // This allows the transition to complete first
+      // Single mode logic (unchanged)
       return currentIndex < 0 || currentIndex >= totalVisibleCards;
     }
   }
