@@ -93,6 +93,7 @@ body:
         - Swipe Navigation
         - Pagination Dots
         - Auto-swipe functionality
+        - Auto Height feature
         - Reset after timeout
         - Visual Editor
         - Card Configuration
@@ -100,6 +101,23 @@ body:
         - Visibility conditions
         - CSS Styling/Variables
         - Card-mod integration
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dashboard-type
+    attributes:
+      label: Dashboard type
+      description: On which dashboard type does this issue happen?
+      options:
+        - Sections
+        - Masonry
+        - Panel (single card)
+        - Masonry (layout-card)
+        - Horizontal (layout-card)
+        - Vertical (layout-card)
+        - Grid (layout-card)
       default: 0
     validations:
       required: true
