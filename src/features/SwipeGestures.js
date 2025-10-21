@@ -183,6 +183,51 @@ export class SwipeGestures {
    * @private
    */
   _preventClick(e) {
+    // BUTTON FIX: Check if click is on or inside a button (check entire path)
+    if (e.composedPath && typeof e.composedPath === "function") {
+      const path = e.composedPath();
+
+      const allowedClickElements = [
+        "button",
+        "ha-icon-button",
+        "mwc-icon-button",
+        "ha-button",
+        "mwc-button",
+        "paper-button",
+        "a",
+        "input",
+        "select",
+        "textarea",
+      ];
+
+      // Check first 10 elements in the path for buttons
+      for (let i = 0; i < Math.min(10, path.length); i++) {
+        const element = path[i];
+
+        if (
+          element === this.card.cardContainer ||
+          element === this.card.sliderElement
+        ) {
+          break;
+        }
+
+        if (element.nodeType === Node.ELEMENT_NODE) {
+          const tagName = element.localName?.toLowerCase();
+          const role = element.getAttribute?.("role");
+
+          if (allowedClickElements.includes(tagName) || role === "button") {
+            logDebug(
+              "SWIPE",
+              "Allowing click - button found in path:",
+              tagName || role,
+            );
+            return; // Let the click proceed normally
+          }
+        }
+      }
+    }
+
+    // For non-interactive elements, apply normal swipe click prevention
     if (this._isClickBlocked || this._isDragging) {
       logDebug("SWIPE", "Click prevented during/after swipe gesture");
       e.preventDefault();
@@ -198,6 +243,51 @@ export class SwipeGestures {
    * @private
    */
   _preventPointerEvents(e) {
+    // BUTTON FIX: Check if pointer event is on or inside a button (check entire path)
+    if (e.composedPath && typeof e.composedPath === "function") {
+      const path = e.composedPath();
+
+      const allowedPointerElements = [
+        "button",
+        "ha-icon-button",
+        "mwc-icon-button",
+        "ha-button",
+        "mwc-button",
+        "paper-button",
+        "a",
+        "input",
+        "select",
+        "textarea",
+      ];
+
+      // Check first 10 elements in the path for buttons
+      for (let i = 0; i < Math.min(10, path.length); i++) {
+        const element = path[i];
+
+        if (
+          element === this.card.cardContainer ||
+          element === this.card.sliderElement
+        ) {
+          break;
+        }
+
+        if (element.nodeType === Node.ELEMENT_NODE) {
+          const tagName = element.localName?.toLowerCase();
+          const role = element.getAttribute?.("role");
+
+          if (allowedPointerElements.includes(tagName) || role === "button") {
+            logDebug(
+              "SWIPE",
+              "Allowing pointer event - button found in path:",
+              tagName || role,
+            );
+            return; // Let the pointer event proceed normally
+          }
+        }
+      }
+    }
+
+    // For non-interactive elements, apply normal swipe pointer event prevention
     if (this._isDragging && this._hasMovedDuringGesture) {
       e.preventDefault();
       e.stopPropagation();
@@ -245,26 +335,47 @@ export class SwipeGestures {
       return;
     }
 
-    // SHADOW DOM FIX: Get the actual clicked element through shadow DOM boundaries
-    const actualTarget = this._getActualEventTarget(e);
+    // MOBILE BUTTON FIX: Check the ENTIRE event path for interactive elements
+    // This is critical for deeply nested shadow DOM elements like cover controls
+    if (e.composedPath && typeof e.composedPath === "function") {
+      const path = e.composedPath();
 
-    console.log("DROPDOWN_FIX: 🎯 DEBUG - Actual target:", actualTarget);
-    console.log(
-      "DROPDOWN_FIX: 🎯 DEBUG - Actual target tag:",
-      actualTarget?.tagName,
-    );
-    console.log(
-      "DROPDOWN_FIX: 🎯 DEBUG - Actual target class:",
-      actualTarget?.className,
-    );
+      // Check first 15 elements in the path (covers deep nesting)
+      for (let i = 0; i < Math.min(15, path.length); i++) {
+        const pathElement = path[i];
 
-    if (this._isInteractiveOrScrollable(actualTarget)) {
-      logDebug(
-        "SWIPE",
-        "Swipe Start ignored (interactive element):",
-        actualTarget,
-      );
-      return;
+        // Stop if we reach our container
+        if (
+          pathElement === this.card.cardContainer ||
+          pathElement === this.card.sliderElement
+        ) {
+          break;
+        }
+
+        // Check if this element in the path is interactive
+        if (
+          pathElement.nodeType === Node.ELEMENT_NODE &&
+          this._isInteractiveOrScrollable(pathElement)
+        ) {
+          logDebug(
+            "SWIPE",
+            "Swipe Start ignored - found interactive element in path:",
+            pathElement.localName,
+          );
+          return; // Don't start swipe on interactive elements
+        }
+      }
+    } else {
+      // Fallback for browsers without composedPath
+      const actualTarget = this._getActualEventTarget(e);
+      if (this._isInteractiveOrScrollable(actualTarget)) {
+        logDebug(
+          "SWIPE",
+          "Swipe Start ignored (interactive element):",
+          actualTarget,
+        );
+        return;
+      }
     }
 
     // Reset gesture state
@@ -273,7 +384,7 @@ export class SwipeGestures {
     this._hasMovedDuringGesture = false;
     this._totalMovement = 0;
     this._gestureStartTime = Date.now();
-    this._isGestureActive = true; // Mark gesture as active
+    this._isGestureActive = true;
 
     const isTouch = e.type === "touchstart";
     const point = isTouch ? e.touches[0] : e;
@@ -286,9 +397,9 @@ export class SwipeGestures {
     if (this.card.sliderElement) {
       const style = window.getComputedStyle(this.card.sliderElement);
       const matrix = new DOMMatrixReadOnly(style.transform);
-      this._initialTransform = matrix.m41; // For horizontal, we track X transform
+      this._initialTransform = matrix.m41;
       if (this.card._swipeDirection === "vertical") {
-        this._initialTransform = matrix.m42; // For vertical, we track Y transform
+        this._initialTransform = matrix.m42;
       }
       this.card.sliderElement.style.transition =
         this.card._getTransitionStyle(false);
@@ -304,7 +415,6 @@ export class SwipeGestures {
       window.addEventListener("mouseup", this._boundMouseUp, { passive: true });
     }
 
-    // Pause auto-swipe when user interaction begins
     if (this.card._config.enable_auto_swipe) {
       this.card.autoSwipe?.pause(5000);
     }
@@ -674,22 +784,40 @@ export class SwipeGestures {
     )
       return false;
 
-    // CHART FIX: Allow swiping on chart elements (SVG, Canvas)
     const tagName = element.localName?.toLowerCase();
+    const role = element.getAttribute("role");
+
+    // CHART FIX: Allow swiping on chart elements (SVG, Canvas)
     if (tagName === "svg" || tagName === "canvas") {
       logDebug("SWIPE", "Allowing swipe on chart element:", tagName);
-      return false; // Allow swiping on charts
+      return false;
     }
 
-    // SIMPLE & ROBUST: Detect slider-like elements by common patterns
+    // BUTTON/ICON FIX: Block swipes ONLY on actual button/icon elements
+    const blockSwipeElements = [
+      "button",
+      "ha-icon-button",
+      "mwc-icon-button",
+      "ha-button",
+      "mwc-button",
+      "paper-button",
+      "mwc-icon",
+      "ha-cover-controls",
+      "ha-state-icon",
+    ];
+
+    if (blockSwipeElements.includes(tagName)) {
+      logDebug("SWIPE", "Blocking swipe on button/icon element:", tagName);
+      return true;
+    }
+
+    // SIMPLE & ROBUST: Detect slider-like elements
     const className =
       element.className && typeof element.className === "string"
         ? element.className
         : element.className?.toString() || "";
     const id = element.id || "";
-    const role = element.getAttribute("role");
 
-    // 1. Check for slider-related class names, IDs, or roles
     if (
       className.includes("slider") ||
       id.includes("slider") ||
@@ -704,22 +832,38 @@ export class SwipeGestures {
       return true;
     }
 
-    // 2. Check for touch-action: pan-y (common on sliders)
+    // TOUCH-ACTION FIX: Only block swipes if touch-action conflicts with swipe direction
+    // pan-y means allow vertical panning, which conflicts with VERTICAL swipes (not horizontal)
+    // pan-x means allow horizontal panning, which conflicts with HORIZONTAL swipes (not vertical)
     try {
       const style = window.getComputedStyle(element);
-      if (style.touchAction && style.touchAction.includes("pan-y")) {
-        logDebug(
-          "SWIPE",
-          "_isInteractiveOrScrollable: Found touch-action pan-y element:",
-          element,
-        );
-        return true;
+      const touchAction = style.touchAction;
+      const isHorizontalSwipe = this.card._swipeDirection === "horizontal";
+
+      if (touchAction) {
+        // Only block if there's a direction conflict
+        if (isHorizontalSwipe && touchAction.includes("pan-x")) {
+          logDebug(
+            "SWIPE",
+            "_isInteractiveOrScrollable: Found conflicting touch-action pan-x for horizontal swipe:",
+            element,
+          );
+          return true;
+        }
+        if (!isHorizontalSwipe && touchAction.includes("pan-y")) {
+          logDebug(
+            "SWIPE",
+            "_isInteractiveOrScrollable: Found conflicting touch-action pan-y for vertical swipe:",
+            element,
+          );
+          return true;
+        }
+        // If pan-y on horizontal swipe or pan-x on vertical swipe, that's fine - no conflict
       }
     } catch (e) {
       // Ignore style errors
     }
 
-    // 3. Check basic interactive HTML elements
     if (["input", "textarea", "select", "a", "audio"].includes(tagName)) {
       logDebug(
         "SWIPE",
@@ -729,7 +873,6 @@ export class SwipeGestures {
       return true;
     }
 
-    // 4. Check for interactive roles
     if (
       role &&
       [
@@ -752,7 +895,7 @@ export class SwipeGestures {
       return true;
     }
 
-    // 5. Check for scrollable overflow
+    // Check for scrollable overflow
     let current = element;
     let depth = 0;
     while (
@@ -780,7 +923,6 @@ export class SwipeGestures {
             return true;
           }
 
-          // Check for slider-like elements in parent chain
           const currentClassName =
             current.className && typeof current.className === "string"
               ? current.className
@@ -800,14 +942,13 @@ export class SwipeGestures {
         } catch (e) {
           logDebug(
             "ERROR",
-            "Error accessing style/scroll properties for:",
+            "Error accessing style/scroll properties:",
             current,
             e,
           );
         }
       }
 
-      // Traverse up including through shadow DOM
       current =
         current.assignedSlot ||
         current.parentNode ||

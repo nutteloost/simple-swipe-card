@@ -59,6 +59,10 @@ export class SimpleSwipeCard extends LitElement {
     this._cardModConfig = null;
     this._cardModObserver = null;
 
+    // UPDATED: Cache for OUR relevant entities (visibility/state sync only)
+    this._cachedOurRelevantEntities = null;
+    this._cachedConfigHash = null;
+
     // Initialize feature managers
     this.swipeGestures = new SwipeGestures(this);
     this.autoSwipe = new AutoSwipe(this);
@@ -156,6 +160,10 @@ export class SimpleSwipeCard extends LitElement {
     logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
 
     this._config = JSON.parse(JSON.stringify(config));
+
+    // Clear cache when config changes
+    this._clearOurRelevantEntitiesCache();
+
     if (!Array.isArray(this._config.cards)) this._config.cards = [];
     if (this._config.show_pagination === undefined)
       this._config.show_pagination = true;
@@ -1012,7 +1020,7 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
-   * Sets the Home Assistant object (OPTIMIZED)
+   * Sets the Home Assistant object (OPTIMIZED - Fixed for child card updates)
    * @param {Object} hass - Home Assistant object
    */
   set hass(hass) {
@@ -1020,31 +1028,26 @@ export class SimpleSwipeCard extends LitElement {
       return;
     }
 
-    // OPTIMIZATION: Better change detection - only process if hass has actually changed
+    // OPTIMIZATION 1: Skip if exact same object reference
     const oldHass = this._hass;
     if (oldHass === hass) {
-      return; // Exact same object, no need to update
-    }
-
-    // OPTIMIZATION: More granular change detection
-    const hasStatesChanged = !oldHass || oldHass.states !== hass.states;
-    const hasUserChanged = !oldHass || oldHass.user !== hass.user;
-    const hasConfigChanged =
-      !oldHass ||
-      JSON.stringify(oldHass.config) !== JSON.stringify(hass.config);
-
-    if (!hasStatesChanged && !hasUserChanged && !hasConfigChanged) {
-      // Only update child cards if nothing relevant changed
-      this._updateChildCardsHass(hass);
       return;
     }
 
-    // Only log when hass has actually changed
-    logDebug("INIT", "Setting hass (changed)");
+    // Store new hass reference
     this._hass = hass;
 
-    // Notify state synchronization of hass change
-    this.stateSynchronization?.onHassChange(oldHass, hass);
+    // OPTIMIZATION 2: Check if states changed at all
+    const hasStatesChanged = !oldHass || oldHass.states !== hass.states;
+    const hasUIChanges =
+      !oldHass ||
+      oldHass.localize !== hass.localize ||
+      oldHass.themes !== hass.themes ||
+      oldHass.language !== hass.language;
+
+    // OPTIMIZATION 3: Check if OUR relevant entities changed (for visibility/state sync)
+    const hasOurRelevantChanges =
+      hasStatesChanged && this._hasOurRelevantEntitiesChanged(oldHass, hass);
 
     // Skip visibility updates during seamless jump to prevent interference
     if (this._performingSeamlessJump) {
@@ -1052,7 +1055,10 @@ export class SimpleSwipeCard extends LitElement {
         "LOOP",
         "Skipping hass-triggered visibility update during seamless jump",
       );
-      this._updateChildCardsHass(hass);
+      // Always update children - they need to react to entity changes
+      if (hasStatesChanged || hasUIChanges) {
+        this._updateChildCardsHass(hass);
+      }
       return;
     }
 
@@ -1062,24 +1068,168 @@ export class SimpleSwipeCard extends LitElement {
         "VISIBILITY",
         "Skipping visibility update during build to prevent rebuild flicker",
       );
-      this._updateChildCardsHass(hass);
+      // Always update children - they need to react to entity changes
+      if (hasStatesChanged || hasUIChanges) {
+        this._updateChildCardsHass(hass);
+      }
       return;
     }
 
-    // OPTIMIZATION: Only update visibility if states actually changed
-    if (hasStatesChanged) {
+    // OPTIMIZATION 4: Only update visibility if OUR relevant entities changed
+    // (visibility conditions and state_entity)
+    if (hasOurRelevantChanges) {
+      logDebug("HASS", "Our relevant entities changed - updating visibility");
+
       // Clear any pending debounced updates
       if (this._visibilityUpdateTimeout) {
         clearTimeout(this._visibilityUpdateTimeout);
         this._visibilityUpdateTimeout = null;
       }
 
-      // Update visibility immediately when hass changes
+      // Update visibility when our entities change
       this._updateVisibleCardIndices();
     }
 
-    // Update hass for all child cards
-    this._updateChildCardsHass(hass);
+    // ALWAYS update child cards when states or UI changes
+    // (Child cards need to track their own entities)
+    if (hasStatesChanged || hasUIChanges) {
+      this._updateChildCardsHass(hass);
+    }
+  }
+
+  /**
+   * Checks if any of OUR relevant entities have changed
+   * (Only entities used by Simple Swipe Card itself: state_entity, visibility conditions)
+   * @param {Object} oldHass - Previous hass object
+   * @param {Object} newHass - New hass object
+   * @returns {boolean} True if any of our entities changed
+   * @private
+   */
+  _hasOurRelevantEntitiesChanged(oldHass, newHass) {
+    // First hass set
+    if (!oldHass || !oldHass.states || !newHass.states) {
+      return true;
+    }
+
+    // Get list of entities WE care about (not child cards)
+    const ourEntities = this._getOurRelevantEntities();
+
+    // If no relevant entities, no need to update visibility
+    if (ourEntities.length === 0) {
+      return false;
+    }
+
+    // Check if any of our entities changed
+    for (const entityId of ourEntities) {
+      const oldState = oldHass.states[entityId];
+      const newState = newHass.states[entityId];
+
+      // Entity added or removed
+      if (!oldState !== !newState) {
+        logDebug("HASS", `Our entity ${entityId} added/removed`);
+        return true;
+      }
+
+      // Entity state or attributes changed
+      if (
+        oldState &&
+        newState &&
+        (oldState.state !== newState.state ||
+          oldState.last_changed !== newState.last_changed)
+      ) {
+        logDebug(
+          "HASS",
+          `Our entity ${entityId} state changed: ${oldState.state} -> ${newState.state}`,
+        );
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Gets the list of entity IDs that Simple Swipe Card uses directly
+   * (NOT including entities used by child cards)
+   * Results are cached for performance
+   * @returns {Array<string>} Array of entity IDs
+   * @private
+   */
+  _getOurRelevantEntities() {
+    // Return cached list if config hasn't changed
+    if (
+      this._cachedOurRelevantEntities &&
+      this._cachedConfigHash === this._getConfigHash()
+    ) {
+      return this._cachedOurRelevantEntities;
+    }
+
+    const entities = new Set();
+
+    // Add state synchronization entity
+    if (this._config.state_entity) {
+      entities.add(this._config.state_entity);
+    }
+
+    // Add entities from visibility conditions
+    if (this._config.cards && Array.isArray(this._config.cards)) {
+      this._config.cards.forEach((cardConfig) => {
+        if (cardConfig.visibility && Array.isArray(cardConfig.visibility)) {
+          cardConfig.visibility.forEach((condition) => {
+            if (condition.entity) {
+              entities.add(condition.entity);
+            }
+          });
+        }
+      });
+    }
+
+    // Cache the results
+    this._cachedOurRelevantEntities = Array.from(entities);
+    this._cachedConfigHash = this._getConfigHash();
+
+    if (this._cachedOurRelevantEntities.length > 0) {
+      logDebug(
+        "HASS",
+        `Tracking ${this._cachedOurRelevantEntities.length} entities for visibility/state sync:`,
+        this._cachedOurRelevantEntities,
+      );
+    }
+
+    return this._cachedOurRelevantEntities;
+  }
+
+  /**
+   * Gets a simple hash of the config to detect changes
+   * @returns {string} Config hash
+   * @private
+   */
+  _getConfigHash() {
+    if (!this._config || !this._config.cards) {
+      return "";
+    }
+
+    // Create a simple hash based on:
+    // - Number of cards
+    // - State entity
+    // - Whether cards have visibility conditions
+    const parts = [
+      this._config.cards.length,
+      this._config.state_entity || "",
+      this._config.cards.filter((c) => c.visibility?.length > 0).length,
+    ];
+
+    return parts.join("|");
+  }
+
+  /**
+   * Clears the cached relevant entities (call when config changes)
+   * @private
+   */
+  _clearOurRelevantEntitiesCache() {
+    this._cachedOurRelevantEntities = null;
+    this._cachedConfigHash = null;
+    logDebug("HASS", "Cleared our relevant entities cache");
   }
 
   /**
@@ -1871,10 +2021,59 @@ export class SimpleSwipeCard extends LitElement {
     this.cardContainer.addEventListener(
       "pointerdown",
       (e) => {
-        // DEBOUNCING: Prevent rapid successive triggers
+        const target = this._getActualEventTarget(e);
+
+        // CHECK DROPDOWN FIRST: If it's a dropdown trigger, proceed with the fix
+        const isDropdown = this._isDropdownTrigger(target);
+
+        if (!isDropdown) {
+          // NOT a dropdown - check if it's a button using composedPath (handles shadow DOM)
+          const excludedElements = [
+            "button",
+            "ha-icon-button",
+            "mwc-icon-button",
+            "ha-button",
+            "mwc-button",
+            "paper-button",
+            "ha-cover-controls",
+          ];
+
+          // Use composedPath to properly traverse shadow DOM
+          if (e.composedPath && typeof e.composedPath === "function") {
+            const path = e.composedPath();
+
+            // Check first 10 elements in the path for buttons
+            for (let i = 0; i < Math.min(10, path.length); i++) {
+              const element = path[i];
+
+              if (element === this.cardContainer) {
+                break;
+              }
+
+              if (element.nodeType === Node.ELEMENT_NODE) {
+                const tagName = element.tagName?.toLowerCase();
+
+                if (excludedElements.includes(tagName)) {
+                  // Found a button in path but not a dropdown - let it work normally
+                  // NO DEBOUNCING for buttons!
+                  console.log(
+                    "DROPDOWN_FIX: ✅ Allowing button click:",
+                    tagName,
+                  );
+                  return;
+                }
+              }
+            }
+          }
+
+          // Not a dropdown and not a button - just return
+          return;
+        }
+
+        // IS a dropdown trigger - NOW apply debouncing for dropdowns only
+        // DEBOUNCING: Prevent rapid successive dropdown triggers
         if (this._dropdownFixApplied) return;
 
-        // Add a small debounce to prevent double-triggering
         const now = Date.now();
         if (
           this._lastDropdownTrigger &&
@@ -1883,9 +2082,6 @@ export class SimpleSwipeCard extends LitElement {
           return;
         }
         this._lastDropdownTrigger = now;
-
-        const target = this._getActualEventTarget(e);
-        if (!this._isDropdownTrigger(target)) return;
 
         logDebug(
           "SYSTEM",
@@ -1962,37 +2158,33 @@ export class SimpleSwipeCard extends LitElement {
 
         // 4. Find and store the combobox element NOW (before shadow DOM makes it hard to find)
         const clickedElement = this._getActualEventTarget(e);
-        let comboboxElement = null;
+        let comboboxSearch = clickedElement;
 
         // Walk up from the clicked element to find the combobox
-        let current = clickedElement;
         for (
           let i = 0;
-          i < 10 && current && current !== this.cardContainer;
+          i < 10 && comboboxSearch && comboboxSearch !== this.cardContainer;
           i++
         ) {
           if (
-            current.getAttribute &&
-            current.getAttribute("role") === "combobox"
+            comboboxSearch.getAttribute &&
+            comboboxSearch.getAttribute("role") === "combobox"
           ) {
-            comboboxElement = current;
+            // Store the combobox reference for the observer to use
+            this._monitoredCombobox = comboboxSearch;
             logDebug(
               "SYSTEM",
               "Found and stored combobox element for monitoring",
             );
             break;
           }
-          current = current.parentElement;
+          comboboxSearch = comboboxSearch.parentElement;
         }
-
-        // Store the combobox reference for the observer to use
-        this._monitoredCombobox = comboboxElement;
 
         // 5. Add click-controlled restoration with delay to avoid catching the opening click
         // Store the timeout for cleanup
         this._dropdownDelayTimeout = setTimeout(() => {
           if (this._dropdownFixApplied && this.isConnected) {
-            // Add isConnected check
             this._addClickRestoreListener();
             logDebug(
               "SYSTEM",
@@ -2072,7 +2264,7 @@ export class SimpleSwipeCard extends LitElement {
   _addFallbackClickListener() {
     if (!this.cardContainer) return;
 
-    const restoreAfterClick = (e) => {
+    const restoreAfterClick = () => {
       logDebug(
         "SYSTEM",
         "Click detected (fallback), restoring layout in 200ms",
@@ -2224,6 +2416,29 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
+   * Gets the actual event target, accounting for Shadow DOM
+   * @param {Event} e - The event
+   * @returns {Element} The actual target element
+   * @private
+   */
+  _getActualEventTarget(e) {
+    // Try to get the composed path (works through shadow DOM)
+    if (e.composedPath && typeof e.composedPath === "function") {
+      const composedPath = e.composedPath();
+      if (composedPath && composedPath.length > 0) {
+        // Return the first element in the path (the actual clicked element)
+        const actualTarget = composedPath[0];
+        if (actualTarget && actualTarget.nodeType === Node.ELEMENT_NODE) {
+          return actualTarget;
+        }
+      }
+    }
+
+    // Fallback to regular target for browsers that don't support composedPath
+    return e.target;
+  }
+
+  /**
    * A more precise helper to determine if a clicked element is part of a dropdown menu.
    * Enhanced to properly detect mushroom-select-card components
    * @param {HTMLElement} element The element that was clicked.
@@ -2236,18 +2451,18 @@ export class SimpleSwipeCard extends LitElement {
     // Check the element and its parents (increased depth for mushroom cards)
     let current = element;
     for (let i = 0; i < 8 && current && current !== this.cardContainer; i++) {
-      const tagName = current.tagName?.toLowerCase();
+      const currentTagName = current.tagName?.toLowerCase();
       const className = current.className || "";
       const role = current.getAttribute && current.getAttribute("role");
 
       // Check for specific dropdown component tag names
       if (
-        tagName === "ha-select" ||
-        tagName === "mwc-select" ||
-        tagName === "mushroom-select" ||
-        tagName === "mushroom-select-card"
+        currentTagName === "ha-select" ||
+        currentTagName === "mwc-select" ||
+        currentTagName === "mushroom-select" ||
+        currentTagName === "mushroom-select-card"
       ) {
-        console.log("DROPDOWN_FIX: 🎯 Found dropdown tag:", tagName);
+        console.log("DROPDOWN_FIX: 🎯 Found dropdown tag:", currentTagName);
         return true;
       }
 
@@ -2308,16 +2523,5 @@ export class SimpleSwipeCard extends LitElement {
       element.className,
     );
     return false;
-  }
-
-  /**
-   * Gets the actual event target, accounting for Shadow DOM.
-   * @param {Event} e The event object.
-   * @returns {Element} The actual target element.
-   * @private
-   */
-  _getActualEventTarget(e) {
-    if (e.composedPath && e.composedPath().length) return e.composedPath()[0];
-    return e.target;
   }
 }

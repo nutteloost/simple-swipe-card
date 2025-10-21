@@ -35,5 +35,6 @@ tree.txt
 todo.md
 RELEASE-GUIDE.md
 RELEASE-NOTES.md
+scripts/
 
 *.map

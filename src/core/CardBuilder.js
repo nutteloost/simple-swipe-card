@@ -612,7 +612,15 @@ export class CardBuilder {
     );
 
     // Apply matching border radius to all loaded slides
-    applyBorderRadiusToSlides(this.card.cards, this.card.cardContainer);
+    // Re-check container validity after async operations
+    if (this.card.cardContainer && this.card.cardContainer.isConnected) {
+      applyBorderRadiusToSlides(this.card.cards, this.card.cardContainer);
+    } else {
+      logDebug(
+        "INIT",
+        "Skipping border radius application - container no longer valid",
+      );
+    }
 
     this.card.updateSlider(false);
     this.card._setupResizeObserver();

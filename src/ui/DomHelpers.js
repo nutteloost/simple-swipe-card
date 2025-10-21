@@ -130,6 +130,29 @@ export function createSlide() {
  * @param {HTMLElement} cardContainer - The card container element
  */
 export function applyBorderRadiusToSlides(cards, cardContainer) {
+  // Validate cardContainer before calling getComputedStyle
+  if (!cardContainer || !(cardContainer instanceof Element)) {
+    logDebug(
+      "INIT",
+      "applyBorderRadiusToSlides skipped: invalid cardContainer",
+      {
+        isNull: !cardContainer,
+        type: cardContainer?.constructor?.name,
+      },
+    );
+    return;
+  }
+
+  // Check if element is still connected to DOM
+  if (!cardContainer.isConnected) {
+    logDebug(
+      "INIT",
+      "applyBorderRadiusToSlides skipped: cardContainer not connected to DOM",
+    );
+    return;
+  }
+
+  // Safe to call getComputedStyle now
   const cardBorderRadius = getComputedStyle(cardContainer).borderRadius;
   cards.forEach((cardData) => {
     if (cardData && cardData.slide) {

@@ -116,7 +116,9 @@ export function getStyles() {
         overflow: hidden;
         border-radius: inherit;
         background: transparent;
+        will-change: contents; /* Hint browser for optimization */   
      }
+
      .slider {
         position: relative;
         display: flex;
@@ -124,6 +126,7 @@ export function getStyles() {
         transition: transform var(--simple-swipe-card-transition-speed, 0.3s) var(--simple-swipe-card-transition-easing, ease-out);
         will-change: transform;
         background: transparent;
+        backface-visibility: hidden; /* Reduce repaints */   
      }
 
      .slider.dropdown-fix-active {
@@ -185,7 +188,7 @@ export function getStyles() {
 
     .card-container[data-view-mode="carousel"] {
       /* Ensure container can handle overflow */
-      overflow: hidden;
+      overflow: visible;
       position: relative;
     }
 
