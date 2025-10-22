@@ -1394,6 +1394,19 @@ export class SimpleSwipeCard extends LitElement {
 
     logDebug("INIT", "disconnectedCallback - Enhanced cleanup starting");
 
+    // Mark that we're disconnecting to abort any ongoing builds
+    const wasBuilding = this.building;
+    if (wasBuilding) {
+      logDebug("INIT", "Disconnecting during active build - aborting build");
+      this.building = false;
+    }
+
+    // Safety mechanism: Clear any stuck seamless jump flag
+    if (this._performingSeamlessJump) {
+      logDebug("INIT", "Clearing stuck seamless jump flag on disconnect");
+      this._performingSeamlessJump = false;
+    }
+
     // Clean up dropdown restore timeout and listener
     if (this._dropdownRestoreTimeout) {
       clearTimeout(this._dropdownRestoreTimeout);

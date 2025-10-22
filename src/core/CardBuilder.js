@@ -217,6 +217,21 @@ export class CardBuilder {
       );
 
       await Promise.allSettled(allCardsPromises);
+
+      // Check if card is still connected before inserting into DOM
+      if (!this.card.isConnected || !this.card.sliderElement) {
+        logDebug(
+          "INIT",
+          "Card disconnected during build, aborting gracefully",
+          {
+            connected: this.card.isConnected,
+            hasSlider: !!this.card.sliderElement,
+          },
+        );
+        this.card.building = false;
+        return false;
+      }
+
       this._insertLoadedCardsIntoDom();
 
       logDebug("INIT", "All cards loaded synchronously for layout-card");
@@ -226,16 +241,22 @@ export class CardBuilder {
         this.card.initialized = true;
         if (wasAtDefaultPosition) {
           requestAnimationFrame(() => {
-            this.finishBuildLayout();
+            if (this.card.isConnected && this.card.cardContainer) {
+              this.finishBuildLayout();
+            }
           });
         } else {
           requestAnimationFrame(() => {
-            this.finishBuildLayout();
+            if (this.card.isConnected && this.card.cardContainer) {
+              this.finishBuildLayout();
+            }
           });
         }
       } else {
         requestAnimationFrame(() => {
-          this.finishBuildLayout();
+          if (this.card.isConnected && this.card.cardContainer) {
+            this.finishBuildLayout();
+          }
         });
       }
 
@@ -390,7 +411,14 @@ export class CardBuilder {
       }
 
       // Ensure priority cards are in the DOM immediately
-      this._insertLoadedCardsIntoDom();
+      // Check if card is still connected before inserting
+      if (this.card.isConnected && this.card.sliderElement) {
+        this._insertLoadedCardsIntoDom();
+      } else {
+        logDebug("INIT", "Card disconnected before inserting priority cards");
+        this.card.building = false;
+        return false;
+      }
     }
 
     // Set initial state based on configuration
@@ -411,30 +439,35 @@ export class CardBuilder {
 
     logDebug("INIT", "All cards initialized.");
 
-    // Initialize if needed
+    // Initialize if this is the first build
     if (!this.card.initialized) {
       this.card.initialized = true;
-      if (wasAtDefaultPosition) {
-        // INITIAL BUILD - just finish layout
-        requestAnimationFrame(() => {
-          this.finishBuildLayout();
-        });
-      } else {
-        // REBUILD - finish layout (might jump to preserved state)
-        requestAnimationFrame(() => {
-          this.finishBuildLayout();
-        });
-      }
-    } else {
-      // Re-initialization case
+
+      // Schedule layout finalization - but check connection first
       requestAnimationFrame(() => {
-        this.finishBuildLayout();
+        if (this.card.isConnected && this.card.cardContainer) {
+          this.finishBuildLayout();
+        } else {
+          logDebug("INIT", "Card disconnected before finishBuildLayout");
+        }
+      });
+    } else {
+      // This is a rebuild - finalize immediately
+      requestAnimationFrame(() => {
+        if (this.card.isConnected && this.card.cardContainer) {
+          this.finishBuildLayout();
+        } else {
+          logDebug(
+            "INIT",
+            "Card disconnected before finishBuildLayout (rebuild)",
+          );
+        }
       });
     }
 
     this.card.building = false;
     logDebug("INIT", "Build completed successfully");
-    return true; // Build succeeded
+    return true;
   }
 
   /**
@@ -1553,10 +1586,15 @@ export class CardBuilder {
    * @private
    */
   _insertLoadedCardsIntoDom() {
-    if (!this.card.sliderElement) {
+    // Check if card is still connected and DOM is valid
+    if (!this.card.isConnected || !this.card.sliderElement) {
       logDebug(
         "ERROR",
-        "_insertLoadedCardsIntoDom: sliderElement is null, skipping",
+        "_insertLoadedCardsIntoDom: Card disconnected or sliderElement is null, skipping",
+        {
+          connected: this.card.isConnected,
+          hasSlider: !!this.card.sliderElement,
+        },
       );
       return;
     }
@@ -1569,6 +1607,12 @@ export class CardBuilder {
       .sort((a, b) => a.visibleIndex - b.visibleIndex);
 
     cardsToInsert.forEach((cardData) => {
+      // Double-check slider still exists before each insertion
+      if (!this.card.sliderElement) {
+        logDebug("ERROR", "Slider element disappeared during insertion loop");
+        return;
+      }
+
       cardData.slide.setAttribute("data-index", cardData.originalIndex);
       cardData.slide.setAttribute("data-visible-index", cardData.visibleIndex);
       if (cardData.isDuplicate) {
