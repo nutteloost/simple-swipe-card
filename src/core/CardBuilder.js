@@ -216,19 +216,46 @@ export class CardBuilder {
         }),
       );
 
+      // Store build timestamp to detect stale builds
+      const buildTimestamp = Date.now();
+      this.card._currentBuildTimestamp = buildTimestamp;
+
       await Promise.allSettled(allCardsPromises);
 
-      // Check if card is still connected before inserting into DOM
+      // Check if this build is still the current one
+      // Another build might have started during the await
+      if (this.card._currentBuildTimestamp !== buildTimestamp) {
+        logDebug("INIT", "Build superseded by newer build, aborting this one", {
+          thisBuild: buildTimestamp,
+          currentBuild: this.card._currentBuildTimestamp,
+        });
+
+        // Clear any cards created by this superseded build
+        this.card.cards = [];
+
+        return false;
+      }
+
+      // Check if card is still connected after async operation
       if (!this.card.isConnected || !this.card.sliderElement) {
         logDebug(
           "INIT",
-          "Card disconnected during build, aborting gracefully",
+          "Card disconnected during build, aborting and cleaning up",
           {
             connected: this.card.isConnected,
             hasSlider: !!this.card.sliderElement,
           },
         );
+
+        // Clear the cards array to prevent stale references
+        this.card.cards = [];
+
+        // Mark as not building so reconnection can trigger new build
         this.card.building = false;
+
+        // Mark as not initialized to force proper rebuild on reconnection
+        this.card.initialized = false;
+
         return false;
       }
 
@@ -262,7 +289,7 @@ export class CardBuilder {
 
       this.card.building = false;
       logDebug("INIT", "Build completed successfully (layout-card mode)");
-      return true; // Layout-card build succeeded
+      return true;
     }
 
     if (viewMode === "carousel") {
@@ -412,13 +439,18 @@ export class CardBuilder {
 
       // Ensure priority cards are in the DOM immediately
       // Check if card is still connected before inserting
-      if (this.card.isConnected && this.card.sliderElement) {
-        this._insertLoadedCardsIntoDom();
-      } else {
+      if (!this.card.isConnected || !this.card.sliderElement) {
         logDebug("INIT", "Card disconnected before inserting priority cards");
+
+        // CRITICAL: Clear the cards array to prevent stale references
+        this.card.cards = [];
         this.card.building = false;
+        this.card.initialized = false;
+
         return false;
       }
+
+      this._insertLoadedCardsIntoDom();
     }
 
     // Set initial state based on configuration
