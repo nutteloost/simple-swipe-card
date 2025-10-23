@@ -1090,6 +1090,11 @@ export class SimpleSwipeCard extends LitElement {
       this._updateVisibleCardIndices();
     }
 
+    // Notify state synchronization of hass changes when states changed
+    if (hasStatesChanged) {
+      this.stateSynchronization.onHassChange(oldHass, hass);
+    }
+
     // ALWAYS update child cards when states or UI changes
     // (Child cards need to track their own entities)
     if (hasStatesChanged || hasUIChanges) {
@@ -1636,7 +1641,7 @@ export class SimpleSwipeCard extends LitElement {
 
     this.resizeObserver = setupResizeObserver(
       this.cardContainer,
-      () => this.recalculateLayout(), // ← Updated to use the new method
+      () => this.recalculateLayout(), // â† Updated to use the new method
     );
   }
 
@@ -2070,7 +2075,7 @@ export class SimpleSwipeCard extends LitElement {
                   // Found a button in path but not a dropdown - let it work normally
                   // NO DEBOUNCING for buttons!
                   console.log(
-                    "DROPDOWN_FIX: ✅ Allowing button click:",
+                    "DROPDOWN_FIX: âœ… Allowing button click:",
                     tagName,
                   );
                   return;
@@ -2475,19 +2480,19 @@ export class SimpleSwipeCard extends LitElement {
         currentTagName === "mushroom-select" ||
         currentTagName === "mushroom-select-card"
       ) {
-        console.log("DROPDOWN_FIX: 🎯 Found dropdown tag:", currentTagName);
+        console.log("DROPDOWN_FIX: ðŸŽ¯ Found dropdown tag:", currentTagName);
         return true;
       }
 
       // The 'combobox' role is a very reliable indicator of a dropdown activator
       if (role === "combobox") {
-        console.log("DROPDOWN_FIX: 🎯 Found combobox role");
+        console.log("DROPDOWN_FIX: ðŸŽ¯ Found combobox role");
         return true;
       }
 
       // Check for Material Web Components classes
       if (current.classList?.contains("mdc-select")) {
-        console.log("DROPDOWN_FIX: 🎯 Found mdc-select class");
+        console.log("DROPDOWN_FIX: ðŸŽ¯ Found mdc-select class");
         return true;
       }
 
@@ -2502,7 +2507,10 @@ export class SimpleSwipeCard extends LitElement {
           className.includes("mdc-select__anchor") ||
           className.includes("mdc-select__selected-text")
         ) {
-          console.log("DROPDOWN_FIX: 🎯 Found mushroom/mdc class:", className);
+          console.log(
+            "DROPDOWN_FIX: ðŸŽ¯ Found mushroom/mdc class:",
+            className,
+          );
           return true;
         }
       }
@@ -2513,7 +2521,7 @@ export class SimpleSwipeCard extends LitElement {
         (current.hasAttribute("data-mdc-select") ||
           current.hasAttribute("aria-haspopup"))
       ) {
-        console.log("DROPDOWN_FIX: 🎯 Found dropdown data attributes");
+        console.log("DROPDOWN_FIX: ðŸŽ¯ Found dropdown data attributes");
         return true;
       }
 
@@ -2524,14 +2532,14 @@ export class SimpleSwipeCard extends LitElement {
     let mushroomCard = element;
     while (mushroomCard && mushroomCard !== this.cardContainer) {
       if (mushroomCard.tagName?.toLowerCase() === "mushroom-select-card") {
-        console.log("DROPDOWN_FIX: 🎯 Found mushroom-select-card ancestor");
+        console.log("DROPDOWN_FIX: ðŸŽ¯ Found mushroom-select-card ancestor");
         return true;
       }
       mushroomCard = mushroomCard.parentElement;
     }
 
     console.log(
-      "DROPDOWN_FIX: ❌ No dropdown trigger detected for:",
+      "DROPDOWN_FIX: âŒ No dropdown trigger detected for:",
       element.tagName,
       element.className,
     );

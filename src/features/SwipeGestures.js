@@ -183,7 +183,17 @@ export class SwipeGestures {
    * @private
    */
   _preventClick(e) {
-    // BUTTON FIX: Check if click is on or inside a button (check entire path)
+    // FIRST: Check if we're blocking clicks due to swipe - this takes priority over everything
+    if (this._isClickBlocked || this._isDragging) {
+      logDebug("SWIPE", "Click prevented during/after swipe gesture");
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+
+    // SECOND: If not blocking, check if click is on or inside a button (check entire path)
+    // This allows buttons to work normally when NOT swiping
     if (e.composedPath && typeof e.composedPath === "function") {
       const path = e.composedPath();
 
@@ -226,15 +236,6 @@ export class SwipeGestures {
         }
       }
     }
-
-    // For non-interactive elements, apply normal swipe click prevention
-    if (this._isClickBlocked || this._isDragging) {
-      logDebug("SWIPE", "Click prevented during/after swipe gesture");
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      return false;
-    }
   }
 
   /**
@@ -243,7 +244,15 @@ export class SwipeGestures {
    * @private
    */
   _preventPointerEvents(e) {
-    // BUTTON FIX: Check if pointer event is on or inside a button (check entire path)
+    // FIRST: Check if we're blocking pointer events due to swipe - this takes priority
+    if (this._isDragging && this._hasMovedDuringGesture) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // SECOND: If not blocking, check if pointer event is on or inside a button (check entire path)
+    // This allows buttons to work normally when NOT swiping
     if (e.composedPath && typeof e.composedPath === "function") {
       const path = e.composedPath();
 
@@ -285,13 +294,6 @@ export class SwipeGestures {
           }
         }
       }
-    }
-
-    // For non-interactive elements, apply normal swipe pointer event prevention
-    if (this._isDragging && this._hasMovedDuringGesture) {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
     }
   }
 
@@ -793,7 +795,7 @@ export class SwipeGestures {
       return false;
     }
 
-    // BUTTON/ICON FIX: Block swipes ONLY on actual button/icon elements
+    // Block swipes ONLY on actual button/icon elements
     const blockSwipeElements = [
       "button",
       "ha-icon-button",
@@ -801,9 +803,7 @@ export class SwipeGestures {
       "ha-button",
       "mwc-button",
       "paper-button",
-      "mwc-icon",
       "ha-cover-controls",
-      "ha-state-icon",
     ];
 
     if (blockSwipeElements.includes(tagName)) {
