@@ -81,6 +81,10 @@ export class SimpleSwipeCard extends LitElement {
     this._boundRestoreLayout = null;
     this._lastDropdownTrigger = null;
 
+    // Child card visibility observer (for cards like bubble-card that manage their own visibility)
+    this._childVisibilityObserver = null;
+    this._childVisibilityDebounce = null;
+
     // Initialize global dialog stack for picture-elements card support
     initializeGlobalDialogStack();
 
@@ -531,8 +535,24 @@ export class SimpleSwipeCard extends LitElement {
         );
       }
 
-      // Card is visible only if both conditions are met
-      const isVisible = swipeCardVisible && conditionalCardVisible;
+      // Check if the actual card element has a "hidden" class
+      // (for cards like bubble-card that manage their own visibility)
+      let elementVisible = true;
+      if (this.cards && this.cards[index]?.element) {
+        const cardElement = this.cards[index].element;
+        // Check if element has "hidden" class (bubble-card uses this)
+        if (cardElement.classList?.contains("hidden")) {
+          elementVisible = false;
+          logDebug(
+            "VISIBILITY",
+            `Card ${index} has 'hidden' class from child card's own visibility logic`,
+          );
+        }
+      }
+
+      // Card is visible only if all conditions are met
+      const isVisible =
+        swipeCardVisible && conditionalCardVisible && elementVisible;
 
       if (isVisible) {
         this.visibleCardIndices.push(index);
@@ -1551,6 +1571,9 @@ export class SimpleSwipeCard extends LitElement {
     this.cardContainer = null;
     this.sliderElement = null;
 
+    // Clean up child visibility observer
+    this._cleanupChildVisibilityObserver();
+
     // Clear pagination DOM references
     if (this.pagination && this.pagination.paginationElement) {
       this.pagination.paginationElement = null;
@@ -1639,9 +1662,8 @@ export class SimpleSwipeCard extends LitElement {
   _setupResizeObserver() {
     if (this.resizeObserver || !this.cardContainer) return;
 
-    this.resizeObserver = setupResizeObserver(
-      this.cardContainer,
-      () => this.recalculateLayout(), // â† Updated to use the new method
+    this.resizeObserver = setupResizeObserver(this.cardContainer, () =>
+      this.recalculateLayout(),
     );
   }
 
@@ -1707,6 +1729,100 @@ export class SimpleSwipeCard extends LitElement {
     this._cardModObserver = setupCardModObserver(this.shadowRoot, () => {
       this._applyCardModStyles();
     });
+  }
+
+  /**
+   * Sets up observer for child card visibility changes
+   * (for cards like bubble-card that manage their own visibility with "hidden" class)
+   * @private
+   */
+  _setupChildVisibilityObserver() {
+    // Clean up existing observer
+    if (this._childVisibilityObserver) {
+      this._childVisibilityObserver.disconnect();
+      this._childVisibilityObserver = null;
+    }
+
+    if (!this.sliderElement || !this.cards || this.cards.length === 0) {
+      return;
+    }
+
+    logDebug(
+      "VISIBILITY",
+      "Setting up child visibility observer for cards with self-managed visibility",
+    );
+
+    // Create observer to watch for class changes on card elements
+    this._childVisibilityObserver = new MutationObserver((mutations) => {
+      let hasVisibilityChange = false;
+
+      for (const mutation of mutations) {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
+          const target = mutation.target;
+          // Check if this is a card element with visibility conditions
+          const hasHiddenClass = target.classList?.contains("hidden");
+          const hadHiddenClass = mutation.oldValue?.includes("hidden");
+
+          if (hasHiddenClass !== hadHiddenClass) {
+            hasVisibilityChange = true;
+            logDebug(
+              "VISIBILITY",
+              "Child card visibility changed via 'hidden' class:",
+              target.tagName,
+            );
+            break;
+          }
+        }
+      }
+
+      if (hasVisibilityChange) {
+        // Debounce visibility updates
+        if (this._childVisibilityDebounce) {
+          clearTimeout(this._childVisibilityDebounce);
+        }
+
+        this._childVisibilityDebounce = setTimeout(() => {
+          if (this.isConnected && !this.building) {
+            logDebug(
+              "VISIBILITY",
+              "Triggering visibility update after child card visibility change",
+            );
+            this._updateVisibleCardIndices();
+          }
+          this._childVisibilityDebounce = null;
+        }, 150);
+      }
+    });
+
+    // Observe all card elements for class changes
+    this.cards.forEach((cardData) => {
+      if (cardData.element) {
+        this._childVisibilityObserver.observe(cardData.element, {
+          attributes: true,
+          attributeFilter: ["class"],
+          attributeOldValue: true,
+        });
+      }
+    });
+  }
+
+  /**
+   * Cleans up child visibility observer
+   * @private
+   */
+  _cleanupChildVisibilityObserver() {
+    if (this._childVisibilityObserver) {
+      this._childVisibilityObserver.disconnect();
+      this._childVisibilityObserver = null;
+    }
+
+    if (this._childVisibilityDebounce) {
+      clearTimeout(this._childVisibilityDebounce);
+      this._childVisibilityDebounce = null;
+    }
   }
 
   /**
@@ -2074,10 +2190,7 @@ export class SimpleSwipeCard extends LitElement {
                 if (excludedElements.includes(tagName)) {
                   // Found a button in path but not a dropdown - let it work normally
                   // NO DEBOUNCING for buttons!
-                  console.log(
-                    "DROPDOWN_FIX: âœ… Allowing button click:",
-                    tagName,
-                  );
+                  console.log("DROPDOWN_FIX: Allowing button click:", tagName);
                   return;
                 }
               }
@@ -2480,19 +2593,19 @@ export class SimpleSwipeCard extends LitElement {
         currentTagName === "mushroom-select" ||
         currentTagName === "mushroom-select-card"
       ) {
-        console.log("DROPDOWN_FIX: ðŸŽ¯ Found dropdown tag:", currentTagName);
+        console.log("DROPDOWN_FIX: Found dropdown tag:", currentTagName);
         return true;
       }
 
       // The 'combobox' role is a very reliable indicator of a dropdown activator
       if (role === "combobox") {
-        console.log("DROPDOWN_FIX: ðŸŽ¯ Found combobox role");
+        console.log("DROPDOWN_FIX: Found combobox role");
         return true;
       }
 
       // Check for Material Web Components classes
       if (current.classList?.contains("mdc-select")) {
-        console.log("DROPDOWN_FIX: ðŸŽ¯ Found mdc-select class");
+        console.log("DROPDOWN_FIX: Found mdc-select class");
         return true;
       }
 
@@ -2507,10 +2620,7 @@ export class SimpleSwipeCard extends LitElement {
           className.includes("mdc-select__anchor") ||
           className.includes("mdc-select__selected-text")
         ) {
-          console.log(
-            "DROPDOWN_FIX: ðŸŽ¯ Found mushroom/mdc class:",
-            className,
-          );
+          console.log("DROPDOWN_FIX: Found mushroom/mdc class:", className);
           return true;
         }
       }
@@ -2521,7 +2631,7 @@ export class SimpleSwipeCard extends LitElement {
         (current.hasAttribute("data-mdc-select") ||
           current.hasAttribute("aria-haspopup"))
       ) {
-        console.log("DROPDOWN_FIX: ðŸŽ¯ Found dropdown data attributes");
+        console.log("DROPDOWN_FIX: Found dropdown data attributes");
         return true;
       }
 
@@ -2532,14 +2642,14 @@ export class SimpleSwipeCard extends LitElement {
     let mushroomCard = element;
     while (mushroomCard && mushroomCard !== this.cardContainer) {
       if (mushroomCard.tagName?.toLowerCase() === "mushroom-select-card") {
-        console.log("DROPDOWN_FIX: ðŸŽ¯ Found mushroom-select-card ancestor");
+        console.log("DROPDOWN_FIX: Found mushroom-select-card ancestor");
         return true;
       }
       mushroomCard = mushroomCard.parentElement;
     }
 
     console.log(
-      "DROPDOWN_FIX: âŒ No dropdown trigger detected for:",
+      "DROPDOWN_FIX: No dropdown trigger detected for:",
       element.tagName,
       element.className,
     );

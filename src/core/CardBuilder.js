@@ -49,6 +49,9 @@ export class CardBuilder {
     // Preserve reset-after state before rebuild
     this.card.resetAfter?.preserveState();
 
+    // Stop observing child card visibility during rebuild
+    this.card._cleanupChildVisibilityObserver();
+
     // Reset state - but preserve currentIndex for state sync during rebuilds
     this.card.cards = [];
 
@@ -199,7 +202,7 @@ export class CardBuilder {
     if (isInsideLayoutCard) {
       logDebug(
         "INIT",
-        "⚠️ Layout-card detected - using synchronous loading for compatibility",
+        "âš ï¸ Layout-card detected - using synchronous loading for compatibility",
       );
 
       // Load all cards synchronously to prevent layout-card calculation issues
@@ -716,6 +719,9 @@ export class CardBuilder {
     this.card.resetAfter?.manage();
     this.card.stateSynchronization?.manage();
 
+    // Setup observer for child card visibility changes (e.g., bubble-card)
+    this.card._setupChildVisibilityObserver();
+
     // Update pagination after state sync to ensure active dot is set
     // This ensures the correct dot is active after state synchronization runs
     logDebug("PAGINATION", "Updating pagination after layout finalization");
@@ -891,7 +897,7 @@ export class CardBuilder {
           // Dimensions changed - reset stable count
           logDebug(
             "INIT",
-            `⚡ Dimensions changed: width Δ${widthDiff}px, height Δ${heightDiff}px (resetting stability counter)`,
+            `âš¡ Dimensions changed: width Î”${widthDiff}px, height Î”${heightDiff}px (resetting stability counter)`,
           );
           stableCount = 0;
         }
@@ -901,7 +907,7 @@ export class CardBuilder {
       } else {
         logDebug(
           "INIT",
-          `⏳ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
+          `â³ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
         );
         stableCount = 0; // Reset if dimensions go to zero
       }
