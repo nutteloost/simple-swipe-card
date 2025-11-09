@@ -324,6 +324,28 @@ export function getStyles() {
         display: flex;
         flex-direction: column;
      }
+
+     /* Reduced Motion Support - Automatically disable animations when user prefers reduced motion */
+     @media (prefers-reduced-motion: reduce) {
+        /* Disable slide transitions */
+        .slider {
+           transition: none !important;
+        }
+
+        /* Disable auto-height transitions */
+        :host([data-auto-height]:not([data-editor-mode])) .card-container {
+           transition: none !important;
+        }
+
+        /* Disable pagination transitions */
+        .pagination {
+           transition: none !important;
+        }
+
+        .pagination-dot {
+           transition: none !important;
+        }
+     }
    `;
 }
 
@@ -1035,5 +1057,20 @@ export const getEditorStyles = () => css`
     font-style: italic;
     margin-top: 4px;
     line-height: 1.3;
+  }
+
+  /* Reduced Motion Support - Disable editor animations when user prefers reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .section-toggle-icon {
+      transition: none !important;
+    }
+
+    .section-content {
+      transition: none !important;
+    }
+
+    .github-badge {
+      transition: none !important;
+    }
   }
 `;

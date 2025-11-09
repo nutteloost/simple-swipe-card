@@ -199,7 +199,7 @@ export function applyCardModStyles(
     return;
   }
 
-  // Handle card-mod style string
+  // Handle card-mod style - supports both string and object formats
   if (cardModConfig.style) {
     logDebug("CARD_MOD", "Applying card-mod styles");
 
@@ -207,8 +207,28 @@ export function applyCardModStyles(
     const cardModStyle = document.createElement("style");
     cardModStyle.setAttribute("id", "card-mod-styles");
 
+    // BUGFIX: Handle both card-mod formats
+    // Format 1 (direct string): style: "css content"
+    // Format 2 (object with . key): style: { ".": "css content" }
+    let styleContent;
+    if (typeof cardModConfig.style === "string") {
+      // Direct string format
+      styleContent = cardModConfig.style;
+      logDebug("CARD_MOD", "Using direct string format");
+    } else if (
+      typeof cardModConfig.style === "object" &&
+      cardModConfig.style["."]
+    ) {
+      // Object format with "." key (standard card-mod format for :host)
+      styleContent = cardModConfig.style["."];
+      logDebug("CARD_MOD", "Using object format with '.' key");
+    } else {
+      logDebug("CARD_MOD", "Unknown card-mod style format, skipping");
+      return;
+    }
+
     // Add the style content
-    cardModStyle.textContent = cardModConfig.style;
+    cardModStyle.textContent = styleContent;
 
     // Remove any existing card-mod styles first
     const existingStyle = shadowRoot.querySelector("#card-mod-styles");

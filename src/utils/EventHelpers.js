@@ -64,6 +64,15 @@ export function fireHAEvent(element, type, detail = {}) {
 export function getTransitionStyle(animate, element = null) {
   if (!animate) return "none";
 
+  // Check if user prefers reduced motion
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (prefersReducedMotion) {
+    return "none";
+  }
+
   // Get computed values if connected to DOM
   let speed = "0.3s";
   let easing = "ease-out";

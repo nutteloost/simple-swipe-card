@@ -372,6 +372,23 @@ export class Pagination {
   _setupAutoHideCSS() {
     if (!this.paginationElement || !this.paginationElement.isConnected) return;
 
+    // Check if user prefers reduced motion
+    const prefersReducedMotion =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      // Disable all transitions when reduced motion is preferred
+      this.paginationElement.style.transition = "none";
+      this.paginationElement.style.opacity = "1";
+      const dots = this.paginationElement.querySelectorAll(".pagination-dot");
+      dots.forEach((dot) => {
+        dot.style.transition = "none";
+        dot.style.opacity = "1";
+      });
+      return;
+    }
+
     // Get animation type to determine which approach to use
     const animationType =
       getComputedStyle(this.paginationElement)

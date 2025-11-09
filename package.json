@@ -1,6 +1,6 @@
 {
   "name": "simple-swipe-card",
-  "version": "2.6.7",
+  "version": "2.6.8",
   "description": "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout",
   "main": "build/simple-swipe-card.js",
   "type": "module",

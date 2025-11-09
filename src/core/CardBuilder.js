@@ -41,6 +41,12 @@ export class CardBuilder {
     this.card.building = true;
     logDebug("INIT", "Starting build...");
 
+    // CRITICAL: Set build timestamp immediately to prevent stale builds from completing
+    // This prevents race conditions when disconnect/reconnect happens during build
+    const buildTimestamp = Date.now();
+    this.card._currentBuildTimestamp = buildTimestamp;
+    logDebug("INIT", `Build timestamp set: ${buildTimestamp}`);
+
     // CLEAR CACHED CAROUSEL DIMENSIONS TO PREVENT STALE DATA
     this.card._carouselCardWidth = null;
     this.card._carouselCardsVisible = null;
@@ -200,10 +206,22 @@ export class CardBuilder {
     const isInsideLayoutCard = this._detectLayoutCard();
 
     if (isInsideLayoutCard) {
+      const layoutType =
+        this.card.getAttribute("data-in-layout-container") || "unknown";
       logDebug(
         "INIT",
-        "âš ï¸ Layout-card detected - using synchronous loading for compatibility",
+        `${layoutType} detected - using synchronous loading for compatibility`,
       );
+
+      // Make detection clearly visible in console
+      console.log(
+        `SimpleSwipeCard: SYNCHRONOUS LOADING ACTIVE`,
+        "background: #ff9800; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+        `Detected ${layoutType} container - preventing duplicate cards bug`,
+      );
+
+      // Use the build timestamp set at the start of build()
+      const buildTimestamp = this.card._currentBuildTimestamp;
 
       // Load all cards synchronously to prevent layout-card calculation issues
       const allCardsPromises = cardsToLoad.map((cardInfo) =>
@@ -213,15 +231,12 @@ export class CardBuilder {
           cardInfo.originalIndex,
           helpers,
           cardInfo.isDuplicate,
+          buildTimestamp,
         ).catch((error) => {
           console.warn(`Card ${cardInfo.visibleIndex} failed to load:`, error);
           return null;
         }),
       );
-
-      // Store build timestamp to detect stale builds
-      const buildTimestamp = Date.now();
-      this.card._currentBuildTimestamp = buildTimestamp;
 
       await Promise.allSettled(allCardsPromises);
 
@@ -272,20 +287,20 @@ export class CardBuilder {
         if (wasAtDefaultPosition) {
           requestAnimationFrame(() => {
             if (this.card.isConnected && this.card.cardContainer) {
-              this.finishBuildLayout();
+              this.finishBuildLayout(buildTimestamp);
             }
           });
         } else {
           requestAnimationFrame(() => {
             if (this.card.isConnected && this.card.cardContainer) {
-              this.finishBuildLayout();
+              this.finishBuildLayout(buildTimestamp);
             }
           });
         }
       } else {
         requestAnimationFrame(() => {
           if (this.card.isConnected && this.card.cardContainer) {
-            this.finishBuildLayout();
+            this.finishBuildLayout(buildTimestamp);
           }
         });
       }
@@ -351,7 +366,12 @@ export class CardBuilder {
       // Load first batch (visible cards) immediately
       const firstBatch = batches[0] || [];
       if (firstBatch.length > 0) {
-        await this._loadCarouselBatch(firstBatch, helpers, "priority");
+        await this._loadCarouselBatch(
+          firstBatch,
+          helpers,
+          "priority",
+          buildTimestamp,
+        );
       }
 
       // Load remaining batches with staggered delay
@@ -361,7 +381,12 @@ export class CardBuilder {
 
         setTimeout(async () => {
           if (!this.card.isConnected) return;
-          await this._loadCarouselBatch(batch, helpers, `batch-${i + 1}`);
+          await this._loadCarouselBatch(
+            batch,
+            helpers,
+            `batch-${i + 1}`,
+            buildTimestamp,
+          );
         }, delay);
       }
     } else {
@@ -391,6 +416,7 @@ export class CardBuilder {
             cardInfo.originalIndex,
             helpers,
             cardInfo.isDuplicate,
+            buildTimestamp,
           ).catch((error) => {
             console.warn(
               `Priority card ${cardInfo.visibleIndex} failed to load:`,
@@ -425,6 +451,7 @@ export class CardBuilder {
               cardInfo.originalIndex,
               helpers,
               cardInfo.isDuplicate,
+              buildTimestamp,
             ).catch((error) => {
               console.warn(
                 `Background card ${cardInfo.visibleIndex} failed to load:`,
@@ -481,7 +508,7 @@ export class CardBuilder {
       // Schedule layout finalization - but check connection first
       requestAnimationFrame(() => {
         if (this.card.isConnected && this.card.cardContainer) {
-          this.finishBuildLayout();
+          this.finishBuildLayout(buildTimestamp);
         } else {
           logDebug("INIT", "Card disconnected before finishBuildLayout");
         }
@@ -490,7 +517,7 @@ export class CardBuilder {
       // This is a rebuild - finalize immediately
       requestAnimationFrame(() => {
         if (this.card.isConnected && this.card.cardContainer) {
-          this.finishBuildLayout();
+          this.finishBuildLayout(buildTimestamp);
         } else {
           logDebug(
             "INIT",
@@ -502,11 +529,16 @@ export class CardBuilder {
 
     this.card.building = false;
     logDebug("INIT", "Build completed successfully");
+
+    // Setup input listeners for auto-swipe pause on text input
+    this.card._setupInputListeners();
+
     return true;
   }
 
   /**
    * Creates a card element and adds it to the slider
+   * @param {number} buildTimestamp - Timestamp of the build that initiated this card creation
    */
   async createCard(
     cardConfig,
@@ -514,6 +546,7 @@ export class CardBuilder {
     originalIndex,
     helpers,
     isDuplicate = false,
+    buildTimestamp = null,
   ) {
     const slideDiv = createSlide();
     let cardElement;
@@ -529,6 +562,19 @@ export class CardBuilder {
     try {
       // Create the card element
       cardElement = await helpers.createCardElement(cardConfig);
+
+      // CRITICAL: Check if this build is still current after async operation
+      // This prevents duplicate cards when multiple builds overlap (e.g., in Masonry layouts)
+      if (
+        buildTimestamp &&
+        this.card._currentBuildTimestamp !== buildTimestamp
+      ) {
+        logDebug("INIT", `Discarding card ${visibleIndex} from stale build`, {
+          cardBuild: buildTimestamp,
+          currentBuild: this.card._currentBuildTimestamp,
+        });
+        return; // Don't push this card - it's from an old build
+      }
 
       // Set hass IMMEDIATELY after creation, before any async operations
       // This prevents race conditions with cards that need hass during initialization
@@ -561,6 +607,22 @@ export class CardBuilder {
         });
       });
 
+      // Check again after async operation
+      if (
+        buildTimestamp &&
+        this.card._currentBuildTimestamp !== buildTimestamp
+      ) {
+        logDebug(
+          "INIT",
+          `Discarding card ${visibleIndex} from stale build (after card-mod wait)`,
+          {
+            cardBuild: buildTimestamp,
+            currentBuild: this.card._currentBuildTimestamp,
+          },
+        );
+        return; // Don't push this card - it's from an old build
+      }
+
       // Special handling for specific card types
       requestAnimationFrame(() => {
         try {
@@ -582,6 +644,19 @@ export class CardBuilder {
         e,
       );
       cardData.error = true;
+
+      // Check if build is still current before creating error card
+      if (
+        buildTimestamp &&
+        this.card._currentBuildTimestamp !== buildTimestamp
+      ) {
+        logDebug(
+          "INIT",
+          `Discarding error card ${visibleIndex} from stale build`,
+        );
+        return;
+      }
+
       // Create error card with user-friendly message
       const errorCard = await helpers.createErrorCardElement(
         {
@@ -593,6 +668,15 @@ export class CardBuilder {
       );
       cardData.element = errorCard;
       slideDiv.appendChild(errorCard);
+    }
+
+    // Final check before pushing to array
+    if (buildTimestamp && this.card._currentBuildTimestamp !== buildTimestamp) {
+      logDebug(
+        "INIT",
+        `Discarding card ${visibleIndex} from stale build (final check)`,
+      );
+      return;
     }
 
     // Use push instead of array index assignment to handle negative visibleIndex values
@@ -625,8 +709,22 @@ export class CardBuilder {
 
   /**
    * Finishes the build process by setting up layout and observers
+   * @param {number} buildTimestamp - Optional timestamp to validate this is not a stale build
    */
-  async finishBuildLayout() {
+  async finishBuildLayout(buildTimestamp = null) {
+    // CRITICAL: Check if this is a stale build
+    if (
+      buildTimestamp &&
+      this.card._currentBuildTimestamp &&
+      buildTimestamp !== this.card._currentBuildTimestamp
+    ) {
+      logDebug("INIT", "finishBuildLayout skipped - stale build detected", {
+        thisBuild: buildTimestamp,
+        currentBuild: this.card._currentBuildTimestamp,
+      });
+      return;
+    }
+
     if (
       !this.card.cardContainer ||
       !this.card.isConnected ||
@@ -897,7 +995,7 @@ export class CardBuilder {
           // Dimensions changed - reset stable count
           logDebug(
             "INIT",
-            `âš¡ Dimensions changed: width Î”${widthDiff}px, height Î”${heightDiff}px (resetting stability counter)`,
+            `Dimensions changed: width${widthDiff}px, height ${heightDiff}px (resetting stability counter)`,
           );
           stableCount = 0;
         }
@@ -907,7 +1005,7 @@ export class CardBuilder {
       } else {
         logDebug(
           "INIT",
-          `â³ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
+          `Ã¢ÂÂ³ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
         );
         stableCount = 0; // Reset if dimensions go to zero
       }
@@ -1531,9 +1629,10 @@ export class CardBuilder {
    * @param {Array} batch - Array of card info objects to load
    * @param {Object} helpers - Home Assistant card helpers
    * @param {string} batchType - Type of batch for logging
+   * @param {number} buildTimestamp - Timestamp of the build that initiated this batch loading
    * @private
    */
-  async _loadCarouselBatch(batch, helpers, batchType) {
+  async _loadCarouselBatch(batch, helpers, batchType, buildTimestamp = null) {
     logDebug("INIT", `Loading carousel ${batchType} content:`, batch.length);
 
     const contentPromises = batch.map(async (cardInfo) => {
@@ -1549,6 +1648,18 @@ export class CardBuilder {
         }
 
         const cardElement = await helpers.createCardElement(cardInfo.config);
+
+        // CRITICAL: Check if this build is still current after async operation
+        if (
+          buildTimestamp &&
+          this.card._currentBuildTimestamp !== buildTimestamp
+        ) {
+          logDebug(
+            "INIT",
+            `Discarding carousel card ${cardInfo.visibleIndex} from stale build`,
+          );
+          return null;
+        }
 
         if (this.card._hass) {
           cardElement.hass = this.card._hass;
@@ -1706,22 +1817,34 @@ export class CardBuilder {
 
       if (!element) break;
 
-      // Check if this is a layout-card element
+      // Check if this is a layout-card element or Home Assistant's native Masonry view
       const tagName = element.tagName?.toLowerCase();
       if (
         tagName === "layout-card" ||
         tagName === "masonry-layout" ||
         tagName === "horizontal-layout" ||
         tagName === "vertical-layout" ||
-        tagName === "grid-layout"
+        tagName === "grid-layout" ||
+        tagName === "hui-masonry-view"
       ) {
-        logDebug("INIT", `Detected parent layout container: ${tagName}`);
+        logDebug("INIT", `✅ DETECTED PARENT LAYOUT CONTAINER: ${tagName}`);
+        console.log(
+          `SimpleSwipeCard: ✅ MASONRY/LAYOUT DETECTED`,
+          "background: #4caf50; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
+          `Parent container: ${tagName}`,
+        );
+
+        // Add data attribute to card for easy verification
+        this.card.setAttribute("data-in-layout-container", tagName);
+
         return true;
       }
 
       maxDepth--;
     }
 
+    // No layout container detected
+    this.card.removeAttribute("data-in-layout-container");
     return false;
   }
 }

@@ -85,11 +85,17 @@ export class SimpleSwipeCard extends LitElement {
     this._childVisibilityObserver = null;
     this._childVisibilityDebounce = null;
 
+    // Input focus tracking for auto-swipe pause
+    this._inputFocusListener = null;
+    this._inputBlurListener = null;
+
     // Initialize global dialog stack for picture-elements card support
     initializeGlobalDialogStack();
 
     // Bind event handlers
     this._handleConfigChanged = this._handleConfigChanged.bind(this);
+    this._handleInputFocus = this._handleInputFocus.bind(this);
+    this._handleInputBlur = this._handleInputBlur.bind(this);
 
     logDebug("INIT", "SimpleSwipeCard Constructor completed successfully.");
   }
@@ -1321,6 +1327,17 @@ export class SimpleSwipeCard extends LitElement {
               if (this.isConnected) {
                 logDebug("LIFECYCLE", "Deferred build completed successfully");
                 this._handleDropdownOverflow();
+
+                // BUGFIX: Explicitly reapply card-mod styles after rebuild
+                // This ensures styles persist when navigating back to the dashboard
+                if (this._cardModConfig) {
+                  logDebug(
+                    "CARD_MOD",
+                    "Reapplying card-mod styles after deferred build",
+                  );
+                  this._applyCardModStyles();
+                  this._setupCardModObserver();
+                }
               }
             })
             .catch((error) => {
@@ -1353,6 +1370,17 @@ export class SimpleSwipeCard extends LitElement {
           if (this.isConnected) {
             logDebug("LIFECYCLE", "Reconnection build completed");
             this._handleDropdownOverflow();
+
+            // BUGFIX: Explicitly reapply card-mod styles after rebuild
+            // This ensures styles persist when navigating back to the dashboard
+            if (this._cardModConfig) {
+              logDebug(
+                "CARD_MOD",
+                "Reapplying card-mod styles after reconnection build",
+              );
+              this._applyCardModStyles();
+              this._setupCardModObserver();
+            }
 
             // Ensure pagination is created after reconnection
             requestAnimationFrame(() => {
@@ -1626,6 +1654,9 @@ export class SimpleSwipeCard extends LitElement {
       this._performingSeamlessJump = false;
     }
 
+    // Clean up input focus/blur listeners
+    this._cleanupInputListeners();
+
     logDebug("INIT", "Remaining event listeners cleared");
   }
 
@@ -1653,6 +1684,125 @@ export class SimpleSwipeCard extends LitElement {
       );
       return;
     }
+  }
+
+  /**
+   * Handle input focus event - pause auto-swipe while user is typing
+   * @private
+   */
+  _handleInputFocus(e) {
+    if (!this._config.enable_auto_swipe) return;
+
+    // Check if the event originated from within this card
+    const path = e.composedPath();
+    if (!path.includes(this)) return;
+
+    // Get the actual focused element (composedPath[0] gives us the real target across shadow DOM)
+    const actualTarget = path[0];
+
+    logDebug(
+      "INPUT",
+      `Focus event detected - e.target: ${e.target.tagName}, actualTarget: ${actualTarget.tagName}, isContentEditable: ${actualTarget.isContentEditable}`,
+    );
+
+    const isTextInput =
+      actualTarget.tagName === "INPUT" ||
+      actualTarget.tagName === "TEXTAREA" ||
+      actualTarget.tagName === "SELECT" ||
+      actualTarget.isContentEditable;
+
+    if (isTextInput) {
+      logDebug(
+        "INPUT",
+        `Text input focused (${actualTarget.tagName || "contenteditable"}) - pausing auto-swipe indefinitely`,
+      );
+      // Pause for a very long duration (1 hour) - will be cleared on blur
+      this.autoSwipe.pause(3600000);
+    }
+  }
+
+  /**
+   * Handle input blur event - resume auto-swipe after user finishes typing
+   * @private
+   */
+  _handleInputBlur(e) {
+    if (!this._config.enable_auto_swipe) return;
+
+    // Check if the event originated from within this card
+    const path = e.composedPath();
+    if (!path.includes(this)) return;
+
+    // Get the actual blurred element (composedPath[0] gives us the real target across shadow DOM)
+    const actualTarget = path[0];
+
+    logDebug(
+      "INPUT",
+      `Blur event detected - e.target: ${e.target.tagName}, actualTarget: ${actualTarget.tagName}, isContentEditable: ${actualTarget.isContentEditable}`,
+    );
+
+    const isTextInput =
+      actualTarget.tagName === "INPUT" ||
+      actualTarget.tagName === "TEXTAREA" ||
+      actualTarget.tagName === "SELECT" ||
+      actualTarget.isContentEditable;
+
+    if (isTextInput) {
+      logDebug(
+        "INPUT",
+        `Text input blurred (${actualTarget.tagName || "contenteditable"}) - resuming auto-swipe`,
+      );
+      // Clear the pause and restart auto-swipe
+      if (this.autoSwipe._autoSwipePauseTimer) {
+        clearTimeout(this.autoSwipe._autoSwipePauseTimer);
+        this.autoSwipe._autoSwipePauseTimer = null;
+      }
+      this.autoSwipe._autoSwipePaused = false;
+      this.autoSwipe.start();
+    }
+  }
+
+  /**
+   * Setup event listeners for input focus/blur to pause auto-swipe
+   * @private
+   */
+  _setupInputListeners() {
+    if (this._inputFocusListener) {
+      logDebug("INPUT", "Input listeners already set up, skipping");
+      return;
+    }
+
+    logDebug(
+      "INPUT",
+      "Setting up input focus/blur listeners for auto-swipe pause on document",
+    );
+
+    // Listen on document with capture phase to catch all focus/blur events
+    // This works across shadow DOM boundaries
+    this._inputFocusListener = this._handleInputFocus;
+    this._inputBlurListener = this._handleInputBlur;
+
+    document.addEventListener("focusin", this._inputFocusListener, true);
+    document.addEventListener("focusout", this._inputBlurListener, true);
+
+    logDebug("INPUT", "Input listeners successfully attached to document");
+  }
+
+  /**
+   * Cleanup input focus/blur event listeners
+   * @private
+   */
+  _cleanupInputListeners() {
+    if (this._inputFocusListener) {
+      document.removeEventListener("focusin", this._inputFocusListener, true);
+      this._inputFocusListener = null;
+    }
+
+    if (this._inputBlurListener) {
+      document.removeEventListener("focusout", this._inputBlurListener, true);
+      this._inputBlurListener = null;
+    }
+
+    logDebug("INPUT", "Cleaned up input focus/blur listeners from document");
   }
 
   /**
@@ -2363,7 +2513,7 @@ export class SimpleSwipeCard extends LitElement {
           if (!isExpanded) {
             logDebug(
               "SYSTEM",
-              "Dropdown closed detected via aria-expanded=false, restoring layout",
+              "Dropdown closed detected via aria-expanded=false, restoring layout immediately",
             );
 
             // Cleanup observer
@@ -2372,10 +2522,8 @@ export class SimpleSwipeCard extends LitElement {
               this._dropdownObserver = null;
             }
 
-            // Small delay to allow any final updates
-            this._dropdownRestoreTimeout = setTimeout(() => {
-              this._restoreLayout();
-            }, 100);
+            // Restore immediately to allow next swipe to work
+            this._restoreLayout();
           }
         }
       }
@@ -2395,19 +2543,23 @@ export class SimpleSwipeCard extends LitElement {
   _addFallbackClickListener() {
     if (!this.cardContainer) return;
 
-    const restoreAfterClick = () => {
+    const restoreAfterClick = (e) => {
       logDebug(
         "SYSTEM",
-        "Click detected (fallback), restoring layout in 200ms",
+        "Click detected (fallback), preventing click and restoring layout immediately",
       );
+
+      // CRITICAL: Prevent this click from opening more-info dialog or triggering other actions
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
 
       this.cardContainer.removeEventListener("click", restoreAfterClick, {
         capture: true,
       });
 
-      this._dropdownRestoreTimeout = setTimeout(() => {
-        this._restoreLayout();
-      }, 200);
+      // Restore immediately to allow next swipe to work
+      this._restoreLayout();
     };
 
     this.cardContainer.addEventListener("click", restoreAfterClick, {
@@ -2580,6 +2732,7 @@ export class SimpleSwipeCard extends LitElement {
     if (!element) return false;
 
     // Check the element and its parents (increased depth for mushroom cards)
+    // Also traverse through shadow DOM boundaries
     let current = element;
     for (let i = 0; i < 8 && current && current !== this.cardContainer; i++) {
       const currentTagName = current.tagName?.toLowerCase();
@@ -2587,11 +2740,13 @@ export class SimpleSwipeCard extends LitElement {
       const role = current.getAttribute && current.getAttribute("role");
 
       // Check for specific dropdown component tag names
+      // NOTE: Removed mushroom-select-card to avoid matching entire card container
       if (
         currentTagName === "ha-select" ||
         currentTagName === "mwc-select" ||
+        currentTagName === "mwc-menu" ||
         currentTagName === "mushroom-select" ||
-        currentTagName === "mushroom-select-card"
+        currentTagName === "mmp-button"
       ) {
         console.log("DROPDOWN_FIX: Found dropdown tag:", currentTagName);
         return true;
@@ -2609,18 +2764,30 @@ export class SimpleSwipeCard extends LitElement {
         return true;
       }
 
-      // Enhanced mushroom card detection
+      // Enhanced mushroom card detection and mini-media-player detection
       if (typeof className === "string") {
-        // Check for mushroom card classes
+        // Check for SPECIFIC mushroom/mdc dropdown trigger classes only
+        // NOT generic card container classes
         if (
-          className.includes("mushroom-select") ||
-          className.includes("mushroom-card") ||
-          className.includes("mdc-menu") ||
-          className.includes("mdc-list-item") ||
           className.includes("mdc-select__anchor") ||
-          className.includes("mdc-select__selected-text")
+          className.includes("mdc-select__selected-text") ||
+          className.includes("mdc-menu") ||
+          className.includes("mdc-list-item")
         ) {
-          console.log("DROPDOWN_FIX: Found mushroom/mdc class:", className);
+          console.log(
+            "DROPDOWN_FIX: Found mushroom/mdc dropdown trigger class:",
+            className,
+          );
+          return true;
+        }
+
+        // Check for mini-media-player dropdown button class
+        // Only match the button, not the container div
+        if (className.includes("mmp-dropdown__button")) {
+          console.log(
+            "DROPDOWN_FIX: Found mini-media-player dropdown class:",
+            className,
+          );
           return true;
         }
       }
@@ -2635,17 +2802,18 @@ export class SimpleSwipeCard extends LitElement {
         return true;
       }
 
-      current = current.parentElement;
-    }
-
-    // Additional check: look for mushroom-select-card ancestor
-    let mushroomCard = element;
-    while (mushroomCard && mushroomCard !== this.cardContainer) {
-      if (mushroomCard.tagName?.toLowerCase() === "mushroom-select-card") {
-        console.log("DROPDOWN_FIX: Found mushroom-select-card ancestor");
-        return true;
+      // Traverse up: check parent element or shadow host
+      if (current.parentElement) {
+        current = current.parentElement;
+      } else if (
+        current.getRootNode &&
+        current.getRootNode() instanceof ShadowRoot
+      ) {
+        // If we're at the top of a shadow DOM, jump to the host element
+        current = current.getRootNode().host;
+      } else {
+        break;
       }
-      mushroomCard = mushroomCard.parentElement;
     }
 
     console.log(
