@@ -708,6 +708,485 @@ export class CardBuilder {
   }
 
   /**
+   * Fixes mushroom-select dropdown positioning by intercepting menu opens
+   * and adjusting position to account for CSS transforms on parent slides
+   * @private
+   */
+  _fixMushroomSelectPositioning() {
+    if (!this.card.sliderElement) return;
+
+    logDebug("MUSHROOM", "Checking for mushroom-select elements...");
+
+    // Find all mushroom-select elements in all slides
+    // Note: mushroom-select can be standalone or inside mushroom-select-card
+    const mushroomSelectCards = this.card.sliderElement.querySelectorAll(
+      "mushroom-select-card",
+    );
+    const standaloneSelects =
+      this.card.sliderElement.querySelectorAll("mushroom-select");
+
+    logDebug(
+      "MUSHROOM",
+      `Found ${mushroomSelectCards.length} mushroom-select-card(s) and ${standaloneSelects.length} standalone mushroom-select element(s)`,
+    );
+
+    // Collect all mushroom-select elements (from cards and standalone)
+    // Store both the select element and its root element (for finding parent slide)
+    const allSelects = [];
+
+    // Extract mushroom-select from mushroom-select-card shadow roots
+    // Structure: mushroom-select-card -> shadowRoot -> mushroom-card (in shadow)
+    //            mushroom-card has light DOM children including mushroom-select-option-control
+    //            mushroom-select-option-control -> shadowRoot -> mushroom-select
+    mushroomSelectCards.forEach((card) => {
+      // First shadow root level: get mushroom-card
+      const mushroomCard = card.shadowRoot?.querySelector("mushroom-card");
+      if (mushroomCard) {
+        logDebug("MUSHROOM", "Found mushroom-card inside mushroom-select-card");
+
+        // mushroom-select-option-control is in mushroom-card's LIGHT DOM (not shadow root)
+        // It's a direct child element that gets slotted into the shadow root's <slot>
+        const optionControl = mushroomCard.querySelector(
+          "mushroom-select-option-control",
+        );
+        if (optionControl) {
+          logDebug(
+            "MUSHROOM",
+            "Found mushroom-select-option-control in mushroom-card's light DOM",
+          );
+
+          // Now look inside mushroom-select-option-control's shadow root for mushroom-select
+          const select =
+            optionControl.shadowRoot?.querySelector("mushroom-select");
+          if (select) {
+            // Store both the select and the card (card is in light DOM and can use closest)
+            allSelects.push({ select, rootElement: card });
+            logDebug(
+              "MUSHROOM",
+              "Found mushroom-select inside mushroom-select-option-control's shadow root",
+            );
+          } else {
+            logDebug(
+              "MUSHROOM",
+              "mushroom-select-option-control found but no mushroom-select in its shadow root",
+            );
+          }
+        } else {
+          logDebug(
+            "MUSHROOM",
+            "mushroom-card found but no mushroom-select-option-control in its light DOM",
+          );
+        }
+      } else {
+        logDebug(
+          "MUSHROOM",
+          "mushroom-select-card found but no mushroom-card inside shadow root",
+        );
+      }
+    });
+
+    // Add standalone mushroom-select elements
+    standaloneSelects.forEach((select) => {
+      allSelects.push({ select, rootElement: select });
+    });
+
+    if (allSelects.length > 0) {
+      logDebug(
+        "MUSHROOM",
+        `Total ${allSelects.length} mushroom-select element(s) found, setting up dropdown positioning fix...`,
+      );
+
+      allSelects.forEach((item, index) => {
+        const { select, rootElement } = item;
+
+        try {
+          // Disable fixed menu positioning - we'll handle positioning manually
+          if (select.fixedMenuPosition !== false) {
+            select.fixedMenuPosition = false;
+            logDebug(
+              "MUSHROOM",
+              `mushroom-select #${index + 1} - disabled fixedMenuPosition`,
+            );
+          }
+
+          // Enable naturalMenuWidth for better dropdown sizing
+          if (select.naturalMenuWidth !== true) {
+            select.naturalMenuWidth = true;
+            logDebug(
+              "MUSHROOM",
+              `mushroom-select #${index + 1} - enabled naturalMenuWidth`,
+            );
+          }
+
+          // Find the parent slide using the root element (which is in light DOM)
+          const parentSlide = rootElement.closest(".slide");
+          if (!parentSlide) {
+            logDebug(
+              "MUSHROOM",
+              `mushroom-select #${index + 1} - no parent slide found`,
+            );
+            return;
+          }
+
+          logDebug(
+            "MUSHROOM",
+            `mushroom-select #${index + 1} - found parent slide`,
+          );
+
+          // Track whether we've set up the menu listener
+          let menuListenerAttached = false;
+
+          // Function to attach the position fix listener to the menu
+          const attachMenuListener = (menu) => {
+            if (menuListenerAttached) return;
+            menuListenerAttached = true;
+
+            // Listen for menu opening
+            menu.addEventListener("opened", () => {
+              logDebug(
+                "MUSHROOM",
+                `mushroom-select #${index + 1} - menu opened, adjusting position...`,
+              );
+
+              // Get the menu surface element
+              const menuSurface =
+                menu.shadowRoot?.querySelector(".mdc-menu-surface");
+              if (!menuSurface) {
+                logDebug(
+                  "MUSHROOM",
+                  `mushroom-select #${index + 1} - menu surface not found`,
+                );
+                return;
+              }
+
+              // Get the slide's current transform
+              const slideTransform = window.getComputedStyle(
+                this.card.sliderElement,
+              ).transform;
+              logDebug("MUSHROOM", `Slider transform: ${slideTransform}`);
+
+              // Parse the transform matrix to get x/y translation
+              let translateX = 0;
+              let translateY = 0;
+
+              if (slideTransform && slideTransform !== "none") {
+                const matrixMatch = slideTransform.match(/matrix\(([^)]+)\)/);
+                if (matrixMatch) {
+                  const matrixValues = matrixMatch[1]
+                    .split(",")
+                    .map((v) => parseFloat(v.trim()));
+                  if (matrixValues.length >= 6) {
+                    translateX = matrixValues[4] || 0;
+                    translateY = matrixValues[5] || 0;
+                  }
+                }
+              }
+
+              logDebug(
+                "MUSHROOM",
+                `Detected transform offset: translateX=${translateX}, translateY=${translateY}`,
+              );
+
+              // Get current menu position
+              const currentLeft = parseFloat(menuSurface.style.left) || 0;
+              const currentTop = parseFloat(menuSurface.style.top) || 0;
+
+              // Adjust position to compensate for parent transform
+              const newLeft = currentLeft - translateX;
+              const newTop = currentTop - translateY;
+
+              logDebug(
+                "MUSHROOM",
+                `Adjusting menu position: (${currentLeft}, ${currentTop}) -> (${newLeft}, ${newTop})`,
+              );
+
+              menuSurface.style.left = `${newLeft}px`;
+              menuSurface.style.top = `${newTop}px`;
+
+              logDebug(
+                "MUSHROOM",
+                `mushroom-select #${index + 1} - position adjusted successfully`,
+              );
+            });
+
+            logDebug(
+              "MUSHROOM",
+              `mushroom-select #${index + 1} - menu fix listener attached`,
+            );
+          };
+
+          // Wait for the menu element to be created (it's created dynamically)
+          let retryCount = 0;
+          const maxRetries = 10; // Try for 1 second max
+          const setupMenuFix = () => {
+            const menu = select.shadowRoot?.querySelector("mwc-menu");
+            if (menu) {
+              attachMenuListener(menu);
+              return;
+            }
+
+            retryCount++;
+            if (retryCount < maxRetries) {
+              logDebug(
+                "MUSHROOM",
+                `mushroom-select #${index + 1} - menu not found yet, will retry (${retryCount}/${maxRetries})`,
+              );
+              setTimeout(setupMenuFix, 100);
+            } else {
+              // Menu not found after retries - set up MutationObserver to watch for menu creation
+              logDebug(
+                "MUSHROOM",
+                `mushroom-select #${index + 1} - menu not found after ${maxRetries} retries, setting up MutationObserver`,
+              );
+
+              if (!select.shadowRoot) {
+                logDebug(
+                  "MUSHROOM",
+                  `mushroom-select #${index + 1} - no shadow root, cannot observe`,
+                );
+                return;
+              }
+
+              // Watch for when the mwc-menu element is added to the shadow DOM
+              const observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                  if (mutation.type === "childList") {
+                    for (const node of mutation.addedNodes) {
+                      if (node.nodeName === "MWC-MENU") {
+                        logDebug(
+                          "MUSHROOM",
+                          `mushroom-select #${index + 1} - menu detected via MutationObserver!`,
+                        );
+                        attachMenuListener(node);
+                        observer.disconnect(); // Stop observing once we found it
+                        return;
+                      }
+                    }
+                  }
+                }
+              });
+
+              // Observe the shadow root for added children
+              observer.observe(select.shadowRoot, {
+                childList: true,
+                subtree: true,
+              });
+
+              logDebug(
+                "MUSHROOM",
+                `mushroom-select #${index + 1} - MutationObserver setup complete`,
+              );
+            }
+          };
+
+          // Start the setup process
+          setupMenuFix();
+        } catch (error) {
+          console.warn(`Error fixing mushroom-select #${index + 1}:`, error);
+        }
+      });
+
+      logDebug("MUSHROOM", "Mushroom-select positioning fix setup completed");
+    } else {
+      logDebug("MUSHROOM", "No mushroom-select elements found");
+    }
+
+    // Set up persistent observer to watch for new mushroom-select-card elements
+    // This handles cards that are added to the DOM after initial build (e.g., cards 3+)
+    this._setupMushroomSelectObserver();
+  }
+
+  /**
+   * Sets up a persistent MutationObserver to detect new mushroom-select-card elements
+   * being added to the DOM after the initial build
+   * @private
+   */
+  _setupMushroomSelectObserver() {
+    // Clean up any existing observer
+    if (this.card._mushroomSelectObserver) {
+      this.card._mushroomSelectObserver.disconnect();
+      this.card._mushroomSelectObserver = null;
+    }
+
+    if (!this.card.sliderElement) return;
+
+    logDebug(
+      "MUSHROOM",
+      "Setting up persistent observer for new mushroom-select elements...",
+    );
+
+    // Create observer to watch for new mushroom-select-card elements
+    this.card._mushroomSelectObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "childList") {
+          for (const node of mutation.addedNodes) {
+            // Check if the added node is a mushroom-select-card
+            if (node.nodeName === "MUSHROOM-SELECT-CARD") {
+              logDebug(
+                "MUSHROOM",
+                "Detected new mushroom-select-card being added to DOM",
+              );
+              // Give the card a moment to fully render
+              setTimeout(() => {
+                this._fixSingleMushroomSelectCard(node);
+              }, 100);
+            }
+            // Also check if added node contains mushroom-select-card children
+            if (node.querySelectorAll) {
+              const nestedCards = node.querySelectorAll("mushroom-select-card");
+              if (nestedCards.length > 0) {
+                logDebug(
+                  "MUSHROOM",
+                  `Detected ${nestedCards.length} nested mushroom-select-card(s) in added node`,
+                );
+                setTimeout(() => {
+                  nestedCards.forEach((card) =>
+                    this._fixSingleMushroomSelectCard(card),
+                  );
+                }, 100);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Observe the slider for added children
+    this.card._mushroomSelectObserver.observe(this.card.sliderElement, {
+      childList: true,
+      subtree: true,
+    });
+
+    logDebug("MUSHROOM", "Persistent mushroom-select observer active");
+  }
+
+  /**
+   * Fixes positioning for a single mushroom-select-card element
+   * @param {Element} card - The mushroom-select-card element
+   * @private
+   */
+  _fixSingleMushroomSelectCard(card) {
+    try {
+      // Extract mushroom-select from shadow roots (same logic as main function)
+      const mushroomCard = card.shadowRoot?.querySelector("mushroom-card");
+      if (!mushroomCard) {
+        logDebug("MUSHROOM", "New card: no mushroom-card found in shadow root");
+        return;
+      }
+
+      const optionControl = mushroomCard.querySelector(
+        "mushroom-select-option-control",
+      );
+      if (!optionControl) {
+        logDebug(
+          "MUSHROOM",
+          "New card: no mushroom-select-option-control found",
+        );
+        return;
+      }
+
+      const select = optionControl.shadowRoot?.querySelector("mushroom-select");
+      if (!select) {
+        logDebug("MUSHROOM", "New card: no mushroom-select found");
+        return;
+      }
+
+      logDebug(
+        "MUSHROOM",
+        "New card: found mushroom-select, setting up positioning fix",
+      );
+
+      // Disable fixed menu positioning
+      select.fixedMenuPosition = false;
+      select.naturalMenuWidth = true;
+
+      // Find parent slide
+      const parentSlide = card.closest(".slide");
+      if (!parentSlide) {
+        logDebug("MUSHROOM", "New card: no parent slide found");
+        return;
+      }
+
+      // Track whether we've set up the menu listener
+      let menuListenerAttached = false;
+
+      // Function to attach the position fix listener to the menu
+      const attachMenuListener = (menu) => {
+        if (menuListenerAttached) return;
+        menuListenerAttached = true;
+
+        menu.addEventListener("opened", () => {
+          logDebug("MUSHROOM", "New card menu opened, adjusting position...");
+
+          const menuSurface =
+            menu.shadowRoot?.querySelector(".mdc-menu-surface");
+          if (!menuSurface) return;
+
+          const slideTransform = window.getComputedStyle(
+            this.card.sliderElement,
+          ).transform;
+          let translateX = 0;
+          let translateY = 0;
+
+          if (slideTransform && slideTransform !== "none") {
+            const matrixMatch = slideTransform.match(/matrix\(([^)]+)\)/);
+            if (matrixMatch) {
+              const matrixValues = matrixMatch[1]
+                .split(",")
+                .map((v) => parseFloat(v.trim()));
+              if (matrixValues.length >= 6) {
+                translateX = matrixValues[4] || 0;
+                translateY = matrixValues[5] || 0;
+              }
+            }
+          }
+
+          const currentLeft = parseFloat(menuSurface.style.left) || 0;
+          const currentTop = parseFloat(menuSurface.style.top) || 0;
+          const newLeft = currentLeft - translateX;
+          const newTop = currentTop - translateY;
+
+          menuSurface.style.left = `${newLeft}px`;
+          menuSurface.style.top = `${newTop}px`;
+
+          logDebug("MUSHROOM", "New card menu position adjusted");
+        });
+      };
+
+      // Try to find menu immediately
+      const menu = select.shadowRoot?.querySelector("mwc-menu");
+      if (menu) {
+        attachMenuListener(menu);
+        logDebug("MUSHROOM", "New card: menu found immediately");
+      } else {
+        // Set up observer for menu creation
+        logDebug("MUSHROOM", "New card: menu not found, setting up observer");
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            if (mutation.type === "childList") {
+              for (const node of mutation.addedNodes) {
+                if (node.nodeName === "MWC-MENU") {
+                  logDebug("MUSHROOM", "New card: menu detected via observer");
+                  attachMenuListener(node);
+                  observer.disconnect();
+                  return;
+                }
+              }
+            }
+          }
+        });
+
+        observer.observe(select.shadowRoot, {
+          childList: true,
+          subtree: true,
+        });
+      }
+    } catch (error) {
+      console.warn("Error fixing new mushroom-select-card:", error);
+    }
+  }
+
+  /**
    * Finishes the build process by setting up layout and observers
    * @param {number} buildTimestamp - Optional timestamp to validate this is not a stale build
    */
@@ -820,6 +1299,9 @@ export class CardBuilder {
     // Setup observer for child card visibility changes (e.g., bubble-card)
     this.card._setupChildVisibilityObserver();
 
+    // Fix mushroom-select dropdown positioning
+    this._fixMushroomSelectPositioning();
+
     // Update pagination after state sync to ensure active dot is set
     // This ensures the correct dot is active after state synchronization runs
     logDebug("PAGINATION", "Updating pagination after layout finalization");
@@ -853,6 +1335,9 @@ export class CardBuilder {
 
     // Give pagination one frame to render
     await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Setup dropdown detection for z-index elevation
+    this.card._setupDropdownDetection();
 
     await this._fadeInAfterLayoutSettles();
   }

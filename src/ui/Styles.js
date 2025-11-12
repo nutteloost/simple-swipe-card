@@ -12,12 +12,22 @@ export function getStyles() {
   return `
      :host {
         display: block;
-        overflow: hidden;
+        overflow: visible;
         width: 100%;
         height: 100%;
         position: relative;
         border-radius: var(--ha-card-border-radius, 12px);
         background: transparent;
+        contain: layout style;
+        /* Prevent horizontal scrolling on touch devices while allowing vertical scrolling */
+        touch-action: pan-y pinch-zoom;
+        /* Ensure dropdowns appear above cards positioned below this one */
+        z-index: 1;
+     }
+
+     /* Elevated z-index when dropdown is open to appear above other cards */
+     :host(.dropdown-open) {
+        z-index: 100;
      }
 
      :host([data-vertical-no-grid]:not([data-editor-mode])) {
@@ -113,11 +123,51 @@ export function getStyles() {
         position: relative;
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        overflow: visible;
         border-radius: inherit;
         background: transparent;
-        will-change: contents; /* Hint browser for optimization */   
+        will-change: contents; /* Hint browser for optimization */
+        isolation: isolate; /* Create stacking context for proper z-index behavior */
+        /* Prevent horizontal scrolling while allowing vertical */
+        touch-action: pan-y pinch-zoom;
      }
+
+     /* Horizontal swipe: Clip horizontally but allow vertical overflow for dropdowns */
+     .card-container:has(.slider[data-swipe-direction="horizontal"]) {
+        clip-path: polygon(
+          0 -100vh,                    /* top-left, extended upward */
+          100% -100vh,                 /* top-right, extended upward */
+          100% calc(100% + 100vh),     /* bottom-right, extended downward */
+          0 calc(100% + 100vh)         /* bottom-left, extended downward */
+        );
+     }
+
+     /* Vertical swipe: No container clipping by default - we apply selective clipping to inactive slides */
+     /* But during animations, we temporarily enable container clipping via .animating class */
+     .card-container:has(.slider[data-swipe-direction="vertical"]) {
+        clip-path: none;
+     }
+
+     /* Vertical swipe DURING ANIMATION: Use container clipping to show only viewport */
+     /* This prevents both slides from being visible during the transition */
+     .card-container:has(.slider[data-swipe-direction="vertical"].animating) {
+        clip-path: polygon(
+          -100vw 0,                    /* top-left, extended leftward for dropdown overflow */
+          calc(100% + 100vw) 0,        /* top-right, extended rightward */
+          calc(100% + 100vw) 100%,     /* bottom-right, clip at container bottom */
+          -100vw 100%                  /* bottom-left, clip at container bottom */
+        );
+     }
+
+    /* Carousel mode: clip horizontally at container boundaries, allow vertical overflow */
+    .card-container:has(.slider[data-view-mode="carousel"]) {
+      clip-path: polygon(
+        0 -100vh,                    /* top-left, clip at edge but extend upward */
+        100% -100vh,                 /* top-right, clip at edge but extend upward */
+        100% calc(100% + 100vh),     /* bottom-right, clip at edge but extend downward */
+        0 calc(100% + 100vh)         /* bottom-left, clip at edge but extend downward */
+      );
+    }
 
      .slider {
         position: relative;
@@ -126,26 +176,10 @@ export function getStyles() {
         transition: transform var(--simple-swipe-card-transition-speed, 0.3s) var(--simple-swipe-card-transition-easing, ease-out);
         will-change: transform;
         background: transparent;
-        backface-visibility: hidden; /* Reduce repaints */   
+        backface-visibility: hidden; /* Reduce repaints */
+        z-index: 2; /* Above pagination - transform creates stacking context */
      }
 
-     .slider.dropdown-fix-active {
-        transform: none !important;
-        will-change: auto !important;
-        transition: none !important;
-     }
-
-     /* Immediately hide all slides except the current one during dropdown fix */
-     .slider.dropdown-fix-active-hide-adjacent .slide {
-       display: none !important;
-     }
-
-     /* Show only the current slide during dropdown fix */
-     .slider.dropdown-fix-active-hide-adjacent .slide.current-active {
-       display: flex !important;
-       overflow: visible !important;
-     }     
-     
      /* Horizontal slider (default) */
      .slider[data-swipe-direction="horizontal"] {
         flex-direction: row;
@@ -170,8 +204,29 @@ export function getStyles() {
         position: relative;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: visible;
         background: transparent;
+        z-index: 2; /* Above pagination (z-index: 1) */
+        transform: translateZ(0); /* Force GPU acceleration for better iOS/Safari rendering */
+        -webkit-transform: translateZ(0);
+     }
+
+     /* Vertical mode: Clip inactive slides to hide adjacent cards */
+     /* BUT: During animation, disable per-slide clipping to show smooth transition */
+     .slider[data-swipe-direction="vertical"]:not(.animating) .slide:not(.active-slide) {
+        /* Clip to zero height - makes slide invisible while keeping it in DOM */
+        clip-path: inset(0 0 100% 0);
+     }
+
+     /* Vertical mode DURING ANIMATION: All slides visible (no per-slide clipping) */
+     /* Container clipping handles viewport boundaries */
+     .slider[data-swipe-direction="vertical"].animating .slide {
+        clip-path: none;
+     }
+
+     /* Vertical mode AFTER ANIMATION: Active slide has no clipping, allowing dropdowns to overflow */
+     .slider[data-swipe-direction="vertical"]:not(.animating) .slide.active-slide {
+        clip-path: none;
      }
 
     .slide.carousel-mode {
@@ -192,11 +247,21 @@ export function getStyles() {
       position: relative;
     }
 
+    /* Z-INDEX HIERARCHY (within .card-container stacking context):
+     * 1. pagination (z-index: 1) - Bottom layer, behind all slide content
+     * 2. .slider (z-index: 2) - Above pagination (transform creates stacking context)
+     *    └─ .slide (z-index: 2) - Within slider's stacking context
+     *       └─ .slide > *:first-child (z-index: 3) - Ensures dropdowns appear above everything
+     *
+     * This hierarchy fixes:
+     * - Android: Dropdowns now appear above pagination dots and other cards
+     * - iOS: Hardware acceleration (translateZ) improves rendering
+     */
     .pagination {
         position: absolute;
         display: flex;
         justify-content: center;
-        z-index: 1;
+        z-index: 1; /* Lowest layer - behind slides and dropdowns */
         background-color: var(--simple-swipe-card-pagination-background, transparent);
         pointer-events: auto;
         transition: opacity 0.2s ease-in-out;
@@ -312,6 +377,9 @@ export function getStyles() {
         display: flex;
         flex-direction: column;
         min-height: 0;
+        overflow: visible !important;
+        position: relative;
+        z-index: 3; /* Above slides and pagination - ensures dropdowns are on top */
      }
      .slide > * > ha-card,
      .slide > * > .card-content {
@@ -323,7 +391,16 @@ export function getStyles() {
         height: 100%;
         display: flex;
         flex-direction: column;
+        overflow: visible !important;
+        position: relative;
+        z-index: 3; /* Same as parent - maintains stacking for dropdowns */
      }
+
+     /* Mushroom-select dropdown positioning fix */
+     /* Note: The fixedMenuPosition property is disabled via JavaScript in CardBuilder.js */
+     /* This ensures dropdowns work correctly with CSS transforms applied to slides */
+     /* For vertical mode: Active slide has no clip-path, allowing dropdown overflow */
+     /* Inactive slides are clipped to hide adjacent cards */
 
      /* Reduced Motion Support - Automatically disable animations when user prefers reduced motion */
      @media (prefers-reduced-motion: reduce) {
