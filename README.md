@@ -272,17 +272,6 @@ Simple Swipe Card intercepts mouse and touch events to enable swipe gestures, wh
 - Third-party widgets that use iframe elements
 - Any card that relies on complex mouse interactions
 
-### Dropdown Menus and Overflow Elements
-
-Simple Swipe Card is designed to contain all content within its boundaries and does not support elements that overflow beyond the card's edges. 
-
-**Why dropdown menus aren't supported:**
-- The card uses `overflow: hidden` to prevent content from appearing outside its boundaries
-- This is essential for proper swipe gesture functionality and visual consistency
-- Allowing overflow would interfere with the card's swipe mechanics and pagination positioning
-
-Cards with overflowing elements such as dropdown menu's or input_select elements may work or may not work. Issues regarding the support of those elements will be closed. Fixing them takes too much time and effort and those fixes will possibly create new issues.
-
 ## Customizing with Theme Variables
 
 The Simple Swipe Card provides extensive customization capabilities through two primary methods: Home Assistant themes and card-mod styling. This flexible approach allows you to establish consistent styling across all card instances while maintaining the ability to customize individual cards as needed.
