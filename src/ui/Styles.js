@@ -178,6 +178,7 @@ export function getStyles() {
         background: transparent;
         backface-visibility: hidden; /* Reduce repaints */
         z-index: 2; /* Above pagination - transform creates stacking context */
+        pointer-events: none;
      }
 
      /* Horizontal slider (default) */
@@ -209,6 +210,7 @@ export function getStyles() {
         z-index: 2; /* Above pagination (z-index: 1) */
         transform: translateZ(0); /* Force GPU acceleration for better iOS/Safari rendering */
         -webkit-transform: translateZ(0);
+        pointer-events: none; /* Allow clicks to pass through to elements below/behind */
      }
 
      /* Vertical mode: Clip inactive slides to hide adjacent cards */
@@ -380,6 +382,7 @@ export function getStyles() {
         overflow: visible !important;
         position: relative;
         z-index: 3; /* Above slides and pagination - ensures dropdowns are on top */
+        pointer-events: auto; /* Re-enable pointer events for card content */
      }
      .slide > * > ha-card,
      .slide > * > .card-content {
