@@ -66,7 +66,23 @@ export class CardBuilder {
 
     // Only reset currentIndex if state sync is not configured
     if (!this.card._config.state_entity || !this.card._hass) {
-      this.card.currentIndex = 0;
+      // If reset_after is enabled, start at the reset target card
+      if (
+        this.card._config.enable_reset_after &&
+        this.card._config.reset_target_card
+      ) {
+        // Convert from 1-based to 0-based index
+        this.card.currentIndex = Math.max(
+          0,
+          parseInt(this.card._config.reset_target_card) - 1 || 0,
+        );
+        logDebug(
+          "INIT",
+          `Reset-after enabled: Setting initial index to ${this.card.currentIndex} (card ${this.card._config.reset_target_card})`,
+        );
+      } else {
+        this.card.currentIndex = 0;
+      }
     }
     // If state sync is configured, preserve currentIndex during rebuilds
 
@@ -177,21 +193,6 @@ export class CardBuilder {
       this.card.visibleCardIndices,
       this.card._config.cards,
     );
-
-    if (this.card.loopMode.isInfiniteMode) {
-      console.log("=== CARDBUILDER INFINITE MODE DEBUG ===");
-      console.log("Visible card indices:", this.card.visibleCardIndices);
-      console.log(
-        "Cards to load:",
-        cardsToLoad.map((card) => ({
-          visibleIndex: card.visibleIndex,
-          originalIndex: card.originalIndex,
-          isDuplicate: card.isDuplicate,
-          cardType: card.config?.type,
-        })),
-      );
-      console.log("=== END CARDBUILDER DEBUG ===");
-    }
 
     logDebug("INIT", `Building cards:`, {
       totalVisible: this.card.visibleCardIndices.length,
@@ -1249,6 +1250,43 @@ export class CardBuilder {
     }
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
+
+    // If reset_after is enabled and we're at the initial load (not a rebuild),
+    // ensure the currentIndex points to the correct visible card position
+    if (
+      this.card._config.enable_reset_after &&
+      this.card._config.reset_target_card
+    ) {
+      const targetOriginalIndex = Math.max(
+        0,
+        parseInt(this.card._config.reset_target_card) - 1 || 0,
+      );
+      const targetVisibleIndex =
+        this.card.visibleCardIndices.indexOf(targetOriginalIndex);
+
+      if (targetVisibleIndex !== -1) {
+        // Target card is visible, use its position in visible cards
+        this.card.currentIndex = targetVisibleIndex;
+        logDebug(
+          "INIT",
+          `Reset target card ${this.card._config.reset_target_card} is visible at position ${targetVisibleIndex}`,
+        );
+      } else {
+        // Target card is not visible, find the closest visible card
+        let closestVisibleIndex = 0;
+        for (let i = 0; i < this.card.visibleCardIndices.length; i++) {
+          if (this.card.visibleCardIndices[i] >= targetOriginalIndex) {
+            closestVisibleIndex = i;
+            break;
+          }
+        }
+        this.card.currentIndex = closestVisibleIndex;
+        logDebug(
+          "INIT",
+          `Reset target card ${this.card._config.reset_target_card} not visible, using closest at position ${closestVisibleIndex}`,
+        );
+      }
+    }
 
     // Adjust index if out of bounds
     this.card.currentIndex = Math.max(

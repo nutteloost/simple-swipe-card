@@ -28,7 +28,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
     - Cards can cycle automatically at a user-defined interval
     - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
     - Integrates with `loop_mode: infinite` for continuous cycling or uses a "ping-pong" effect if `loop_mode: none` is set
-- Reset After Timeout: Automatically return to a target card after inactivity
+- Reset After Timeout: Automatically start at and return to a target card after inactivity. When enabled, the card begins at the specified reset target and returns to it after user inactivity
 - State Synchronization: Two-way sync with Home Assistant `input_select` and `input_number` entities
 
 ## View Modes
@@ -151,7 +151,7 @@ This card can be configured using the visual editor or YAML.
 | `auto_swipe_interval` | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if `enable_auto_swipe` is true |
 | `enable_reset_after` | boolean | false | Enable automatic return to target card after inactivity |
 | `reset_after_timeout` | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
-| `reset_target_card` | number | 1 | Index of card to return to (1 = first card) |
+| `reset_target_card` | number | 1 | Index of card to use as initial card and to return to after inactivity (1 = first card). When `enable_reset_after` is true, the card will start at this position when loaded and return to it after the timeout |
 | `state_entity` | string | null | Entity ID for state synchronization. Supports `input_select` and `input_number` entities |
 
 > [!WARNING]  
@@ -732,5 +732,3 @@ Check out my other custom cards for Home Assistant:
 Enjoying my cards? Consider donating a beer (or two)! It will keep me going. 
 
 [![Buy me a beer](https://img.shields.io/badge/Donate-Buy%20me%20a%20beer-yellow?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/nutteloost)
-
-

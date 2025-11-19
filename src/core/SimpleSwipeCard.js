@@ -2010,9 +2010,29 @@ export class SimpleSwipeCard extends LitElement {
    * @param {boolean} [animate=true] - Whether to animate the transition
    */
   updateSlider(animate = true) {
+    // BUGFIX: Only recalculate dimensions if they're not properly initialized
+    // This prevents race conditions where child cards (with aspect-ratio, etc.)
+    // haven't fully rendered, causing incorrect transform calculations
+    // We check both for zero and for obvious fallback values (300x100)
     if (this.cardContainer) {
-      this.slideWidth = this.cardContainer.offsetWidth;
-      this.slideHeight = this.cardContainer.offsetHeight;
+      const isUninit = this.slideWidth === 0 || this.slideHeight === 0;
+      const isFallback = this.slideWidth === 300 && this.slideHeight === 100;
+
+      if (isUninit || isFallback) {
+        const newWidth = this.cardContainer.offsetWidth;
+        const newHeight = this.cardContainer.offsetHeight;
+
+        // Only update if we got valid dimensions
+        if (newWidth > 0 && newHeight > 0) {
+          this.slideWidth = newWidth;
+          this.slideHeight = newHeight;
+          logDebug("SWIPE", "Recalculated dimensions in updateSlider:", {
+            width: this.slideWidth,
+            height: this.slideHeight,
+            reason: isUninit ? "uninitialized" : "fallback",
+          });
+        }
+      }
     }
 
     const totalVisibleCards = this.visibleCardIndices.length;
