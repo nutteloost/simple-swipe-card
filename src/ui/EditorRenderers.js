@@ -134,6 +134,7 @@ export function renderDisplayOptions(config, valueChanged) {
   const swipeBehavior = config.swipe_behavior || "single";
   const viewMode = config.view_mode || "single";
   const autoHeight = config.auto_height === true;
+  const enableBackdropFilter = config.enable_backdrop_filter === true;
 
   return html`
     <div class="section">
@@ -414,6 +415,7 @@ export function renderAdvancedOptions(
   const resetAfterTimeout = config.reset_after_timeout ?? 30000;
   const resetTargetCard = config.reset_target_card ?? 1;
   const stateEntity = config.state_entity || "";
+  const enableBackdropFilter = config.enable_backdrop_filter === true;
 
   // Count active and blocked advanced features (now works for both modes)
   let activeFeatures = 0;
@@ -426,6 +428,7 @@ export function renderAdvancedOptions(
   if (enableResetAfter && !enableAutoSwipe) activeFeatures++; // Only count if not blocked
   if (enableResetAfter && enableAutoSwipe) blockedFeatures++; // Count as blocked when auto-swipe is on
   if (stateEntity) activeFeatures++; // Count state sync as active feature
+  if (enableBackdropFilter) activeFeatures++; // Count backdrop filter as active feature
 
   // Create separate badges for active and blocked features
   let activeBadge = "";
@@ -484,6 +487,7 @@ export function renderAdvancedOptions(
           handleTargetChange,
         )}
         ${renderStateSynchronizationOptions(stateEntity, hass, valueChanged)}
+        ${renderBackdropFilterOption(enableBackdropFilter, valueChanged)}
       </div>
     </div>
   `;
@@ -710,6 +714,54 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
         </ha-select>
       </div>
     </div>
+  `;
+}
+
+/**
+ * Renders the backdrop filter support option
+ * @param {boolean} enableBackdropFilter - Current backdrop filter setting
+ * @param {Function} valueChanged - Value change handler
+ * @returns {TemplateResult} The backdrop filter option template
+ */
+function renderBackdropFilterOption(enableBackdropFilter, valueChanged) {
+  return html`
+    <div class="option-row">
+      <div class="option-left">
+        <div class="option-label">Enable Backdrop Filter (Advanced)</div>
+        <div class="option-help">
+          For card-mod users: Allow CSS backdrop-filter blur effects
+        </div>
+      </div>
+      <div class="option-control">
+        <ha-switch
+          .checked=${enableBackdropFilter}
+          data-option="enable_backdrop_filter"
+          @change=${valueChanged}
+        ></ha-switch>
+      </div>
+    </div>
+
+    <!-- Info/Warning when backdrop filter is enabled/disabled -->
+    ${enableBackdropFilter
+      ? html`
+          <div class="option-info warning">
+            <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+            <span>
+              Trade-off: Disables clip-path, which may prevent dropdown menus
+              from overflowing card boundaries. Only enable if you're using
+              <code>backdrop-filter: blur()</code> in card-mod CSS.
+            </span>
+          </div>
+        `
+      : html`
+          <div
+            class="option-help"
+            style="margin-top: -4px; margin-bottom: 12px;"
+          >
+            When to enable: Only if you're using card-mod with
+            <code>backdrop-filter: blur()</code> CSS
+          </div>
+        `}
   `;
 }
 

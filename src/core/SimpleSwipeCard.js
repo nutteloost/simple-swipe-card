@@ -246,6 +246,14 @@ export class SimpleSwipeCard extends LitElement {
       this.removeAttribute("data-editor-mode");
     }
 
+    // Set backdrop-filter support attribute - when enabled, clip-path is disabled
+    // to allow CSS backdrop-filter effects to work (they conflict with clip-path)
+    if (this._config.enable_backdrop_filter === true) {
+      this.setAttribute("data-enable-backdrop-filter", "");
+    } else {
+      this.removeAttribute("data-enable-backdrop-filter");
+    }
+
     // Set default for swipe_behavior and validate based on loop_mode
     if (this._config.swipe_behavior === undefined) {
       this._config.swipe_behavior = "single";

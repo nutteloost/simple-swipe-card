@@ -133,7 +133,8 @@ export function getStyles() {
      }
 
      /* Horizontal swipe: Clip horizontally but allow vertical overflow for dropdowns */
-     .card-container:has(.slider[data-swipe-direction="horizontal"]) {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="horizontal"]) {
         clip-path: polygon(
           0 -100vh,                    /* top-left, extended upward */
           100% -100vh,                 /* top-right, extended upward */
@@ -144,13 +145,15 @@ export function getStyles() {
 
      /* Vertical swipe: No container clipping by default - we apply selective clipping to inactive slides */
      /* But during animations, we temporarily enable container clipping via .animating class */
-     .card-container:has(.slider[data-swipe-direction="vertical"]) {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"]) {
         clip-path: none;
      }
 
      /* Vertical swipe DURING ANIMATION: Use container clipping to show only viewport */
      /* This prevents both slides from being visible during the transition */
-     .card-container:has(.slider[data-swipe-direction="vertical"].animating) {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"].animating) {
         clip-path: polygon(
           -100vw 0,                    /* top-left, extended leftward for dropdown overflow */
           calc(100% + 100vw) 0,        /* top-right, extended rightward */
@@ -160,7 +163,8 @@ export function getStyles() {
      }
 
     /* Carousel mode: clip horizontally at container boundaries, allow vertical overflow */
-    .card-container:has(.slider[data-view-mode="carousel"]) {
+    /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+    :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-view-mode="carousel"]) {
       clip-path: polygon(
         0 -100vh,                    /* top-left, clip at edge but extend upward */
         100% -100vh,                 /* top-right, clip at edge but extend upward */
@@ -215,21 +219,35 @@ export function getStyles() {
 
      /* Vertical mode: Clip inactive slides to hide adjacent cards */
      /* BUT: During animation, disable per-slide clipping to show smooth transition */
-     .slider[data-swipe-direction="vertical"]:not(.animating) .slide:not(.active-slide) {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"]:not(.animating) .slide:not(.active-slide) {
         /* Clip to zero height - makes slide invisible while keeping it in DOM */
         clip-path: inset(0 0 100% 0);
      }
 
      /* Vertical mode DURING ANIMATION: All slides visible (no per-slide clipping) */
      /* Container clipping handles viewport boundaries */
-     .slider[data-swipe-direction="vertical"].animating .slide {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"].animating .slide {
         clip-path: none;
      }
 
      /* Vertical mode AFTER ANIMATION: Active slide has no clipping, allowing dropdowns to overflow */
-     .slider[data-swipe-direction="vertical"]:not(.animating) .slide.active-slide {
+     /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"]:not(.animating) .slide.active-slide {
         clip-path: none;
      }
+
+     /* ========== BACKDROP FILTER MODE ========== */
+     /* When backdrop-filter is enabled, use overflow: hidden to clip adjacent cards */
+     /* Note: overflow: hidden may conflict with backdrop-filter in some browsers, */
+     /* but it's the only option that doesn't completely break the functionality */
+
+     :host([data-enable-backdrop-filter]) .card-container {
+        overflow: hidden;
+     }
+
+     /* ========== END BACKDROP FILTER MODE ========== */
 
     .slide.carousel-mode {
       flex: 0 0 auto; /* Don't grow/shrink, use calculated width */

@@ -491,6 +491,7 @@ export class EditorConfigManager {
       "reset_after_timeout",
       "reset_target_card",
       "state_entity",
+      "enable_backdrop_filter",
     ];
 
     // Defaults for comparison
@@ -505,6 +506,7 @@ export class EditorConfigManager {
       enable_reset_after: false,
       reset_after_timeout: 30000,
       reset_target_card: 1,
+      enable_backdrop_filter: false,
     };
 
     // Add display options in UI order

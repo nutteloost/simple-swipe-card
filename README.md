@@ -153,17 +153,25 @@ This card can be configured using the visual editor or YAML.
 | `reset_after_timeout` | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
 | `reset_target_card` | number | 1 | Index of card to use as initial card and to return to after inactivity (1 = first card). When `enable_reset_after` is true, the card will start at this position when loaded and return to it after the timeout |
 | `state_entity` | string | null | Entity ID for state synchronization. Supports `input_select` and `input_number` entities |
+| `enable_backdrop_filter` | boolean | false | Enable support for CSS `backdrop-filter` effects (blur, etc.) in card-mod. When enabled, disables clip-path to allow backdrop-filter to work. Only enable if using `backdrop-filter: blur()` in card-mod CSS |
 
 > [!WARNING]  
 > Infinite loop mode creates duplicate cards for a true seamless scrolling experience which can be resource-intensive with camera cards or complex cards. Consider using `loop_mode: loopback` for better performance
 
-> [!NOTE]  
+> [!NOTE]
 > **Auto Height Compatibility**: The `auto_height` feature is only available when using:
 > - View Mode: Single (not carousel)
 > - Swipe Direction: Horizontal (not vertical)
 > - Loop Mode: None or Loopback (not infinite)
-> 
+>
 > When switching to an incompatible mode, `auto_height` will be automatically removed from your configuration.
+
+> [!NOTE]
+> **Backdrop Filter Support**: The `enable_backdrop_filter` option allows CSS `backdrop-filter` effects (blur, etc.) to work with card-mod. Due to browser limitations, `backdrop-filter` conflicts with `clip-path`, which is used for dropdown overflow. When enabled:
+> - ✅ Backdrop-filter effects work correctly
+> - ❌ Dropdown menus do not overflow card boundaries
+>
+> Only enable this option if you're using `backdrop-filter: blur()` in your card-mod CSS and need it to work. The toggle is available in the Advanced Options section of the visual editor.
 
 ### Example Configuration
 
