@@ -12,22 +12,33 @@ export function getStyles() {
   return `
      :host {
         display: block;
-        overflow: visible;
+        /* Default: overflow hidden prevents scrollbars and works with expander-card */
+        overflow: hidden;
         width: 100%;
         height: 100%;
         position: relative;
         border-radius: var(--ha-card-border-radius, 12px);
         background: transparent;
-        contain: layout style;
         /* Prevent horizontal scrolling on touch devices while allowing vertical scrolling */
         touch-action: pan-y pinch-zoom;
         /* Ensure dropdowns appear above cards positioned below this one */
         z-index: 1;
      }
 
-     /* Elevated z-index when dropdown is open to appear above other cards */
+     /* When dropdown is open: switch to visible overflow with clip-path
+        to allow vertical dropdown overflow while still clipping horizontally */
      :host(.dropdown-open) {
+        overflow: visible;
         z-index: 100;
+     }
+
+     :host(.dropdown-open:not([data-enable-backdrop-filter])) {
+        clip-path: polygon(
+          0 -100vh,
+          100% -100vh,
+          100% calc(100% + 100vh),
+          0 calc(100% + 100vh)
+        );
      }
 
      :host([data-vertical-no-grid]:not([data-editor-mode])) {
@@ -270,8 +281,8 @@ export function getStyles() {
     /* Z-INDEX HIERARCHY (within .card-container stacking context):
      * 1. pagination (z-index: 1) - Bottom layer, behind all slide content
      * 2. .slider (z-index: 2) - Above pagination (transform creates stacking context)
-     *    └─ .slide (z-index: 2) - Within slider's stacking context
-     *       └─ .slide > *:first-child (z-index: 3) - Ensures dropdowns appear above everything
+     *    â””â”€ .slide (z-index: 2) - Within slider's stacking context
+     *       â””â”€ .slide > *:first-child (z-index: 3) - Ensures dropdowns appear above everything
      *
      * This hierarchy fixes:
      * - Android: Dropdowns now appear above pagination dots and other cards
