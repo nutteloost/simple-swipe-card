@@ -279,15 +279,15 @@ export function getStyles() {
     }
 
     /* Z-INDEX HIERARCHY (within .card-container stacking context):
-     * 1. pagination (z-index: 1) - Bottom layer, behind all slide content
-     * 2. .slider (z-index: 2) - Above pagination (transform creates stacking context)
-     *    â””â”€ .slide (z-index: 2) - Within slider's stacking context
-     *       â””â”€ .slide > *:first-child (z-index: 3) - Ensures dropdowns appear above everything
-     *
-     * This hierarchy fixes:
-     * - Android: Dropdowns now appear above pagination dots and other cards
-     * - iOS: Hardware acceleration (translateZ) improves rendering
-     */
+    * 1. pagination (z-index: 1) - Bottom layer, behind all slide content
+    * 2. .slider (z-index: 2) - Above pagination (transform creates stacking context)
+    *    -> .slide (z-index: 2) - Within slider's stacking context
+    *       -> .slide > *:first-child (z-index: 3) - Ensures dropdowns appear above everything
+    *
+    * This hierarchy fixes:
+    * - Android: Dropdowns now appear above pagination dots and other cards
+    * - iOS: Hardware acceleration (translateZ) improves rendering
+    */
     .pagination {
         position: absolute;
         display: flex;
@@ -720,7 +720,7 @@ export const getEditorStyles = () => css`
   }
 
   .section-content.expanded {
-    max-height: 500px;
+    max-height: 2000px;
     opacity: 1;
     overflow: visible;
   }

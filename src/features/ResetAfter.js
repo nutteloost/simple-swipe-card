@@ -183,8 +183,19 @@ export class ResetAfter {
       return;
     }
 
+    // Get evaluated target card (supports templates)
+    const evaluatedTargetCard = this.card.getEvaluatedConfigValue(
+      "reset_target_card",
+      1,
+    );
+
     // Determine target card index (convert from 1-based YAML to 0-based internal)
-    let targetIndex = (parseInt(this.card._config.reset_target_card) || 1) - 1;
+    let targetIndex = (parseInt(evaluatedTargetCard) || 1) - 1;
+
+    logDebug(
+      "RESET",
+      `Reset target card: configured=${this.card._config.reset_target_card}, evaluated=${evaluatedTargetCard}, index=${targetIndex}`,
+    );
 
     // Convert from original card index to visible card index
     const targetOriginalIndex = targetIndex;
@@ -195,7 +206,7 @@ export class ResetAfter {
       targetIndex = targetVisibleIndex;
       logDebug(
         "RESET",
-        `Target card ${this.card._config.reset_target_card} is visible at position ${targetIndex}`,
+        `Target card ${evaluatedTargetCard} is visible at position ${targetIndex}`,
       );
     } else {
       // Target card is not visible, find the closest visible card
@@ -210,7 +221,7 @@ export class ResetAfter {
       targetIndex = closestVisibleIndex;
       logDebug(
         "RESET",
-        `Target card ${this.card._config.reset_target_card} not visible, using closest visible card at position ${targetIndex}`,
+        `Target card ${evaluatedTargetCard} not visible, using closest visible card at position ${targetIndex}`,
       );
     }
 

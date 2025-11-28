@@ -71,14 +71,16 @@ export class CardBuilder {
         this.card._config.enable_reset_after &&
         this.card._config.reset_target_card
       ) {
-        // Convert from 1-based to 0-based index
-        this.card.currentIndex = Math.max(
-          0,
-          parseInt(this.card._config.reset_target_card) - 1 || 0,
+        // Get evaluated value (supports templates)
+        const targetCard = this.card.getEvaluatedConfigValue(
+          "reset_target_card",
+          1,
         );
+        // Convert from 1-based to 0-based index
+        this.card.currentIndex = Math.max(0, parseInt(targetCard) - 1 || 0);
         logDebug(
           "INIT",
-          `Reset-after enabled: Setting initial index to ${this.card.currentIndex} (card ${this.card._config.reset_target_card})`,
+          `Reset-after enabled: Setting initial index to ${this.card.currentIndex} (target card ${targetCard})`,
         );
       } else {
         this.card.currentIndex = 0;
@@ -1257,10 +1259,12 @@ export class CardBuilder {
       this.card._config.enable_reset_after &&
       this.card._config.reset_target_card
     ) {
-      const targetOriginalIndex = Math.max(
-        0,
-        parseInt(this.card._config.reset_target_card) - 1 || 0,
+      // Get evaluated value (supports templates)
+      const targetCard = this.card.getEvaluatedConfigValue(
+        "reset_target_card",
+        1,
       );
+      const targetOriginalIndex = Math.max(0, parseInt(targetCard) - 1 || 0);
       const targetVisibleIndex =
         this.card.visibleCardIndices.indexOf(targetOriginalIndex);
 
@@ -1269,7 +1273,7 @@ export class CardBuilder {
         this.card.currentIndex = targetVisibleIndex;
         logDebug(
           "INIT",
-          `Reset target card ${this.card._config.reset_target_card} is visible at position ${targetVisibleIndex}`,
+          `Reset target card ${targetCard} is visible at position ${targetVisibleIndex}`,
         );
       } else {
         // Target card is not visible, find the closest visible card
@@ -1283,7 +1287,7 @@ export class CardBuilder {
         this.card.currentIndex = closestVisibleIndex;
         logDebug(
           "INIT",
-          `Reset target card ${this.card._config.reset_target_card} not visible, using closest at position ${closestVisibleIndex}`,
+          `Reset target card ${targetCard} not visible, using closest at position ${closestVisibleIndex}`,
         );
       }
     }
@@ -1528,7 +1532,7 @@ export class CardBuilder {
       } else {
         logDebug(
           "INIT",
-          `Ã¢ÂÂ³ Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
+          `Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
         );
         stableCount = 0; // Reset if dimensions go to zero
       }
@@ -2350,7 +2354,7 @@ export class CardBuilder {
         tagName === "grid-layout" ||
         tagName === "hui-masonry-view"
       ) {
-        logDebug("INIT", `✅ DETECTED PARENT LAYOUT CONTAINER: ${tagName}`);
+        logDebug("INIT", `âœ… DETECTED PARENT LAYOUT CONTAINER: ${tagName}`);
         console.log(
           `SimpleSwipeCard: ✅ MASONRY/LAYOUT DETECTED`,
           "background: #4caf50; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",

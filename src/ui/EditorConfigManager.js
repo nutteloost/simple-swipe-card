@@ -171,11 +171,20 @@ export class EditorConfigManager {
     if (this.editor._config.reset_target_card === undefined) {
       this.editor._config.reset_target_card = 1; // Default to first card (1-based)
     } else {
-      // Ensure it's a valid 1-based number
-      this.editor._config.reset_target_card = Math.max(
-        1,
-        parseInt(this.editor._config.reset_target_card),
-      );
+      // Check if it's a template (contains {{ or {%)
+      const value = this.editor._config.reset_target_card;
+      const isTemplate =
+        typeof value === "string" &&
+        (value.includes("{{") || value.includes("{%"));
+
+      if (!isTemplate) {
+        // Not a template - ensure it's a valid 1-based number
+        this.editor._config.reset_target_card = Math.max(
+          1,
+          parseInt(value) || 1,
+        );
+      }
+      // If it's a template, keep the raw string
     }
 
     // Set defaults for view mode options
@@ -432,13 +441,30 @@ export class EditorConfigManager {
    * @param {Event} ev - The change event
    */
   handleTargetChange(ev) {
-    const oneBasedIndex = parseInt(ev.target.value);
-    if (!isNaN(oneBasedIndex) && oneBasedIndex >= 1) {
+    const value = ev.target.value;
+
+    // Check if it's a template (contains {{ or {%)
+    const isTemplate =
+      typeof value === "string" &&
+      (value.includes("{{") || value.includes("{%"));
+
+    if (isTemplate) {
+      // Store template as-is
       this.editor._config = {
         ...this.editor._config,
-        reset_target_card: oneBasedIndex,
+        reset_target_card: value,
       };
       this.fireConfigChanged();
+    } else {
+      // Parse as number
+      const oneBasedIndex = parseInt(value);
+      if (!isNaN(oneBasedIndex) && oneBasedIndex >= 1) {
+        this.editor._config = {
+          ...this.editor._config,
+          reset_target_card: oneBasedIndex,
+        };
+        this.fireConfigChanged();
+      }
     }
   }
 

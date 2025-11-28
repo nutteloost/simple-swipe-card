@@ -26,6 +26,7 @@ import {
 import { CarouselView } from "../features/CarouselView.js";
 import { LoopMode } from "../features/LoopMode.js";
 import { SwipeBehavior } from "../features/SwipeBehavior.js";
+import { TemplateEvaluator } from "../features/TemplateEvaluator.js";
 
 /**
  * Main Simple Swipe Card class
@@ -74,6 +75,7 @@ export class SimpleSwipeCard extends LitElement {
     this.loopMode = new LoopMode(this);
     this.swipeBehavior = new SwipeBehavior(this);
     this.autoHeight = new AutoHeight(this);
+    this.templateEvaluator = new TemplateEvaluator(this);
 
     // Child card visibility observer (for cards like bubble-card that manage their own visibility)
     this._childVisibilityObserver = null;
@@ -100,6 +102,9 @@ export class SimpleSwipeCard extends LitElement {
    */
   async firstUpdated() {
     logDebug("LIFECYCLE", "firstUpdated called for wrapper card");
+
+    // Initialize template evaluator (loads ha-nunjucks if available)
+    await this.templateEvaluator.initialize();
 
     // Move the initial build logic here from connectedCallback
     if (!this._firstUpdateCompleted && this._config?.cards) {
@@ -318,25 +323,41 @@ export class SimpleSwipeCard extends LitElement {
     if (this._config.reset_after_timeout === undefined) {
       this._config.reset_after_timeout = 30000; // 30 seconds default
     } else {
-      // Ensure reset_after_timeout is a positive number (minimum 5 seconds)
-      this._config.reset_after_timeout = parseInt(
+      // Check if it's a template string
+      const isTemplate = this.templateEvaluator.isTemplate(
         this._config.reset_after_timeout,
       );
-      if (
-        isNaN(this._config.reset_after_timeout) ||
-        this._config.reset_after_timeout < 5000
-      ) {
-        this._config.reset_after_timeout = 30000;
+
+      if (!isTemplate) {
+        // Not a template - ensure it's a positive number (minimum 5 seconds)
+        this._config.reset_after_timeout = parseInt(
+          this._config.reset_after_timeout,
+        );
+        if (
+          isNaN(this._config.reset_after_timeout) ||
+          this._config.reset_after_timeout < 5000
+        ) {
+          this._config.reset_after_timeout = 30000;
+        }
       }
+      // If it's a template, keep the raw string for later evaluation
     }
     if (this._config.reset_target_card === undefined) {
       this._config.reset_target_card = 1; // Default to first card (1-based)
     } else {
-      // Ensure it's a valid 1-based number
-      this._config.reset_target_card = Math.max(
-        1,
-        parseInt(this._config.reset_target_card),
+      // Check if it's a template string
+      const isTemplate = this.templateEvaluator.isTemplate(
+        this._config.reset_target_card,
       );
+
+      if (!isTemplate) {
+        // Not a template - ensure it's a valid 1-based number
+        this._config.reset_target_card = Math.max(
+          1,
+          parseInt(this._config.reset_target_card) || 1,
+        );
+      }
+      // If it's a template, keep the raw string for later evaluation
     }
 
     // Set defaults for view mode options
@@ -393,6 +414,9 @@ export class SimpleSwipeCard extends LitElement {
 
     // Initialize auto height AFTER all config is validated
     this.autoHeight?.initialize();
+
+    // Scan config for template values
+    this.templateEvaluator.scanConfig(this._config);
 
     // Fire initial config event
     this.requestUpdate();
@@ -1216,6 +1240,12 @@ export class SimpleSwipeCard extends LitElement {
       });
     }
 
+    // Add entities referenced in templates
+    if (this.templateEvaluator?.hasTemplates()) {
+      const templateEntities = this.templateEvaluator.getReferencedEntities();
+      templateEntities.forEach((entityId) => entities.add(entityId));
+    }
+
     // Cache the results
     this._cachedOurRelevantEntities = Array.from(entities);
     this._cachedConfigHash = this._getConfigHash();
@@ -1245,10 +1275,12 @@ export class SimpleSwipeCard extends LitElement {
     // - Number of cards
     // - State entity
     // - Whether cards have visibility conditions
+    // - Template options
     const parts = [
       this._config.cards.length,
       this._config.state_entity || "",
       this._config.cards.filter((c) => c.visibility?.length > 0).length,
+      this.templateEvaluator?.getTemplateOptions().join(",") || "",
     ];
 
     return parts.join("|");
@@ -1262,6 +1294,45 @@ export class SimpleSwipeCard extends LitElement {
     this._cachedOurRelevantEntities = null;
     this._cachedConfigHash = null;
     logDebug("HASS", "Cleared our relevant entities cache");
+  }
+
+  /**
+   * Gets an evaluated config value, resolving templates if necessary
+   * @param {string} option - Config option name
+   * @param {*} defaultValue - Default value if option not set or template fails
+   * @returns {*} Evaluated value or default
+   */
+  getEvaluatedConfigValue(option, defaultValue) {
+    const rawValue = this._config[option];
+
+    // If no value, return default
+    if (rawValue === undefined || rawValue === null) {
+      return defaultValue;
+    }
+
+    // If it's a template and we have hass, evaluate it
+    if (
+      this.templateEvaluator?.isTemplate(rawValue) &&
+      this.templateEvaluator.isAvailable &&
+      this._hass
+    ) {
+      const evaluated = this.templateEvaluator.getEvaluatedValue(
+        option,
+        this._hass,
+      );
+      if (evaluated !== undefined && evaluated !== null) {
+        return evaluated;
+      }
+      // Template evaluation failed, return default
+      logDebug(
+        "TEMPLATE",
+        `Template evaluation failed for ${option}, using default: ${defaultValue}`,
+      );
+      return defaultValue;
+    }
+
+    // Not a template, return raw value
+    return rawValue;
   }
 
   /**

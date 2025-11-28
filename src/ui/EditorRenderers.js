@@ -595,6 +595,11 @@ function renderResetAfterOptions(
   handleTimeoutChange,
   handleTargetChange,
 ) {
+  // Check if reset_target_card is a template
+  const isTemplate =
+    typeof resetTargetCard === "string" &&
+    (resetTargetCard.includes("{{") || resetTargetCard.includes("{%"));
+
   return html`
     <div class="option-row">
       <div class="option-label">Enable reset after timeout</div>
@@ -632,22 +637,24 @@ function renderResetAfterOptions(
           </div>
 
           <ha-textfield
-            label="Target card (1-based)"
+            label="Target card"
             .value=${resetTargetCard.toString()}
-            type="number"
-            min="1"
-            max=${(Math.max(0, cards.length - 1) + 1).toString()}
+            type=${isTemplate ? "text" : "number"}
+            min=${isTemplate ? undefined : "1"}
+            max=${isTemplate
+              ? undefined
+              : (Math.max(0, cards.length - 1) + 1).toString()}
             @change=${handleTargetChange}
             ?disabled=${cards.length === 0}
             autoValidate
-            pattern="[0-9]+"
-            required
+            ?required=${!isTemplate}
           ></ha-textfield>
           <div class="help-text">
-            Which card to return to
-            ${cards.length === 0
-              ? "Add cards first to set a target."
-              : `(current range: 1-${cards.length})`}
+            ${isTemplate
+              ? html`Template: <code>${resetTargetCard}</code>`
+              : cards.length === 0
+                ? "Add cards first to set a target."
+                : `Card number (1-${cards.length}) or template like {{ states('sensor.day') }}`}
           </div>
         `
       : ""}

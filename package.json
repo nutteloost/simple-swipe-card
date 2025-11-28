@@ -1,6 +1,6 @@
 {
   "name": "simple-swipe-card",
-  "version": "2.6.13",
+  "version": "2.7.0",
   "description": "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout",
   "main": "build/simple-swipe-card.js",
   "type": "module",
@@ -21,14 +21,14 @@
     "lint:fix": "npx eslint src/**/*.js --fix",
     "format": "prettier --write 'src/**/*.js'",
     "format:check": "prettier --check 'src/**/*.js'",
-    "version-check": "node -e \"const pkg=require('./package.json'); const fs=require('fs'); const constantsPath='src/utils/Constants.js'; const constants=fs.readFileSync(constantsPath,'utf8'); const versionMatch=constants.match(/export const CARD_VERSION = [\\\"']([^\\\"']+)[\\\"']/); if(!versionMatch || pkg.version !== versionMatch[1]) { console.error('❌ Version mismatch! package.json:',pkg.version,'Constants.js:',versionMatch?versionMatch[1]:'not found'); process.exit(1); } else { console.log('✅ Versions match:',pkg.version); }\"",
-    "size-check": "npm run deploy:minified --silent && echo '📦 Final build size:' && ls -lh build/simple-swipe-card.js",
+    "version-check": "node -e \"const pkg=require('./package.json'); const fs=require('fs'); const constantsPath='src/utils/Constants.js'; const constants=fs.readFileSync(constantsPath,'utf8'); const versionMatch=constants.match(/export const CARD_VERSION = [\\\"']([^\\\"']+)[\\\"']/); if(!versionMatch || pkg.version !== versionMatch[1]) { console.error('âŒ Version mismatch! package.json:',pkg.version,'Constants.js:',versionMatch?versionMatch[1]:'not found'); process.exit(1); } else { console.log('âœ… Versions match:',pkg.version); }\"",
+    "size-check": "npm run deploy:minified --silent && echo 'ðŸ“¦ Final build size:' && ls -lh build/simple-swipe-card.js",
     "validate": "npm run version-check && npm run size-check",
     "pre-release": "npm run format && npm run lint && npm run deploy:prod && npm run validate",
-    "release": "npm run clean && npm run pre-release && npm run deploy:minified && echo '🎉 Release ready! File: build/simple-swipe-card.js'",
+    "release": "npm run clean && npm run pre-release && npm run deploy:minified && echo 'ðŸŽ‰ Release ready! File: build/simple-swipe-card.js'",
     "release:auto": "node scripts/release.js",
     "clean": "rimraf build/*.js *.map",
-    "test:build": "npm run deploy:prod && echo '✅ Production build test passed'",
+    "test:build": "npm run deploy:prod && echo 'âœ… Production build test passed'",
     "backup": "node scripts/backup.js"
   },
   "dependencies": {
