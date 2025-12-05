@@ -24,6 +24,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Visual editor support
 - Multiple loop modes
 - Support for both horizontal and vertical swiping
+- Template Support: Use Jinja2 or JavaScript templates for dynamic configuration values
 - Automatic Slideshow (Auto-Swipe):
     - Cards can cycle automatically at a user-defined interval
     - Auto-swipe intelligently pauses during manual user interaction (e.g., manual swipe, pagination click) and resumes after 5 seconds (not configurable)
@@ -148,10 +149,10 @@ This card can be configured using the visual editor or YAML.
 | `swipe_direction` | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
 | `swipe_behavior` | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
 | `enable_auto_swipe` | boolean	| false | When enabled, the card will automatically swipe between slides |
-| `auto_swipe_interval` | number | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if `enable_auto_swipe` is true |
+| `auto_swipe_interval` | number/template | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if `enable_auto_swipe` is true. Supports Jinja2 and JavaScript templates |
 | `enable_reset_after` | boolean | false | Enable automatic return to target card after inactivity |
-| `reset_after_timeout` | number | 30000 | Time in milliseconds before resetting (minimum 5000ms) |
-| `reset_target_card` | number | 1 | Index of card to use as initial card and to return to after inactivity (1 = first card). When `enable_reset_after` is true, the card will start at this position when loaded and return to it after the timeout |
+| `reset_after_timeout` | number/template | 30000 | Time in milliseconds before resetting (minimum 5000ms). Supports Jinja2 and JavaScript templates |
+| `reset_target_card` | number/template | 1 | Index of card to use as initial card and to return to after inactivity (1 = first card). Supports Jinja2 and JavaScript templates |
 | `state_entity` | string | null | Entity ID for state synchronization. Supports `input_select` and `input_number` entities |
 | `enable_backdrop_filter` | boolean | false | Enable support for CSS `backdrop-filter` effects (blur, etc.) in card-mod. When enabled, disables clip-path to allow backdrop-filter to work. Only enable if using `backdrop-filter: blur()` in card-mod CSS |
 
@@ -199,6 +200,35 @@ reset_after_timeout: 45000
 reset_target_card: 1
 state_entity: input_select.dashboard_cards
 ```
+
+## Template Support
+
+Simple Swipe Card supports both Jinja2 and JavaScript templates for dynamic configuration. Use templates to set `reset_target_card`, `reset_after_timeout`, or `auto_swipe_interval` based on entity states, time, or user context.
+
+### Jinja2 Templates
+
+Use Jinja2 syntax to create dynamic values based on entity states or time calculations:
+
+```yaml
+reset_target_card: "{{ states('sensor.your_sensor') | int }}"
+reset_after_timeout: "{{ 30000 if is_state('input_boolean.quick_mode', 'on') else 60000 }}"
+```
+
+### JavaScript Templates
+
+Use JavaScript templates for more complex logic. JavaScript templates have access to `user` (with `user.name` and `user.id`), `states` object, and `hass` object. Wrap your code in `[[[` and `]]]`:
+
+```yaml
+reset_target_card: |
+  [[[
+    if (user.name === 'Admin') {
+      return 2;
+    }
+    return 1;
+  ]]]
+```
+
+Templates are evaluated dynamically and update automatically when referenced entities change.
 
 ## State Synchronization
 
