@@ -34,10 +34,23 @@ export class StateSynchronization {
 
     // Only enable if state_entity is configured and we have a valid hass object
     if (this.card._config.state_entity && this.card._hass) {
-      this._stateEntity = this.card._config.state_entity;
+      // Check if state_entity is a template and evaluate it
+      const rawStateEntity = this.card._config.state_entity;
+      if (this.card.templateEvaluator?.isTemplate(rawStateEntity)) {
+        this._stateEntity = this.card.templateEvaluator.getEvaluatedValue(
+          "state_entity",
+          this.card._hass,
+        );
+        logDebug(
+          "STATE",
+          `Evaluated state_entity template: "${rawStateEntity}" => "${this._stateEntity}"`,
+        );
+      } else {
+        this._stateEntity = rawStateEntity;
+      }
 
       // Validate entity exists and get its type
-      if (this._validateEntity()) {
+      if (this._stateEntity && this._validateEntity()) {
         logDebug(
           "STATE",
           "State synchronization enabled for entity:",

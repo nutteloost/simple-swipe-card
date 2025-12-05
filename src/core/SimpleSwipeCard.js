@@ -1222,16 +1222,41 @@ export class SimpleSwipeCard extends LitElement {
 
     const entities = new Set();
 
-    // Add state synchronization entity
+    // Add state synchronization entity (evaluate if it's a template)
     if (this._config.state_entity) {
-      entities.add(this._config.state_entity);
+      const rawStateEntity = this._config.state_entity;
+      if (this.templateEvaluator?.isTemplate(rawStateEntity)) {
+        // Evaluate template to get actual entity ID
+        const evaluatedEntity = this.templateEvaluator.getEvaluatedValue(
+          "state_entity",
+          this._hass,
+        );
+        if (evaluatedEntity && typeof evaluatedEntity === "string") {
+          entities.add(evaluatedEntity);
+        }
+      } else {
+        entities.add(rawStateEntity);
+      }
     }
 
-    // Add entities from visibility conditions
+    // Add entities from visibility conditions and conditional card conditions
     if (this._config.cards && Array.isArray(this._config.cards)) {
       this._config.cards.forEach((cardConfig) => {
+        // Simple Swipe Card's own visibility conditions
         if (cardConfig.visibility && Array.isArray(cardConfig.visibility)) {
           cardConfig.visibility.forEach((condition) => {
+            if (condition.entity) {
+              entities.add(condition.entity);
+            }
+          });
+        }
+        // Home Assistant's native conditional card conditions
+        if (
+          cardConfig.type === "conditional" &&
+          cardConfig.conditions &&
+          Array.isArray(cardConfig.conditions)
+        ) {
+          cardConfig.conditions.forEach((condition) => {
             if (condition.entity) {
               entities.add(condition.entity);
             }
@@ -1275,11 +1300,15 @@ export class SimpleSwipeCard extends LitElement {
     // - Number of cards
     // - State entity
     // - Whether cards have visibility conditions
+    // - Whether cards are conditional type with conditions
     // - Template options
     const parts = [
       this._config.cards.length,
       this._config.state_entity || "",
       this._config.cards.filter((c) => c.visibility?.length > 0).length,
+      this._config.cards.filter(
+        (c) => c.type === "conditional" && c.conditions?.length > 0,
+      ).length,
       this.templateEvaluator?.getTemplateOptions().join(",") || "",
     ];
 

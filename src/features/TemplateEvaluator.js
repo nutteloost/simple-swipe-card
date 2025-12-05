@@ -1,6 +1,10 @@
 /**
  * Template evaluation functionality for Simple Swipe Card
  * Self-contained Jinja2-like template rendering for Home Assistant
+ *
+ * Supports two template syntaxes:
+ * 1. Jinja2-like: {{ }} or {% %} - evaluated with built-in expression parser
+ * 2. JavaScript: [[[ ]]] - evaluated client-side with access to hass.user for per-user logic
  */
 
 import { logDebug } from "../utils/Debug.js";
@@ -8,6 +12,7 @@ import { logDebug } from "../utils/Debug.js";
 /**
  * Template evaluator manager class
  * Provides lightweight Jinja2-like template evaluation for common HA patterns
+ * and JavaScript template evaluation for per-user logic
  */
 export class TemplateEvaluator {
   constructor(cardInstance) {
@@ -24,6 +29,7 @@ export class TemplateEvaluator {
       "reset_target_card",
       "auto_swipe_interval",
       "reset_after_timeout",
+      "state_entity",
     ];
   }
 
@@ -37,18 +43,36 @@ export class TemplateEvaluator {
   }
 
   /**
-   * Check if a string contains a template
+   * Check if a string contains a Jinja2 template
+   * @param {*} value - Value to check
+   * @returns {boolean} True if value contains a Jinja2 template
+   */
+  isJinjaTemplate(value) {
+    if (typeof value !== "string") return false;
+    return (
+      (value.includes("{{") && value.includes("}}")) ||
+      (value.includes("{%") && value.includes("%}"))
+    );
+  }
+
+  /**
+   * Check if a string contains a JavaScript template [[[...]]]
+   * @param {*} value - Value to check
+   * @returns {boolean} True if value contains a JS template
+   */
+  isJsTemplate(value) {
+    if (typeof value !== "string") return false;
+    return /\[{3}[\s\S]*\]{3}/.test(value);
+  }
+
+  /**
+   * Check if a string contains any template (Jinja2 or JavaScript)
    * @param {*} value - Value to check
    * @returns {boolean} True if value contains a template
    */
   isTemplate(value) {
     if (typeof value !== "string") return false;
-
-    // Check for Jinja2/Nunjucks template syntax
-    return (
-      (value.includes("{{") && value.includes("}}")) ||
-      (value.includes("{%") && value.includes("%}"))
-    );
+    return this.isJinjaTemplate(value) || this.isJsTemplate(value);
   }
 
   /**
@@ -57,6 +81,67 @@ export class TemplateEvaluator {
    */
   get isAvailable() {
     return true;
+  }
+
+  /**
+   * Evaluate a JavaScript template [[[ ... ]]]
+   * Executes the code inside the brackets with access to HA context
+   *
+   * Available variables in template:
+   * - states: Home Assistant states object
+   * - user: Current user info (id, name, is_admin, etc.)
+   * - hass: Full Home Assistant object
+   *
+   * @param {string} template - Template string with [[[ ... ]]] syntax
+   * @param {Object} hass - Home Assistant object
+   * @returns {*} Result of template evaluation
+   */
+  evalJsTemplate(template, hass) {
+    if (!this.isJsTemplate(template)) {
+      return template;
+    }
+
+    // Extract code from [[[ ... ]]]
+    const trimmed = template.trim();
+    const match = trimmed.match(/^\[{3}([\s\S]*)\]{3}$/);
+
+    if (!match) {
+      return template;
+    }
+
+    const code = match[1];
+
+    try {
+      /* eslint-disable no-new-func */
+      const result = new Function(
+        "states",
+        "user",
+        "hass",
+        `'use strict'; ${code}`,
+      )(hass.states, hass.user, hass);
+      /* eslint-enable no-new-func */
+
+      logDebug(
+        "TEMPLATE",
+        "JS Template evaluated:",
+        template.substring(0, 50) + "...",
+        "->",
+        result,
+      );
+      return result;
+    } catch (e) {
+      const templatePreview =
+        template.length <= 100
+          ? template.trim()
+          : `${template.trim().substring(0, 98)}...`;
+      logDebug(
+        "ERROR",
+        `JS Template error in '${templatePreview}':`,
+        e.message,
+      );
+      console.error("SimpleSwipeCard JS Template Error:", e);
+      return template; // Return original on error
+    }
   }
 
   /**
@@ -101,7 +186,7 @@ export class TemplateEvaluator {
   }
 
   /**
-   * Evaluate a single template value
+   * Evaluate a single template value (Jinja2 or JavaScript)
    * @param {string} template - Template string to evaluate
    * @param {Object} hass - Home Assistant object
    * @returns {*} Evaluated value or original template on error
@@ -116,6 +201,12 @@ export class TemplateEvaluator {
       return template;
     }
 
+    // Check for JavaScript template first
+    if (this.isJsTemplate(template)) {
+      return this.evalJsTemplate(template, hass);
+    }
+
+    // Handle Jinja2-like template
     try {
       // Extract the expression from {{ ... }}
       const match = template.match(/\{\{\s*(.+?)\s*\}\}/);

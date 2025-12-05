@@ -595,12 +595,35 @@ function renderResetAfterOptions(
   handleTimeoutChange,
   handleTargetChange,
 ) {
-  // Check if reset_target_card is a template
+  // Check if reset_target_card is a template (Jinja2: {{ or {% or JavaScript: [[[)
   const isTemplate =
     typeof resetTargetCard === "string" &&
-    (resetTargetCard.includes("{{") || resetTargetCard.includes("{%"));
+    (resetTargetCard.includes("{{") ||
+      resetTargetCard.includes("{%") ||
+      resetTargetCard.includes("[[["));
 
   return html`
+    <!-- Start card option - always available -->
+    <ha-textfield
+      label="Start card"
+      .value=${resetTargetCard.toString()}
+      type=${isTemplate ? "text" : "number"}
+      min=${isTemplate ? undefined : "1"}
+      max=${isTemplate ? undefined : Math.max(1, cards.length).toString()}
+      @change=${handleTargetChange}
+      ?disabled=${cards.length === 0}
+      autoValidate
+      ?required=${!isTemplate}
+    ></ha-textfield>
+    <div class="help-text">
+      ${isTemplate
+        ? html`Template: <code>${resetTargetCard}</code>`
+        : cards.length === 0
+          ? "Add cards first to set a start card."
+          : `Card to show on load (1-${cards.length})`}
+    </div>
+
+    <!-- Reset after timeout option -->
     <div class="option-row">
       <div class="option-label">Enable reset after timeout</div>
       <div class="option-control">
@@ -615,7 +638,7 @@ function renderResetAfterOptions(
     <div class="help-text">
       ${enableAutoSwipe
         ? "Disabled when auto-swipe is on"
-        : "Auto-return after inactivity"}
+        : "Auto-return to start card after inactivity"}
     </div>
 
     ${enableResetAfter && !enableAutoSwipe
@@ -635,27 +658,6 @@ function renderResetAfterOptions(
           <div class="help-text">
             Time of inactivity before resetting (5s to 1h)
           </div>
-
-          <ha-textfield
-            label="Target card"
-            .value=${resetTargetCard.toString()}
-            type=${isTemplate ? "text" : "number"}
-            min=${isTemplate ? undefined : "1"}
-            max=${isTemplate
-              ? undefined
-              : (Math.max(0, cards.length - 1) + 1).toString()}
-            @change=${handleTargetChange}
-            ?disabled=${cards.length === 0}
-            autoValidate
-            ?required=${!isTemplate}
-          ></ha-textfield>
-          <div class="help-text">
-            ${isTemplate
-              ? html`Template: <code>${resetTargetCard}</code>`
-              : cards.length === 0
-                ? "Add cards first to set a target."
-                : `Card number (1-${cards.length}) or template like {{ states('sensor.day') }}`}
-          </div>
         `
       : ""}
   `;
@@ -669,6 +671,13 @@ function renderResetAfterOptions(
  * @returns {TemplateResult} The state synchronization options template
  */
 function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
+  // Check if state_entity is a template (Jinja2: {{ or {% or JavaScript: [[[)
+  const isTemplate =
+    typeof stateEntity === "string" &&
+    (stateEntity.includes("{{") ||
+      stateEntity.includes("{%") ||
+      stateEntity.includes("[[["));
+
   // Get all input_select and input_number entities
   const inputEntities = Object.keys(hass.states || {})
     .filter(
@@ -685,6 +694,36 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
           .replace(/^(input_select\.|input_number\.)/, "")
           .replace(/_/g, " "),
     }));
+
+  // If it's a template, show a text field instead of dropdown
+  if (isTemplate) {
+    return html`
+      <div class="option-row">
+        <div class="option-left">
+          <div class="option-label">State synchronization entity</div>
+          <div class="option-help">
+            Template: dynamic entity based on user/state
+          </div>
+        </div>
+        <div class="option-control" style="flex: 1;">
+          <ha-textfield
+            .value=${stateEntity}
+            data-option="state_entity"
+            @change=${valueChanged}
+            style="width: 100%;"
+          ></ha-textfield>
+        </div>
+      </div>
+      <div class="help-text">
+        Template:
+        <code
+          >${stateEntity.length > 60
+            ? stateEntity.substring(0, 60) + "..."
+            : stateEntity}</code
+        >
+      </div>
+    `;
+  }
 
   return html`
     <div class="option-row">

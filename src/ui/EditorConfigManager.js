@@ -171,11 +171,11 @@ export class EditorConfigManager {
     if (this.editor._config.reset_target_card === undefined) {
       this.editor._config.reset_target_card = 1; // Default to first card (1-based)
     } else {
-      // Check if it's a template (contains {{ or {%)
+      // Check if it's a template (Jinja2: {{ or {% or JavaScript: [[[)
       const value = this.editor._config.reset_target_card;
       const isTemplate =
         typeof value === "string" &&
-        (value.includes("{{") || value.includes("{%"));
+        (value.includes("{{") || value.includes("{%") || value.includes("[[["));
 
       if (!isTemplate) {
         // Not a template - ensure it's a valid 1-based number
@@ -443,10 +443,10 @@ export class EditorConfigManager {
   handleTargetChange(ev) {
     const value = ev.target.value;
 
-    // Check if it's a template (contains {{ or {%)
+    // Check if it's a template (Jinja2: {{ or {% or JavaScript: [[[)
     const isTemplate =
       typeof value === "string" &&
-      (value.includes("{{") || value.includes("{%"));
+      (value.includes("{{") || value.includes("{%") || value.includes("[[["));
 
     if (isTemplate) {
       // Store template as-is
