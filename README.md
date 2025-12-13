@@ -148,6 +148,7 @@ This card can be configured using the visual editor or YAML.
 | `loop_mode` | string | 'none' | Loop behavior for navigation. Options: 'none' (stop at edges), 'loopback' (jump to start/end), 'infinite' (continuous loop) |
 | `swipe_direction` | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
 | `swipe_behavior` | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
+| `swipe_effect` | string | 'slide' | Visual transition effect. Options: 'slide', 'bounce', 'spring', 'instant', 'fade', 'flip', 'cube', 'coverflow', 'creative', 'cards', 'reveal', 'push', 'zoom', 'swing'. Advanced effects (fade through swing) only work in single mode |
 | `enable_auto_swipe` | boolean	| false | When enabled, the card will automatically swipe between slides |
 | `auto_swipe_interval` | number/template | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if `enable_auto_swipe` is true. Supports Jinja2 and JavaScript templates |
 | `enable_reset_after` | boolean | false | Enable automatic return to target card after inactivity |
@@ -169,8 +170,8 @@ This card can be configured using the visual editor or YAML.
 
 > [!NOTE]
 > **Backdrop Filter Support**: The `enable_backdrop_filter` option allows CSS `backdrop-filter` effects (blur, etc.) to work with card-mod. Due to browser limitations, `backdrop-filter` conflicts with `clip-path`, which is used for dropdown overflow. When enabled:
-> - ✅ Backdrop-filter effects work correctly
-> - ❌ Dropdown menus do not overflow card boundaries
+> - âœ… Backdrop-filter effects work correctly
+> - âŒ Dropdown menus do not overflow card boundaries
 >
 > Only enable this option if you're using `backdrop-filter: blur()` in your card-mod CSS and need it to work. The toggle is available in the Advanced Options section of the visual editor.
 

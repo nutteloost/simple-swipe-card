@@ -3,7 +3,7 @@
  */
 
 // Version management
-export const CARD_VERSION = "2.7.1";
+export const CARD_VERSION = "2.8.0";
 
 // Debug configuration - set to false for production
 export const DEBUG = true;
@@ -26,6 +26,7 @@ export const DEFAULT_CONFIG = {
   loop_mode: "none",
   swipe_direction: "horizontal",
   swipe_behavior: "single",
+  swipe_effect: "slide",
   enable_auto_swipe: false,
   auto_swipe_interval: 2000,
   enable_reset_after: false,

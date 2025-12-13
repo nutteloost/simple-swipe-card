@@ -76,14 +76,13 @@ export class LoopMode {
    * @returns {number} Number of cards to duplicate at each end
    */
   getDuplicateCount() {
-    // No duplicates needed if infinite mode is not active
-    if (!this.isInfiniteMode) {
-      return 0;
-    }
-
-    // No duplicates needed if there's only 1 visible card
+    // Calculate directly instead of relying on cached isInfiniteMode
+    // This ensures correct results even during early initialization
+    const mode = this.getMode();
     const totalVisibleCards = this.card.visibleCardIndices.length;
-    if (totalVisibleCards <= 1) {
+
+    // No duplicates needed if not infinite mode or only 1 visible card
+    if (mode !== "infinite" || totalVisibleCards <= 1) {
       return 0;
     }
 
@@ -448,7 +447,7 @@ export class LoopMode {
 
           logDebug(
             "LOOP",
-            `Performing seamless jump: virtual ${actualCurrentIndex} → real ${newIndex}`,
+            `Performing seamless jump: virtual ${actualCurrentIndex} â†’ real ${newIndex}`,
           );
 
           // Set flag to prevent interference

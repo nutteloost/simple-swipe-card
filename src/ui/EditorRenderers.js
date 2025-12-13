@@ -339,6 +339,133 @@ export function renderDisplayOptions(config, valueChanged) {
             </div>
           `}
 
+      <!-- Swipe Effect selector - only available in single view + single swipe + horizontal -->
+      ${viewMode === "single" &&
+      swipeBehavior === "single" &&
+      swipeDirection === "horizontal"
+        ? html`
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-label">Swipe effect</div>
+                <div class="option-help">Visual transition between cards</div>
+              </div>
+              <div class="option-control">
+                <ha-select
+                  .value=${config.swipe_effect || "slide"}
+                  data-option="swipe_effect"
+                  @change=${valueChanged}
+                  @closed=${(ev) => ev.stopPropagation()}
+                >
+                  <ha-list-item .value=${"slide"}>
+                    Slide
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:arrow-right"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"bounce"}>
+                    Bounce
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:arrow-oscillating"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"spring"}>
+                    Spring
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:spring"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"instant"}>
+                    Instant
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:flash"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"fade"}>
+                    Fade
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:blur"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"flip"}>
+                    Flip
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:flip-horizontal"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"coverflow"}>
+                    Coverflow
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:view-carousel"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"creative"}>
+                    Creative
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:palette"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"cards"}>
+                    Cards
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:cards"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"reveal"}>
+                    Reveal
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:compare"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"zoom"}>
+                    Zoom
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:magnify-plus-outline"
+                    ></ha-icon>
+                  </ha-list-item>
+                  <ha-list-item .value=${"swing"}>
+                    Swing
+                    <ha-icon
+                      slot="graphic"
+                      class="direction-icon"
+                      icon="mdi:door"
+                    ></ha-icon>
+                  </ha-list-item>
+                </ha-select>
+              </div>
+            </div>
+          `
+        : html`
+            <div class="option-info">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>
+                Swipe effects are only available in single view mode with single
+                swipe behavior and horizontal direction.
+              </span>
+            </div>
+          `}
+
       <div class="option-row pagination-option">
         <div class="option-label">Show pagination dots</div>
         <div class="option-control">

@@ -59,9 +59,14 @@ export function fireHAEvent(element, type, detail = {}) {
  * Gets transition CSS properties with fallbacks
  * @param {boolean} animate - Whether to apply animation
  * @param {HTMLElement} [element] - Element to get computed styles from
+ * @param {string} [customEasing] - Optional custom easing function to override default
  * @returns {string} - Transition style value
  */
-export function getTransitionStyle(animate, element = null) {
+export function getTransitionStyle(
+  animate,
+  element = null,
+  customEasing = null,
+) {
   if (!animate) return "none";
 
   // Check if user prefers reduced motion
@@ -75,7 +80,7 @@ export function getTransitionStyle(animate, element = null) {
 
   // Get computed values if connected to DOM
   let speed = "0.3s";
-  let easing = "ease-out";
+  let easing = customEasing || "ease-out";
 
   if (element && element.isConnected) {
     const computedStyle = getComputedStyle(element);
@@ -87,7 +92,8 @@ export function getTransitionStyle(animate, element = null) {
       .trim();
 
     if (speedValue) speed = speedValue;
-    if (easingValue) easing = easingValue;
+    // Only use CSS easing if no custom easing was provided
+    if (!customEasing && easingValue) easing = easingValue;
   }
 
   return `transform ${speed} ${easing}`;

@@ -513,14 +513,32 @@ export class SwipeGestures {
       const newTransform = this._initialTransform + dragAmount;
 
       if (this.card.sliderElement) {
-        // Apply transform based on swipe direction
-        if (isHorizontal) {
-          this.card.sliderElement.style.transform = `translateX(${newTransform}px)`;
-        } else {
-          this.card.sliderElement.style.transform = `translateY(${newTransform}px)`;
+        // Check if effect uses stacked mode (no slider movement)
+        const usesStackedMode = this.card.swipeEffects?.usesStackedMode();
+
+        // Apply transform based on swipe direction (skip for stacked mode)
+        if (!usesStackedMode) {
+          if (isHorizontal) {
+            this.card.sliderElement.style.transform = `translateX(${newTransform}px)`;
+          } else {
+            this.card.sliderElement.style.transform = `translateY(${newTransform}px)`;
+          }
         }
+
         // Update pagination dots to match current transform position
         this._updatePaginationDuringSwipe(newTransform);
+
+        // Apply swipe effect progress (fade, flip, zoom, etc. - only in single view + single swipe)
+        const slideSize = isHorizontal
+          ? this.card.slideWidth
+          : this.card.slideHeight;
+        if (slideSize > 0) {
+          const progress = primaryDelta / slideSize;
+          this.card.swipeEffects?.applySwipeProgress(
+            progress,
+            this.card.currentIndex,
+          );
+        }
       }
       this._lastMoveTime = currentTime;
     }

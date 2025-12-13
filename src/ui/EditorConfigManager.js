@@ -93,6 +93,27 @@ export class EditorConfigManager {
       this.editor._config.swipe_direction = "horizontal";
     }
 
+    // Set default for swipe_effect
+    if (
+      this.editor._config.swipe_effect === undefined ||
+      ![
+        "slide",
+        "bounce",
+        "spring",
+        "instant",
+        "fade",
+        "flip",
+        "coverflow",
+        "creative",
+        "cards",
+        "reveal",
+        "zoom",
+        "swing",
+      ].includes(this.editor._config.swipe_effect)
+    ) {
+      this.editor._config.swipe_effect = "slide";
+    }
+
     // Set default for swipe_behavior and validate based on loop_mode
     if (this.editor._config.swipe_behavior === undefined) {
       this.editor._config.swipe_behavior = "single";
@@ -503,6 +524,7 @@ export class EditorConfigManager {
       "card_spacing",
       "swipe_direction",
       "swipe_behavior",
+      "swipe_effect",
       "show_pagination",
       "auto_hide_pagination",
       "auto_height",
@@ -527,6 +549,7 @@ export class EditorConfigManager {
       loop_mode: "none",
       swipe_direction: "horizontal",
       swipe_behavior: "single",
+      swipe_effect: "slide",
       enable_auto_swipe: false,
       auto_swipe_interval: 2000,
       enable_reset_after: false,

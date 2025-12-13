@@ -26,6 +26,7 @@ import {
 import { CarouselView } from "../features/CarouselView.js";
 import { LoopMode } from "../features/LoopMode.js";
 import { SwipeBehavior } from "../features/SwipeBehavior.js";
+import { SwipeEffects } from "../features/SwipeEffects.js";
 import { TemplateEvaluator } from "../features/TemplateEvaluator.js";
 
 /**
@@ -74,6 +75,7 @@ export class SimpleSwipeCard extends LitElement {
     this.carouselView = new CarouselView(this);
     this.loopMode = new LoopMode(this);
     this.swipeBehavior = new SwipeBehavior(this);
+    this.swipeEffects = new SwipeEffects(this);
     this.autoHeight = new AutoHeight(this);
     this.templateEvaluator = new TemplateEvaluator(this);
 
@@ -232,6 +234,27 @@ export class SimpleSwipeCard extends LitElement {
       !["horizontal", "vertical"].includes(this._config.swipe_direction)
     ) {
       this._config.swipe_direction = "horizontal";
+    }
+
+    // Set default for swipe_effect
+    if (
+      this._config.swipe_effect === undefined ||
+      ![
+        "slide",
+        "bounce",
+        "spring",
+        "instant",
+        "fade",
+        "flip",
+        "coverflow",
+        "creative",
+        "cards",
+        "reveal",
+        "zoom",
+        "swing",
+      ].includes(this._config.swipe_effect)
+    ) {
+      this._config.swipe_effect = "slide";
     }
 
     // After setting swipe direction, check for grid options
@@ -1918,7 +1941,14 @@ export class SimpleSwipeCard extends LitElement {
    * @returns {string} - Transition style value
    */
   _getTransitionStyle(animate) {
-    return getTransitionStyle(animate, this);
+    // Check for instant effect (duration: 0)
+    const customDuration = this.swipeEffects?.getCustomDuration();
+    if (customDuration === 0) {
+      return "none";
+    }
+
+    const effectEasing = this.swipeEffects?.getEasing();
+    return getTransitionStyle(animate, this, effectEasing);
   }
 
   /**
@@ -2197,6 +2227,9 @@ export class SimpleSwipeCard extends LitElement {
 
       this.carouselView.updateSliderPosition(this.currentIndex, animate);
 
+      // Apply swipe effect (e.g., fade)
+      this.swipeEffects?.applyEffect(this.currentIndex, animate);
+
       // Simple pagination update - no complex animation
       this.pagination.update(animate);
 
@@ -2280,7 +2313,11 @@ export class SimpleSwipeCard extends LitElement {
     }
 
     // Apply transform based on swipe direction
-    if (isHorizontal) {
+    // For stacked mode effects, keep slider at position 0
+    const stackedTransform = this.swipeEffects?.getSliderTransform(animate);
+    if (stackedTransform) {
+      this.sliderElement.style.transform = stackedTransform;
+    } else if (isHorizontal) {
       this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
     } else {
       this.sliderElement.style.transform = `translateY(-${translateAmount}px)`;
@@ -2342,6 +2379,9 @@ export class SimpleSwipeCard extends LitElement {
       "SWIPE",
       `Slider updated, DOM position: ${domPosition}, transform: -${translateAmount}px along ${isHorizontal ? "X" : "Y"} axis`,
     );
+
+    // Apply swipe effect (fade, flip, zoom, etc.)
+    this.swipeEffects?.applyEffect(this.currentIndex, animate);
 
     // Schedule seamless jump for infinite mode with proper timing
     // Only schedule if we're animating and have a valid duration

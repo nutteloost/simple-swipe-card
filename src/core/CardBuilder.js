@@ -89,6 +89,7 @@ export class CardBuilder {
     this.card.swipeGestures?.removeGestures();
     this.card.autoSwipe?.stop();
     this.card.resetAfter?.stopTimer();
+    this.card.swipeEffects?.resetEffects();
 
     // Wait for LitElement to create shadowRoot if not yet available
     if (!this.card.shadowRoot) {
@@ -1512,7 +1513,7 @@ export class CardBuilder {
           // Dimensions changed - reset stable count
           logDebug(
             "INIT",
-            `Dimensions changed: width${widthDiff}px, height ${heightDiff}px (resetting stability counter)`,
+            `Dimensions changed: widthÂ${widthDiff}px, height ${heightDiff}px (resetting stability counter)`,
           );
           stableCount = 0;
         }
@@ -1607,6 +1608,9 @@ export class CardBuilder {
       if (this.card.sliderElement) {
         this.card.sliderElement.style.transition = "";
         logDebug("INIT", "Fade-in complete, card fully initialized");
+
+        // Initialize swipe effects AFTER slider is visible (e.g., fade effect needs initial opacity)
+        this.card.swipeEffects?.initialize();
       }
     }, 150);
   }
@@ -2288,6 +2292,18 @@ export class CardBuilder {
         cardData.slide.setAttribute("data-card-type", cardData.config.type);
       }
 
+      // For stacked mode: hide slide BEFORE inserting into DOM to prevent flicker
+      // The slide will be made visible with proper transforms after insertion
+      if (this.card.swipeEffects?.usesStackedMode()) {
+        cardData.slide.style.position = "absolute";
+        cardData.slide.style.top = "0";
+        cardData.slide.style.left = "0";
+        cardData.slide.style.width = "100%";
+        cardData.slide.style.height = "100%";
+        cardData.slide.style.opacity = "0";
+        cardData.slide.style.zIndex = "0";
+      }
+
       const existingSlides = Array.from(this.card.sliderElement.children);
       let insertPosition = existingSlides.length;
 
@@ -2307,6 +2323,18 @@ export class CardBuilder {
         this.card.sliderElement.insertBefore(
           cardData.slide,
           existingSlides[insertPosition],
+        );
+      }
+
+      // Apply stacked transforms to newly inserted slides if effects are initialized
+      // This ensures cards loaded in later batches get proper positioning
+      if (this.card.swipeEffects?.usesStackedMode()) {
+        const domIndex = Array.from(this.card.sliderElement.children).indexOf(
+          cardData.slide,
+        );
+        this.card.swipeEffects.applyStackedTransformToNewSlide(
+          cardData.slide,
+          domIndex,
         );
       }
 
@@ -2344,9 +2372,12 @@ export class CardBuilder {
         tagName === "grid-layout" ||
         tagName === "hui-masonry-view"
       ) {
-        logDebug("INIT", `âœ… DETECTED PARENT LAYOUT CONTAINER: ${tagName}`);
+        logDebug(
+          "INIT",
+          `Ã¢Å“â€¦ DETECTED PARENT LAYOUT CONTAINER: ${tagName}`,
+        );
         console.log(
-          `SimpleSwipeCard: ✅ MASONRY/LAYOUT DETECTED`,
+          `SimpleSwipeCard: âœ… MASONRY/LAYOUT DETECTED`,
           "background: #4caf50; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;",
           `Parent container: ${tagName}`,
         );
