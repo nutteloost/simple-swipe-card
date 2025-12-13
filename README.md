@@ -170,8 +170,8 @@ This card can be configured using the visual editor or YAML.
 
 > [!NOTE]
 > **Backdrop Filter Support**: The `enable_backdrop_filter` option allows CSS `backdrop-filter` effects (blur, etc.) to work with card-mod. Due to browser limitations, `backdrop-filter` conflicts with `clip-path`, which is used for dropdown overflow. When enabled:
-> - âœ… Backdrop-filter effects work correctly
-> - âŒ Dropdown menus do not overflow card boundaries
+> - ✅ Backdrop-filter effects work correctly
+> - ❌ Dropdown menus do not overflow card boundaries
 >
 > Only enable this option if you're using `backdrop-filter: blur()` in your card-mod CSS and need it to work. The toggle is available in the Advanced Options section of the visual editor.
 
