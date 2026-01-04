@@ -159,6 +159,12 @@ export class AutoSwipe {
       return;
     }
 
+    // Skip if seamless jump is in progress (prevents race condition on slow devices)
+    if (this.card._performingSeamlessJump) {
+      logDebug("AUTO", "Skipping auto-swipe: seamless jump in progress");
+      return;
+    }
+
     // Throttle logging - only log every 10 seconds or on direction change
     const now = Date.now();
     let shouldLog = now - this._lastLogTime > 10000; // 10 seconds

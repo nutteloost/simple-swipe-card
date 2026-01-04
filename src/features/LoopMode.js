@@ -525,7 +525,8 @@ export class LoopMode {
     }
 
     // Fallback timeout in case transitionend doesn't fire
-    const bufferTime = Math.min(100, transitionDuration * 0.1);
+    // Use larger buffer for slow devices - at least 100ms or 20% of duration
+    const bufferTime = Math.max(100, transitionDuration * 0.2);
     const totalWaitTime = transitionDuration + bufferTime;
 
     this._pendingSeamlessJump = setTimeout(() => {

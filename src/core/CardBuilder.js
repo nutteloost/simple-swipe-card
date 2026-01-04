@@ -1753,7 +1753,7 @@ export class CardBuilder {
     if (!containerWidth) return;
 
     logDebug("INIT", "Recalculating carousel layout after card-mod");
-    this._setupCarouselLayout(containerWidth);
+    this._setupCarouselLayoutWithValidation(containerWidth);
 
     // Update the slider position with new dimensions
     this.card.updateSlider(false);

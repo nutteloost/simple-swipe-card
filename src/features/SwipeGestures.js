@@ -476,8 +476,17 @@ export class SwipeGestures {
         `${isHorizontal ? "Horizontal" : "Vertical"} move detected`,
       );
 
-      // Prevent default browser behavior for mouse events during valid swipe gestures**
+      // Prevent default browser behavior during valid swipe gestures
+      // For mouse events: always prevent default
+      // For touch events: prevent default when horizontal movement exceeds vertical
+      // This locks vertical page scrolling during horizontal card swipes
       if (!isTouch) {
+        e.preventDefault();
+      } else if (
+        Math.abs(primaryDelta) > Math.abs(secondaryDelta) &&
+        Math.abs(primaryDelta) > 10
+      ) {
+        // Touch event: lock vertical scroll when horizontal swipe intent is clear
         e.preventDefault();
       }
 
@@ -691,7 +700,7 @@ export class SwipeGestures {
 
         logDebug(
           "SWIPE",
-          `Swipe resulted in navigation: ${this.card.currentIndex} → ${nextIndex} (${loopMode} mode, ${swipeBehavior} behavior, skip: ${skipCount})`,
+          `Swipe resulted in navigation: ${this.card.currentIndex} ${nextIndex} (${loopMode} mode, ${swipeBehavior} behavior, skip: ${skipCount})`,
         );
       } else {
         logDebug("SWIPE", `Swipe threshold NOT crossed:`, {
