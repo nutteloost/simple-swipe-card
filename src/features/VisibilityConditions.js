@@ -230,6 +230,72 @@ function evaluateSingleCondition(condition, hass) {
       return true;
     }
 
+    case "time": {
+      // Time-based visibility conditions
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+
+      // Check weekdays if specified
+      if (
+        condition.weekdays &&
+        Array.isArray(condition.weekdays) &&
+        condition.weekdays.length > 0
+      ) {
+        const weekdayMap = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+        const currentWeekday = weekdayMap[now.getDay()];
+        if (!condition.weekdays.includes(currentWeekday)) {
+          logDebug(
+            "VISIBILITY",
+            `Time condition: weekday ${currentWeekday} not in ${condition.weekdays}, result: false`,
+          );
+          return false;
+        }
+      }
+
+      // Parse time string (HH:MM or HH:MM:SS) to minutes since midnight
+      const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr) return null;
+        const parts = timeStr.split(":");
+        if (parts.length < 2) return null;
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        if (isNaN(hours) || isNaN(minutes)) return null;
+        return hours * 60 + minutes;
+      };
+
+      const afterMinutes = parseTimeToMinutes(condition.after);
+      const beforeMinutes = parseTimeToMinutes(condition.before);
+
+      // At least one of after or before must be specified
+      if (afterMinutes === null && beforeMinutes === null) {
+        logDebug("VISIBILITY", "Time condition: no after or before specified");
+        return true;
+      }
+
+      let result = true;
+
+      // Handle time ranges that may span midnight
+      if (afterMinutes !== null && beforeMinutes !== null) {
+        if (afterMinutes < beforeMinutes) {
+          // Normal range (e.g., 08:00 to 17:00)
+          result = currentTime >= afterMinutes && currentTime < beforeMinutes;
+        } else {
+          // Range spans midnight (e.g., 22:00 to 06:00)
+          result = currentTime >= afterMinutes || currentTime < beforeMinutes;
+        }
+      } else if (afterMinutes !== null) {
+        result = currentTime >= afterMinutes;
+      } else if (beforeMinutes !== null) {
+        result = currentTime < beforeMinutes;
+      }
+
+      logDebug(
+        "VISIBILITY",
+        `Time condition: current=${Math.floor(currentTime / 60)}:${currentTime % 60}, after=${condition.after}, before=${condition.before}, result: ${result}`,
+      );
+      return result;
+    }
+
     default:
       logDebug("VISIBILITY", `Unknown condition type: ${conditionType}`);
       return true; // Unknown conditions default to visible

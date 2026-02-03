@@ -1,42 +1,42 @@
-import { ensureDependencies, getHelpers } from "./core/Dependencies.js";
+import { getHelpers } from "./core/Dependencies.js";
 import { SimpleSwipeCard } from "./core/SimpleSwipeCard.js";
 import { SimpleSwipeCardEditor } from "./core/SimpleSwipeCardEditor.js";
 import { CARD_VERSION } from "./utils/Constants.js";
 import { logDebug } from "./utils/Debug.js";
 
 /**
- * Initialize the card after dependencies are loaded
+ * CRITICAL: Register custom elements IMMEDIATELY and SYNCHRONOUSLY
+ * This prevents race conditions where auto-entities or card-mod try to create
+ * a simple-swipe-card before it's registered.
+ *
+ * The registration MUST happen at module load time, not after any async operations.
  */
-async function initializeCard() {
-  try {
-    // Ensure all dependencies are loaded
-    await ensureDependencies();
+console.log(
+  "SimpleSwipeCard: Module loading, registering custom elements synchronously...",
+);
 
-    logDebug("SYSTEM", "Dependencies loaded, registering components");
-
-    // Register the custom elements
-    if (!customElements.get("simple-swipe-card")) {
-      customElements.define("simple-swipe-card", SimpleSwipeCard);
-      logDebug("SYSTEM", "SimpleSwipeCard component registered");
-    }
-
-    if (!customElements.get("simple-swipe-card-editor")) {
-      customElements.define("simple-swipe-card-editor", SimpleSwipeCardEditor);
-      logDebug("SYSTEM", "SimpleSwipeCardEditor component registered");
-    }
-
-    // Register with Home Assistant
-    registerWithHomeAssistant();
-
-    // Display version information
-    displayVersionInfo();
-  } catch (error) {
-    console.error("SimpleSwipeCard: Failed to initialize:", error);
+// Register custom elements IMMEDIATELY - no async, no promises, no waiting
+try {
+  if (!customElements.get("simple-swipe-card")) {
+    customElements.define("simple-swipe-card", SimpleSwipeCard);
+    console.log("SimpleSwipeCard: simple-swipe-card element registered");
+    logDebug("SYSTEM", "SimpleSwipeCard component registered (synchronous)");
   }
+
+  if (!customElements.get("simple-swipe-card-editor")) {
+    customElements.define("simple-swipe-card-editor", SimpleSwipeCardEditor);
+    console.log("SimpleSwipeCard: simple-swipe-card-editor element registered");
+    logDebug(
+      "SYSTEM",
+      "SimpleSwipeCardEditor component registered (synchronous)",
+    );
+  }
+} catch (error) {
+  console.error("SimpleSwipeCard: Failed to register custom elements:", error);
 }
 
 /**
- * Registers the card with Home Assistant
+ * Registers the card with Home Assistant's customCards registry
  */
 function registerWithHomeAssistant() {
   const cardInfo = {
@@ -47,10 +47,12 @@ function registerWithHomeAssistant() {
       "A swipeable container for multiple cards with touch and mouse gesture support, visibility conditions, and reset after timeout.",
   };
 
-  if (
-    window.customCards &&
-    !window.customCards.some((card) => card.type === "simple-swipe-card")
-  ) {
+  // Ensure window.customCards exists
+  if (!window.customCards) {
+    window.customCards = [];
+  }
+
+  if (!window.customCards.some((card) => card.type === "simple-swipe-card")) {
     window.customCards.push(cardInfo);
     logDebug(
       "SYSTEM",
@@ -71,48 +73,53 @@ function displayVersionInfo() {
 }
 
 /**
- * Initialize based on loading state
+ * Initialize additional features after registration
+ * This is called asynchronously but the critical registration is already done
  */
-function initialize() {
-  if (getHelpers()) {
-    // Card helpers are available, initialize with them
-    getHelpers()
+function initializeAsync() {
+  // Register with Home Assistant's customCards registry
+  registerWithHomeAssistant();
+
+  // Display version information
+  displayVersionInfo();
+
+  // Pre-load card helpers in the background (optional, for performance)
+  const helpers = getHelpers();
+  if (helpers && typeof helpers.then === "function") {
+    helpers
       .then(() => {
-        registerWithHomeAssistant();
-        initializeCard();
+        logDebug("SYSTEM", "Card helpers pre-loaded successfully");
       })
-      .catch((e) => {
-        console.error("SimpleSwipeCard: Error waiting for Card Helpers:", e);
-        // Fallback initialization
-        initializeCard();
+      .catch(() => {
+        // Ignore errors - helpers will be loaded on demand
       });
-  } else if (window.customCards) {
-    // customCards registry exists, register and initialize
-    registerWithHomeAssistant();
-    initializeCard();
-  } else {
-    // Wait for window load event as fallback
-    if (document.readyState === "loading") {
-      window.addEventListener(
-        "load",
-        () => {
-          registerWithHomeAssistant();
-          initializeCard();
-        },
-        { once: true },
-      );
-    } else {
-      // Document already loaded
-      setTimeout(() => {
-        registerWithHomeAssistant();
-        initializeCard();
-      }, 100);
-    }
   }
 }
 
-// Start initialization
-initialize();
+// Run async initialization
+// Use multiple strategies to ensure it runs
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeAsync, {
+    once: true,
+  });
+} else {
+  // Document already loaded, run immediately
+  initializeAsync();
+}
+
+// Also register on window load as a fallback
+window.addEventListener(
+  "load",
+  () => {
+    // Double-check registration in case something went wrong
+    if (
+      !window.customCards?.some((card) => card.type === "simple-swipe-card")
+    ) {
+      registerWithHomeAssistant();
+    }
+  },
+  { once: true },
+);
 
 // Export components for potential external use
 export { SimpleSwipeCard, SimpleSwipeCardEditor };

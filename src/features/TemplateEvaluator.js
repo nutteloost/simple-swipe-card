@@ -237,6 +237,12 @@ export class TemplateEvaluator {
    * @private
    */
   _evaluateExpression(expression, hass) {
+    // Check for Jinja2 conditional expression: VALUE if CONDITION else VALUE
+    // Must check this BEFORE splitting by pipes
+    if (this._isConditionalExpression(expression)) {
+      return this._evaluateConditional(expression, hass);
+    }
+
     // Handle filters (pipe character)
     const parts = expression.split("|").map((p) => p.trim());
     let value = this._evaluateBaseExpression(parts[0], hass);
@@ -247,6 +253,130 @@ export class TemplateEvaluator {
     }
 
     return value;
+  }
+
+  /**
+   * Check if expression is a Jinja2 conditional (ternary) expression
+   * Pattern: VALUE if CONDITION else VALUE
+   * @param {string} expression - Expression to check
+   * @returns {boolean} True if conditional expression
+   * @private
+   */
+  _isConditionalExpression(expression) {
+    // Match pattern: something "if" something "else" something
+    // Use word boundaries to avoid matching "if" inside words
+    return /\sif\s/.test(expression) && /\selse\s/.test(expression);
+  }
+
+  /**
+   * Evaluate a Jinja2 conditional expression
+   * Pattern: VALUE if CONDITION else VALUE
+   * @param {string} expression - Conditional expression
+   * @param {Object} hass - Home Assistant object
+   * @returns {*} Evaluated result
+   * @private
+   */
+  _evaluateConditional(expression, hass) {
+    // Parse: true_value if condition else false_value
+    // Regex captures: (true_value) if (condition) else (false_value)
+    const match = expression.match(/^(.+?)\s+if\s+(.+?)\s+else\s+(.+)$/);
+
+    if (!match) {
+      logDebug(
+        "TEMPLATE",
+        "Failed to parse conditional expression:",
+        expression,
+      );
+      return expression;
+    }
+
+    const trueValue = match[1].trim();
+    const condition = match[2].trim();
+    const falseValue = match[3].trim();
+
+    logDebug("TEMPLATE", "Conditional parsed:", {
+      trueValue,
+      condition,
+      falseValue,
+    });
+
+    // Evaluate the condition
+    const conditionResult = this._evaluateCondition(condition, hass);
+
+    logDebug("TEMPLATE", "Condition evaluated to:", conditionResult);
+
+    // Return appropriate value based on condition
+    if (conditionResult) {
+      return this._evaluateExpression(trueValue, hass);
+    } else {
+      return this._evaluateExpression(falseValue, hass);
+    }
+  }
+
+  /**
+   * Evaluate a condition (may include comparison operators)
+   * @param {string} condition - Condition to evaluate
+   * @param {Object} hass - Home Assistant object
+   * @returns {boolean} Result of condition evaluation
+   * @private
+   */
+  _evaluateCondition(condition, hass) {
+    // Check for comparison operators: >=, <=, ==, !=, >, <
+    // Order matters - check two-char operators first
+    const comparisonOperators = [">=", "<=", "==", "!=", ">", "<"];
+
+    for (const op of comparisonOperators) {
+      const opIndex = condition.indexOf(op);
+      if (opIndex !== -1) {
+        const leftExpr = condition.substring(0, opIndex).trim();
+        const rightExpr = condition.substring(opIndex + op.length).trim();
+
+        // Evaluate both sides
+        const leftValue = this._evaluateExpression(leftExpr, hass);
+        const rightValue = this._evaluateExpression(rightExpr, hass);
+
+        // Convert to numbers for comparison if possible
+        const leftNum = parseFloat(leftValue);
+        const rightNum = parseFloat(rightValue);
+
+        const useNumeric = !isNaN(leftNum) && !isNaN(rightNum);
+
+        logDebug(
+          "TEMPLATE",
+          `Comparing: ${leftValue} ${op} ${rightValue} (numeric: ${useNumeric})`,
+        );
+
+        switch (op) {
+          case ">=":
+            return useNumeric ? leftNum >= rightNum : leftValue >= rightValue;
+          case "<=":
+            return useNumeric ? leftNum <= rightNum : leftValue <= rightValue;
+          case "==":
+            // eslint-disable-next-line eqeqeq
+            return useNumeric ? leftNum == rightNum : leftValue == rightValue;
+          case "!=":
+            // eslint-disable-next-line eqeqeq
+            return useNumeric ? leftNum != rightNum : leftValue != rightValue;
+          case ">":
+            return useNumeric ? leftNum > rightNum : leftValue > rightValue;
+          case "<":
+            return useNumeric ? leftNum < rightNum : leftValue < rightValue;
+        }
+      }
+    }
+
+    // No comparison operator - evaluate as truthy/falsy
+    const value = this._evaluateExpression(condition, hass);
+
+    // Handle common falsy values
+    if (value === "off" || value === "unavailable" || value === "unknown") {
+      return false;
+    }
+    if (value === "on") {
+      return true;
+    }
+
+    return Boolean(value);
   }
 
   /**
@@ -312,6 +442,12 @@ export class TemplateEvaluator {
     // Handle simple numbers
     if (/^\d+$/.test(expression)) {
       return parseInt(expression, 10);
+    }
+
+    // Handle string literals (quoted strings like 'value' or "value")
+    const stringLiteralMatch = expression.match(/^(['"])(.*)(\1)$/);
+    if (stringLiteralMatch) {
+      return stringLiteralMatch[2]; // Return the unquoted string
     }
 
     // Return as-is if we can't parse it

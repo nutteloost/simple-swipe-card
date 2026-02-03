@@ -21,6 +21,38 @@ export class CardBuilder {
   }
 
   /**
+   * Checks if the card is currently in the Lovelace editor
+   * @returns {boolean} True if in editor mode
+   */
+  _isInEditorMode() {
+    // Check if card is inside hui-card-preview (editor preview)
+    let parent = this.card.parentElement;
+    while (parent) {
+      const tagName = parent.tagName?.toLowerCase();
+      if (
+        tagName === "hui-card-preview" ||
+        tagName === "hui-card-editor" ||
+        tagName === "hui-dialog-edit-card"
+      ) {
+        return true;
+      }
+      // Also check shadow DOM hosts
+      if (parent.getRootNode()?.host) {
+        const hostTag = parent.getRootNode().host.tagName?.toLowerCase();
+        if (
+          hostTag === "hui-card-preview" ||
+          hostTag === "hui-card-editor" ||
+          hostTag === "hui-dialog-edit-card"
+        ) {
+          return true;
+        }
+      }
+      parent = parent.parentElement;
+    }
+    return false;
+  }
+
+  /**
    * Builds or rebuilds the entire card
    * @returns {Promise<boolean>} True if build succeeded, false if skipped
    */
@@ -110,6 +142,19 @@ export class CardBuilder {
     logDebug("INIT", "Building with shadowRoot:", !!root);
 
     const helpers = await getHelpers();
+
+    // CRITICAL: Check if card was disconnected while waiting for helpers
+    // This prevents building in a disconnected state which causes the card to never display
+    if (!this.card.isConnected) {
+      logDebug(
+        "INIT",
+        "Card disconnected while waiting for helpers, aborting build",
+      );
+      this.card.building = false;
+      this.card.initialized = false;
+      return false;
+    }
+
     if (!helpers) {
       console.error("SimpleSwipeCard: Card helpers not loaded.");
       root.innerHTML = `<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>`;
@@ -145,23 +190,36 @@ export class CardBuilder {
     // Update visible card indices
     this.card._updateVisibleCardIndices();
 
-    // Handle empty state (PREVIEW) - only for completely empty config
+    // Handle empty state - show preview only in editor mode
     if (this.card._config.cards.length === 0) {
-      logDebug("INIT", "Building preview state.");
-      const previewContainer = createPreviewContainer(
-        this.card._swipeDirection,
-        (e) => handleEditClick(e, this.card),
-      );
+      const isInEditor = this._isInEditorMode();
+      logDebug("INIT", `No cards configured, editor mode: ${isInEditor}`);
 
-      // Append the preview directly to the shadow root, not inside the slider
-      root.innerHTML = ""; // Clear previous content (including styles)
-      root.appendChild(style); // Re-add styles
-      root.appendChild(previewContainer);
+      if (isInEditor) {
+        // In editor mode: show the preview with "Edit Card" button
+        logDebug("INIT", "Building preview state for editor.");
+        const previewContainer = createPreviewContainer(
+          this.card._swipeDirection,
+          (e) => handleEditClick(e, this.card),
+        );
+
+        // Append the preview directly to the shadow root, not inside the slider
+        root.innerHTML = ""; // Clear previous content (including styles)
+        root.appendChild(style); // Re-add styles
+        root.appendChild(previewContainer);
+      } else {
+        // Not in editor mode: show nothing (empty card)
+        // This prevents the "flash of preview" when auto-entities is loading
+        logDebug("INIT", "No cards and not in editor - showing empty state.");
+        root.innerHTML = ""; // Clear any previous content
+        root.appendChild(style); // Keep styles for when cards arrive
+        // Don't show preview - just wait for cards to be populated
+      }
 
       this.card.initialized = true;
       this.card.building = false;
-      // No layout finish needed for preview
-      return true; // Preview is a successful build
+      // No layout finish needed for empty/preview state
+      return true; // Successfully handled empty state
     }
 
     // Handle case where no cards are visible - COMPLETELY HIDE THE CARD
@@ -1244,6 +1302,12 @@ export class CardBuilder {
           "SimpleSwipeCard: Carousel layout calculation produced invalid dimensions",
         );
       }
+    } else {
+      // For single mode, set the slide width CSS variable for proper slide sizing
+      this.card.style.setProperty(
+        "--single-slide-width",
+        `${this.card.slideWidth}px`,
+      );
     }
 
     const totalVisibleCards = this.card.visibleCardIndices.length;
@@ -1298,6 +1362,21 @@ export class CardBuilder {
         "INIT",
         "Skipping border radius application - container no longer valid",
       );
+    }
+
+    // For single mode, set inline widths on slides to ensure proper sizing
+    // CSS variables alone may not work reliably across all browsers
+    if (viewMode !== "carousel" && this.card.sliderElement) {
+      const slideWidth = this.card.slideWidth;
+      const slides = this.card.sliderElement.querySelectorAll(
+        ".slide:not(.carousel-mode)",
+      );
+      slides.forEach((slide) => {
+        slide.style.width = `${slideWidth}px`;
+        slide.style.minWidth = `${slideWidth}px`;
+        slide.style.flexBasis = `${slideWidth}px`;
+      });
+      logDebug("INIT", "Set single mode slide widths:", slideWidth);
     }
 
     this.card.updateSlider(false);
@@ -1591,10 +1670,23 @@ export class CardBuilder {
       this.card.slideHeight = finalHeight;
       this.card.updateSlider(false);
 
-      // Re-calculate carousel layout if needed
+      // Re-calculate carousel/single mode layout if needed
       const viewMode = this.card._config.view_mode || "single";
       if (viewMode === "carousel") {
         this._setupCarouselLayoutWithValidation(finalWidth);
+      } else {
+        // Update single slide width CSS variable and inline styles
+        this.card.style.setProperty("--single-slide-width", `${finalWidth}px`);
+        if (this.card.sliderElement) {
+          const slides = this.card.sliderElement.querySelectorAll(
+            ".slide:not(.carousel-mode)",
+          );
+          slides.forEach((slide) => {
+            slide.style.width = `${finalWidth}px`;
+            slide.style.minWidth = `${finalWidth}px`;
+            slide.style.flexBasis = `${finalWidth}px`;
+          });
+        }
       }
     }
 
@@ -1743,7 +1835,7 @@ export class CardBuilder {
   }
 
   /**
-   * Recalculates carousel layout (called after card-mod applies styles)
+   * Recalculates carousel layout (called on resize or after card-mod applies styles)
    */
   recalculateCarouselLayout() {
     const viewMode = this.card._config.view_mode || "single";
@@ -1752,7 +1844,7 @@ export class CardBuilder {
     const containerWidth = this.card.cardContainer?.offsetWidth;
     if (!containerWidth) return;
 
-    logDebug("INIT", "Recalculating carousel layout after card-mod");
+    logDebug("INIT", "Recalculating carousel layout (resize or card-mod)");
     this._setupCarouselLayoutWithValidation(containerWidth);
 
     // Update the slider position with new dimensions
@@ -1798,22 +1890,34 @@ export class CardBuilder {
       cardWidth: cardWidth.toFixed(2),
     });
 
-    // Only set CSS custom property if not already overridden by card-mod
-    const existingWidth = getComputedStyle(this.card)
+    // Only set CSS custom property if not overridden by card-mod (external CSS)
+    // Check inline style vs computed style to distinguish our value from card-mod
+    const inlineWidth = this.card.style
       .getPropertyValue("--carousel-card-width")
       .trim();
-    if (!existingWidth || existingWidth === "" || existingWidth === "auto") {
+    const computedWidth = getComputedStyle(this.card)
+      .getPropertyValue("--carousel-card-width")
+      .trim();
+
+    // If computed has value but inline is empty, card-mod set it via CSS - don't override
+    const isCardModOverride =
+      !inlineWidth &&
+      computedWidth &&
+      computedWidth !== "" &&
+      computedWidth !== "auto";
+
+    if (isCardModOverride) {
+      logDebug(
+        "INIT",
+        "Skipping CSS variable set - overridden by card-mod:",
+        computedWidth,
+      );
+    } else {
       this.card.style.setProperty("--carousel-card-width", `${cardWidth}px`);
       logDebug(
         "INIT",
         "Set --carousel-card-width to calculated value:",
         `${cardWidth}px`,
-      );
-    } else {
-      logDebug(
-        "INIT",
-        "Skipping CSS variable set - already overridden:",
-        existingWidth,
       );
     }
 

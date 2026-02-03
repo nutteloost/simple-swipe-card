@@ -35,67 +35,75 @@ import { TemplateEvaluator } from "../features/TemplateEvaluator.js";
  */
 export class SimpleSwipeCard extends LitElement {
   constructor() {
-    super();
+    logDebug("INIT", "SimpleSwipeCard Constructor starting...");
 
-    logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
+    try {
+      super();
 
-    this._config = {};
-    this._hass = null;
-    this.cards = [];
-    this.visibleCardIndices = []; // Track which cards are currently visible
-    this.currentIndex = 0;
-    this.slideWidth = 0;
-    this.slideHeight = 0;
-    this.cardContainer = null;
-    this.sliderElement = null;
-    this.initialized = false;
-    this.building = false;
-    this.resizeObserver = null;
-    this._swipeDirection = "horizontal";
+      logDebug("INIT", "SimpleSwipeCard Constructor invoked.");
 
-    // Pagination animation tracking
-    this._previousIndex = undefined;
-    this._previousWrappedIndex = undefined;
+      this._config = {};
+      this._hass = null;
+      this.cards = [];
+      this.visibleCardIndices = []; // Track which cards are currently visible
+      this.currentIndex = 0;
+      this.slideWidth = 0;
+      this.slideHeight = 0;
+      this.cardContainer = null;
+      this.sliderElement = null;
+      this.initialized = false;
+      this.building = false;
+      this.resizeObserver = null;
+      this._swipeDirection = "horizontal";
 
-    // Card-mod support
-    this._cardModConfig = null;
-    this._cardModObserver = null;
+      // Pagination animation tracking
+      this._previousIndex = undefined;
+      this._previousWrappedIndex = undefined;
 
-    // UPDATED: Cache for OUR relevant entities (visibility/state sync only)
-    this._cachedOurRelevantEntities = null;
-    this._cachedConfigHash = null;
+      // Card-mod support
+      this._cardModConfig = null;
+      this._cardModObserver = null;
 
-    // Initialize feature managers
-    this.swipeGestures = new SwipeGestures(this);
-    this.autoSwipe = new AutoSwipe(this);
-    this.resetAfter = new ResetAfter(this);
-    this.pagination = new Pagination(this);
-    this.cardBuilder = new CardBuilder(this);
-    this.stateSynchronization = new StateSynchronization(this);
-    this.carouselView = new CarouselView(this);
-    this.loopMode = new LoopMode(this);
-    this.swipeBehavior = new SwipeBehavior(this);
-    this.swipeEffects = new SwipeEffects(this);
-    this.autoHeight = new AutoHeight(this);
-    this.templateEvaluator = new TemplateEvaluator(this);
+      // UPDATED: Cache for OUR relevant entities (visibility/state sync only)
+      this._cachedOurRelevantEntities = null;
+      this._cachedConfigHash = null;
 
-    // Child card visibility observer (for cards like bubble-card that manage their own visibility)
-    this._childVisibilityObserver = null;
-    this._childVisibilityDebounce = null;
+      // Initialize feature managers
+      this.swipeGestures = new SwipeGestures(this);
+      this.autoSwipe = new AutoSwipe(this);
+      this.resetAfter = new ResetAfter(this);
+      this.pagination = new Pagination(this);
+      this.cardBuilder = new CardBuilder(this);
+      this.stateSynchronization = new StateSynchronization(this);
+      this.carouselView = new CarouselView(this);
+      this.loopMode = new LoopMode(this);
+      this.swipeBehavior = new SwipeBehavior(this);
+      this.swipeEffects = new SwipeEffects(this);
+      this.autoHeight = new AutoHeight(this);
+      this.templateEvaluator = new TemplateEvaluator(this);
 
-    // Input focus tracking for auto-swipe pause
-    this._inputFocusListener = null;
-    this._inputBlurListener = null;
+      // Child card visibility observer (for cards like bubble-card that manage their own visibility)
+      this._childVisibilityObserver = null;
+      this._childVisibilityDebounce = null;
 
-    // Initialize global dialog stack for picture-elements card support
-    initializeGlobalDialogStack();
+      // Input focus tracking for auto-swipe pause
+      this._inputFocusListener = null;
+      this._inputBlurListener = null;
 
-    // Bind event handlers
-    this._handleConfigChanged = this._handleConfigChanged.bind(this);
-    this._handleInputFocus = this._handleInputFocus.bind(this);
-    this._handleInputBlur = this._handleInputBlur.bind(this);
+      // Initialize global dialog stack for picture-elements card support
+      initializeGlobalDialogStack();
 
-    logDebug("INIT", "SimpleSwipeCard Constructor completed successfully.");
+      // Bind event handlers
+      this._handleConfigChanged = this._handleConfigChanged.bind(this);
+      this._handleInputFocus = this._handleInputFocus.bind(this);
+      this._handleInputBlur = this._handleInputBlur.bind(this);
+
+      logDebug("INIT", "SimpleSwipeCard Constructor completed successfully.");
+    } catch (error) {
+      // DIAGNOSTIC: Catch and log any constructor errors
+      console.error("SimpleSwipeCard: Constructor failed with error:", error);
+      throw error; // Re-throw to maintain normal behavior
+    }
   }
 
   /**
@@ -109,12 +117,47 @@ export class SimpleSwipeCard extends LitElement {
     await this.templateEvaluator.initialize();
 
     // Move the initial build logic here from connectedCallback
-    if (!this._firstUpdateCompleted && this._config?.cards) {
+    if (!this._firstUpdateCompleted && this._config?.cards !== undefined) {
       this._firstUpdateCompleted = true;
 
       logDebug("INIT", "firstUpdated: Initializing build.");
 
       try {
+        // IMPORTANT: Defer build to allow auto-entities to populate cards
+        // Auto-entities uses queueMicrotask to update config, so waiting 2 frames
+        // ensures we build with the final config (populated cards) rather than
+        // building immediately with empty cards and showing the preview.
+        // This prevents the "flash of preview" issue when using auto-entities with templates.
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
+
+        // Check if still connected after the delay
+        if (!this.isConnected) {
+          logDebug(
+            "LIFECYCLE",
+            "Card disconnected during deferred build wait - will retry on connect",
+          );
+          this._firstUpdateCompleted = false; // Allow retry on reconnect
+          return;
+        }
+
+        // Check if already initialized (setConfig may have triggered rebuild during delay)
+        if (this.initialized) {
+          logDebug(
+            "LIFECYCLE",
+            "Card already initialized during deferred build wait - skipping",
+          );
+          return;
+        }
+
+        logDebug(
+          "INIT",
+          `Deferred build starting with ${this._config.cards.length} cards`,
+        );
+
         // Attempt to build - but it might be skipped if not connected
         const buildResult = await this.cardBuilder.build();
 
@@ -133,6 +176,9 @@ export class SimpleSwipeCard extends LitElement {
             "LIFECYCLE",
             "Build finished in firstUpdated, setting up features",
           );
+
+          // Start time visibility timer if any cards have time conditions
+          this._startTimeVisibilityTimer();
         }
       } catch (error) {
         console.error("SimpleSwipeCard: Build failed in firstUpdated:", error);
@@ -164,285 +210,325 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   setConfig(config) {
-    if (!config) {
-      throw new Error("Invalid configuration");
-    }
-    logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
-
-    this._config = JSON.parse(JSON.stringify(config));
-
-    // Clear cache when config changes
-    this._clearOurRelevantEntitiesCache();
-
-    if (!Array.isArray(this._config.cards)) this._config.cards = [];
-    if (this._config.show_pagination === undefined)
-      this._config.show_pagination = true;
-    if (this._config.auto_hide_pagination === undefined) {
-      this._config.auto_hide_pagination = 0; // Default: disabled
-    } else {
-      const autoHideValue = parseInt(this._config.auto_hide_pagination);
-      if (isNaN(autoHideValue) || autoHideValue < 0) {
-        this._config.auto_hide_pagination = 0; // Invalid values default to disabled
-      } else {
-        this._config.auto_hide_pagination = Math.min(autoHideValue, 30000); // Max 30 seconds
+    try {
+      if (!config) {
+        throw new Error("Invalid configuration");
       }
-    }
-    if (this._config.card_spacing === undefined) {
-      this._config.card_spacing = 15;
-    } else {
-      const spacing = parseInt(this._config.card_spacing);
-      this._config.card_spacing = isNaN(spacing) || spacing < 0 ? 15 : spacing;
-    }
+      logDebug("EDITOR", "Editor setConfig received:", JSON.stringify(config));
 
-    // Migrate enable_loopback to loop_mode
-    if (
-      this._config.enable_loopback !== undefined &&
-      this._config.loop_mode === undefined
-    ) {
-      this._config.loop_mode = this._config.enable_loopback
-        ? "loopback"
-        : "none";
-      delete this._config.enable_loopback;
-      logDebug(
-        "CONFIG",
-        "Migrated enable_loopback to loop_mode:",
-        this._config.loop_mode,
-      );
-    }
+      // Track previous cards count to detect when cards are added (for auto-entities support)
+      const previousCardsCount = this._config?.cards?.length || 0;
 
-    // Set default for loop_mode
-    if (this._config.loop_mode === undefined) {
-      this._config.loop_mode = "none";
-    }
+      this._config = JSON.parse(JSON.stringify(config));
 
-    // Validate loop_mode
-    if (!["none", "loopback", "infinite"].includes(this._config.loop_mode)) {
-      logDebug(
-        "CONFIG",
-        "Invalid loop_mode, defaulting to 'none':",
-        this._config.loop_mode,
-      );
-      this._config.loop_mode = "none";
-    }
+      // Clear cache when config changes
+      this._clearOurRelevantEntitiesCache();
 
-    // Initialize loop mode after config is set
-    this.loopMode?.initialize();
+      if (!Array.isArray(this._config.cards)) this._config.cards = [];
+      if (this._config.show_pagination === undefined)
+        this._config.show_pagination = true;
+      if (this._config.auto_hide_pagination === undefined) {
+        this._config.auto_hide_pagination = 0; // Default: disabled
+      } else {
+        const autoHideValue = parseInt(this._config.auto_hide_pagination);
+        if (isNaN(autoHideValue) || autoHideValue < 0) {
+          this._config.auto_hide_pagination = 0; // Invalid values default to disabled
+        } else {
+          this._config.auto_hide_pagination = Math.min(autoHideValue, 30000); // Max 30 seconds
+        }
+      }
+      if (this._config.card_spacing === undefined) {
+        this._config.card_spacing = 15;
+      } else {
+        const spacing = parseInt(this._config.card_spacing);
+        this._config.card_spacing =
+          isNaN(spacing) || spacing < 0 ? 15 : spacing;
+      }
 
-    // Set default for swipe_direction
-    if (
-      this._config.swipe_direction === undefined ||
-      !["horizontal", "vertical"].includes(this._config.swipe_direction)
-    ) {
-      this._config.swipe_direction = "horizontal";
-    }
-
-    // Set default for swipe_effect
-    if (
-      this._config.swipe_effect === undefined ||
-      ![
-        "slide",
-        "bounce",
-        "spring",
-        "instant",
-        "fade",
-        "flip",
-        "coverflow",
-        "creative",
-        "cards",
-        "reveal",
-        "zoom",
-        "swing",
-      ].includes(this._config.swipe_effect)
-    ) {
-      this._config.swipe_effect = "slide";
-    }
-
-    // After setting swipe direction, check for grid options
-    if (this._config.swipe_direction === "vertical" && !config.grid_options) {
-      this.setAttribute("data-vertical-no-grid", "");
-    } else {
-      this.removeAttribute("data-vertical-no-grid");
-    }
-
-    // Detect if we're in editor mode to avoid applying layout fixes there
-    if (
-      this.closest("hui-card-preview") ||
-      this.closest("hui-card-element-editor")
-    ) {
-      this.setAttribute("data-editor-mode", "");
-    } else {
-      this.removeAttribute("data-editor-mode");
-    }
-
-    // Set backdrop-filter support attribute - when enabled, clip-path is disabled
-    // to allow CSS backdrop-filter effects to work (they conflict with clip-path)
-    if (this._config.enable_backdrop_filter === true) {
-      this.setAttribute("data-enable-backdrop-filter", "");
-    } else {
-      this.removeAttribute("data-enable-backdrop-filter");
-    }
-
-    // Set default for swipe_behavior and validate based on loop_mode
-    if (this._config.swipe_behavior === undefined) {
-      this._config.swipe_behavior = "single";
-    }
-
-    // Validate swipe_behavior - only allow "free" with infinite loop mode
-    if (!["single", "free"].includes(this._config.swipe_behavior)) {
-      this._config.swipe_behavior = "single";
-    } else if (
-      this._config.swipe_behavior === "free" &&
-      this._config.loop_mode !== "infinite"
-    ) {
-      // Force to single if free is selected but not in infinite mode
-      this._config.swipe_behavior = "single";
-      logDebug(
-        "CONFIG",
-        "Free swipe behavior requires infinite loop mode, defaulting to single",
-      );
-    }
-
-    // Set default for auto_height
-    if (this._config.auto_height === undefined) {
-      this._config.auto_height = false;
-    }
-
-    // Validate auto_height compatibility - auto-delete if incompatible
-    if (this._config.auto_height === true) {
-      const isIncompatible =
-        this._config.view_mode === "carousel" ||
-        this._config.swipe_direction === "vertical" ||
-        this._config.loop_mode === "infinite";
-
-      if (isIncompatible) {
-        delete this._config.auto_height;
+      // Migrate enable_loopback to loop_mode
+      if (
+        this._config.enable_loopback !== undefined &&
+        this._config.loop_mode === undefined
+      ) {
+        this._config.loop_mode = this._config.enable_loopback
+          ? "loopback"
+          : "none";
+        delete this._config.enable_loopback;
         logDebug(
           "CONFIG",
-          "auto_height removed: incompatible with current mode (carousel, vertical, or infinite loop)",
+          "Migrated enable_loopback to loop_mode:",
+          this._config.loop_mode,
         );
       }
-    }
 
-    // Set defaults for auto-swipe options
-    if (this._config.enable_auto_swipe === undefined)
-      this._config.enable_auto_swipe = false;
-    if (this._config.auto_swipe_interval === undefined) {
-      this._config.auto_swipe_interval = 2000;
-    } else {
-      this._config.auto_swipe_interval = parseInt(
-        this._config.auto_swipe_interval,
-      );
-      if (
-        isNaN(this._config.auto_swipe_interval) ||
-        this._config.auto_swipe_interval < 500
-      ) {
-        this._config.auto_swipe_interval = 2000;
+      // Set default for loop_mode
+      if (this._config.loop_mode === undefined) {
+        this._config.loop_mode = "none";
       }
-    }
 
-    // Set defaults for reset-after options
-    if (this._config.enable_reset_after === undefined)
-      this._config.enable_reset_after = false;
-    if (this._config.reset_after_timeout === undefined) {
-      this._config.reset_after_timeout = 30000; // 30 seconds default
-    } else {
-      // Check if it's a template string
-      const isTemplate = this.templateEvaluator.isTemplate(
-        this._config.reset_after_timeout,
-      );
+      // Validate loop_mode
+      if (!["none", "loopback", "infinite"].includes(this._config.loop_mode)) {
+        logDebug(
+          "CONFIG",
+          "Invalid loop_mode, defaulting to 'none':",
+          this._config.loop_mode,
+        );
+        this._config.loop_mode = "none";
+      }
 
-      if (!isTemplate) {
-        // Not a template - ensure it's a positive number (minimum 5 seconds)
-        this._config.reset_after_timeout = parseInt(
-          this._config.reset_after_timeout,
+      // Initialize loop mode after config is set
+      this.loopMode?.initialize();
+
+      // Set default for swipe_direction
+      if (
+        this._config.swipe_direction === undefined ||
+        !["horizontal", "vertical"].includes(this._config.swipe_direction)
+      ) {
+        this._config.swipe_direction = "horizontal";
+      }
+
+      // Set default for swipe_effect
+      if (
+        this._config.swipe_effect === undefined ||
+        ![
+          "slide",
+          "bounce",
+          "spring",
+          "instant",
+          "fade",
+          "flip",
+          "coverflow",
+          "creative",
+          "cards",
+          "reveal",
+          "zoom",
+          "swing",
+        ].includes(this._config.swipe_effect)
+      ) {
+        this._config.swipe_effect = "slide";
+      }
+
+      // After setting swipe direction, check for grid options
+      if (this._config.swipe_direction === "vertical" && !config.grid_options) {
+        this.setAttribute("data-vertical-no-grid", "");
+      } else {
+        this.removeAttribute("data-vertical-no-grid");
+      }
+
+      // Detect if we're in editor mode to avoid applying layout fixes there
+      if (
+        this.closest("hui-card-preview") ||
+        this.closest("hui-card-element-editor")
+      ) {
+        this.setAttribute("data-editor-mode", "");
+      } else {
+        this.removeAttribute("data-editor-mode");
+      }
+
+      // Set backdrop-filter support attribute - when enabled, clip-path is disabled
+      // to allow CSS backdrop-filter effects to work (they conflict with clip-path)
+      if (this._config.enable_backdrop_filter === true) {
+        this.setAttribute("data-enable-backdrop-filter", "");
+      } else {
+        this.removeAttribute("data-enable-backdrop-filter");
+      }
+
+      // Set default for swipe_behavior and validate based on loop_mode
+      if (this._config.swipe_behavior === undefined) {
+        this._config.swipe_behavior = "single";
+      }
+
+      // Validate swipe_behavior - only allow "free" with infinite loop mode
+      if (!["single", "free"].includes(this._config.swipe_behavior)) {
+        this._config.swipe_behavior = "single";
+      } else if (
+        this._config.swipe_behavior === "free" &&
+        this._config.loop_mode !== "infinite"
+      ) {
+        // Force to single if free is selected but not in infinite mode
+        this._config.swipe_behavior = "single";
+        logDebug(
+          "CONFIG",
+          "Free swipe behavior requires infinite loop mode, defaulting to single",
+        );
+      }
+
+      // Set default for auto_height
+      if (this._config.auto_height === undefined) {
+        this._config.auto_height = false;
+      }
+
+      // Validate auto_height compatibility - auto-delete if incompatible
+      if (this._config.auto_height === true) {
+        const isIncompatible =
+          this._config.view_mode === "carousel" ||
+          this._config.swipe_direction === "vertical" ||
+          this._config.loop_mode === "infinite";
+
+        if (isIncompatible) {
+          delete this._config.auto_height;
+          logDebug(
+            "CONFIG",
+            "auto_height removed: incompatible with current mode (carousel, vertical, or infinite loop)",
+          );
+        }
+      }
+
+      // Set defaults for auto-swipe options
+      if (this._config.enable_auto_swipe === undefined)
+        this._config.enable_auto_swipe = false;
+      if (this._config.auto_swipe_interval === undefined) {
+        this._config.auto_swipe_interval = 2000;
+      } else {
+        this._config.auto_swipe_interval = parseInt(
+          this._config.auto_swipe_interval,
         );
         if (
-          isNaN(this._config.reset_after_timeout) ||
-          this._config.reset_after_timeout < 5000
+          isNaN(this._config.auto_swipe_interval) ||
+          this._config.auto_swipe_interval < 500
         ) {
-          this._config.reset_after_timeout = 30000;
+          this._config.auto_swipe_interval = 2000;
         }
       }
-      // If it's a template, keep the raw string for later evaluation
-    }
-    if (this._config.reset_target_card === undefined) {
-      this._config.reset_target_card = 1; // Default to first card (1-based)
-    } else {
-      // Check if it's a template string
-      const isTemplate = this.templateEvaluator.isTemplate(
-        this._config.reset_target_card,
-      );
 
-      if (!isTemplate) {
-        // Not a template - ensure it's a valid 1-based number
-        this._config.reset_target_card = Math.max(
-          1,
-          parseInt(this._config.reset_target_card) || 1,
-        );
-      }
-      // If it's a template, keep the raw string for later evaluation
-    }
-
-    // Set defaults for view mode options
-    if (this._config.view_mode === undefined) {
-      this._config.view_mode = "single";
-    }
-
-    // Validate view_mode
-    if (!["single", "carousel"].includes(this._config.view_mode)) {
-      this._config.view_mode = "single";
-    }
-
-    // Handle both card_min_width and cards_visible for backwards compatibility
-    if (this._config.view_mode === "carousel") {
-      // Set default for card_min_width (new responsive approach)
-      if (this._config.card_min_width === undefined) {
-        this._config.card_min_width = 200;
+      // Set defaults for reset-after options
+      if (this._config.enable_reset_after === undefined)
+        this._config.enable_reset_after = false;
+      if (this._config.reset_after_timeout === undefined) {
+        this._config.reset_after_timeout = 30000; // 30 seconds default
       } else {
-        const minWidth = parseInt(this._config.card_min_width);
-        if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+        // Check if it's a template string
+        const isTemplate = this.templateEvaluator.isTemplate(
+          this._config.reset_after_timeout,
+        );
+
+        if (!isTemplate) {
+          // Not a template - ensure it's a positive number (minimum 5 seconds)
+          this._config.reset_after_timeout = parseInt(
+            this._config.reset_after_timeout,
+          );
+          if (
+            isNaN(this._config.reset_after_timeout) ||
+            this._config.reset_after_timeout < 5000
+          ) {
+            this._config.reset_after_timeout = 30000;
+          }
+        }
+        // If it's a template, keep the raw string for later evaluation
+      }
+      if (this._config.reset_target_card === undefined) {
+        this._config.reset_target_card = 1; // Default to first card (1-based)
+      } else {
+        // Check if it's a template string
+        const isTemplate = this.templateEvaluator.isTemplate(
+          this._config.reset_target_card,
+        );
+
+        if (!isTemplate) {
+          // Not a template - ensure it's a valid 1-based number
+          this._config.reset_target_card = Math.max(
+            1,
+            parseInt(this._config.reset_target_card) || 1,
+          );
+        }
+        // If it's a template, keep the raw string for later evaluation
+      }
+
+      // Set defaults for view mode options
+      if (this._config.view_mode === undefined) {
+        this._config.view_mode = "single";
+      }
+
+      // Validate view_mode
+      if (!["single", "carousel"].includes(this._config.view_mode)) {
+        this._config.view_mode = "single";
+      }
+
+      // Handle both card_min_width and cards_visible for backwards compatibility
+      if (this._config.view_mode === "carousel") {
+        // Set default for card_min_width (new responsive approach)
+        if (this._config.card_min_width === undefined) {
           this._config.card_min_width = 200;
-        }
-      }
-
-      // Handle legacy cards_visible for backwards compatibility
-      if (this._config.cards_visible !== undefined) {
-        // Validate cards_visible with better bounds
-        const cardsVisible = parseFloat(this._config.cards_visible);
-        if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
-          this._config.cards_visible = 2.5;
         } else {
-          // Round to 1 decimal place to avoid precision issues
-          this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+          const minWidth = parseInt(this._config.card_min_width);
+          if (isNaN(minWidth) || minWidth < 50 || minWidth > 500) {
+            this._config.card_min_width = 200;
+          }
         }
+
+        // Handle legacy cards_visible for backwards compatibility
+        if (this._config.cards_visible !== undefined) {
+          // Validate cards_visible with better bounds
+          const cardsVisible = parseFloat(this._config.cards_visible);
+          if (isNaN(cardsVisible) || cardsVisible < 1.1 || cardsVisible > 8.0) {
+            this._config.cards_visible = 2.5;
+          } else {
+            // Round to 1 decimal place to avoid precision issues
+            this._config.cards_visible = Math.round(cardsVisible * 10) / 10;
+          }
+        }
+        // If cards_visible is undefined, we'll use the responsive approach
       }
-      // If cards_visible is undefined, we'll use the responsive approach
+
+      // Store the card_mod configuration if present
+      if (config.card_mod) {
+        logDebug(
+          "CARD_MOD",
+          "Card-mod configuration detected",
+          config.card_mod,
+        );
+        this._cardModConfig = JSON.parse(JSON.stringify(config.card_mod));
+      } else {
+        this._cardModConfig = null;
+      }
+
+      // Store the current swipe direction for internal use
+      this._swipeDirection = this._config.swipe_direction;
+
+      // Store view mode for internal use
+      this._viewMode = this._config.view_mode || "single";
+
+      delete this._config.title;
+
+      // Initialize auto height AFTER all config is validated
+      this.autoHeight?.initialize();
+
+      // Scan config for template values
+      this.templateEvaluator.scanConfig(this._config);
+
+      // AUTO-ENTITIES SUPPORT: Detect when cards are added after initial build
+      // When auto-entities uses templates, it may call setConfig twice:
+      // 1. First with empty cards (template not yet evaluated)
+      // 2. Second with populated cards (after template evaluation)
+      // If we already built the preview (initialized=true) and now have cards,
+      // trigger a rebuild to show the actual cards instead of the preview.
+      const newCardsCount = this._config.cards.length;
+      if (
+        this.initialized &&
+        this.isConnected &&
+        previousCardsCount === 0 &&
+        newCardsCount > 0
+      ) {
+        logDebug(
+          "CONFIG",
+          `Cards added after initial build (0 -> ${newCardsCount}) - triggering rebuild`,
+        );
+        // Use requestAnimationFrame to ensure DOM is ready and avoid immediate rebuild during setup
+        requestAnimationFrame(() => {
+          if (this.isConnected && this.initialized) {
+            this.cardBuilder.build();
+          }
+        });
+      }
+
+      // Fire initial config event
+      this.requestUpdate();
+
+      logDebug("CONFIG", "setConfig completed successfully");
+    } catch (error) {
+      logDebug("ERROR", "setConfig failed with error:", error);
+      throw error; // Re-throw to maintain normal behavior
     }
-
-    // Store the card_mod configuration if present
-    if (config.card_mod) {
-      logDebug("CARD_MOD", "Card-mod configuration detected", config.card_mod);
-      this._cardModConfig = JSON.parse(JSON.stringify(config.card_mod));
-    } else {
-      this._cardModConfig = null;
-    }
-
-    // Store the current swipe direction for internal use
-    this._swipeDirection = this._config.swipe_direction;
-
-    // Store view mode for internal use
-    this._viewMode = this._config.view_mode || "single";
-
-    delete this._config.title;
-
-    // Initialize auto height AFTER all config is validated
-    this.autoHeight?.initialize();
-
-    // Scan config for template values
-    this.templateEvaluator.scanConfig(this._config);
-
-    // Fire initial config event
-    this.requestUpdate();
   }
 
   /**
@@ -1012,6 +1098,71 @@ export class SimpleSwipeCard extends LitElement {
   }
 
   /**
+   * Checks if any card has time-based visibility conditions
+   * @returns {boolean} True if any card has time conditions
+   * @private
+   */
+  _hasTimeVisibilityConditions() {
+    if (!this._config?.cards) return false;
+
+    const hasTimeCondition = (conditions) => {
+      if (!Array.isArray(conditions)) return false;
+      return conditions.some((condition) => {
+        if (condition.condition === "time") return true;
+        // Check nested conditions (and, or, not)
+        if (condition.conditions && Array.isArray(condition.conditions)) {
+          return hasTimeCondition(condition.conditions);
+        }
+        return false;
+      });
+    };
+
+    return this._config.cards.some(
+      (card) => card.visibility && hasTimeCondition(card.visibility),
+    );
+  }
+
+  /**
+   * Starts the time visibility timer if any card has time conditions
+   * Timer checks every 5 seconds to re-evaluate time-based visibility
+   * @private
+   */
+  _startTimeVisibilityTimer() {
+    // Don't start if already running
+    if (this._timeVisibilityInterval) return;
+
+    // Only start if we have time-based conditions
+    if (!this._hasTimeVisibilityConditions()) {
+      logDebug("VISIBILITY", "No time conditions found, skipping timer");
+      return;
+    }
+
+    logDebug("VISIBILITY", "Starting time visibility timer (5s interval)");
+
+    this._timeVisibilityInterval = setInterval(() => {
+      if (this.isConnected && this._hass) {
+        logDebug(
+          "VISIBILITY",
+          "Time visibility timer tick - checking conditions",
+        );
+        this._updateVisibleCardIndices();
+      }
+    }, 5000); // Check every 5 seconds
+  }
+
+  /**
+   * Stops the time visibility timer
+   * @private
+   */
+  _stopTimeVisibilityTimer() {
+    if (this._timeVisibilityInterval) {
+      logDebug("VISIBILITY", "Stopping time visibility timer");
+      clearInterval(this._timeVisibilityInterval);
+      this._timeVisibilityInterval = null;
+    }
+  }
+
+  /**
    * Handles invalid configuration gracefully
    * @param {string} message - Error message to display
    * @private
@@ -1429,16 +1580,17 @@ export class SimpleSwipeCard extends LitElement {
 
     // Check if we need to build
     // This handles the case where firstUpdated ran while disconnected
+    // Also handles partial builds where cardContainer exists but initialized is false
     const needsBuild =
       this._config &&
       this._config.cards &&
       this._config.cards.length > 0 &&
-      !this.cardContainer;
+      (!this.cardContainer || !this.initialized);
 
     if (needsBuild) {
       logDebug(
         "LIFECYCLE",
-        "Card needs build (firstUpdated may have run while disconnected) - triggering build",
+        `Card needs build (cardContainer: ${!!this.cardContainer}, initialized: ${this.initialized}) - triggering build`,
       );
 
       // Defer build to next frame to ensure card is fully connected
@@ -1461,6 +1613,9 @@ export class SimpleSwipeCard extends LitElement {
                   this._applyCardModStyles();
                   this._setupCardModObserver();
                 }
+
+                // Start time visibility timer after deferred build
+                this._startTimeVisibilityTimer();
               }
             })
             .catch((error) => {
@@ -1510,6 +1665,9 @@ export class SimpleSwipeCard extends LitElement {
                 this.pagination.updateLayout();
               }
             });
+
+            // Restart time visibility timer after reconnection
+            this._startTimeVisibilityTimer();
           }
         })
         .catch((error) => {
@@ -1549,6 +1707,9 @@ export class SimpleSwipeCard extends LitElement {
           this.pagination.updateLayout();
         }
       });
+
+      // Restart time visibility timer after reconnection with intact DOM
+      this._startTimeVisibilityTimer();
     }
 
     logDebug("LIFECYCLE", "connectedCallback finished");
@@ -1627,6 +1788,9 @@ export class SimpleSwipeCard extends LitElement {
         logDebug("INIT", `Cleared timeout: ${timeoutName}`);
       }
     });
+
+    // Also stop the time visibility interval timer
+    this._stopTimeVisibilityTimer();
   }
 
   /**
@@ -1635,10 +1799,8 @@ export class SimpleSwipeCard extends LitElement {
    */
   _cleanupFeatureManagers() {
     try {
-      if (this.resizeObserver) {
-        this.resizeObserver.cleanup();
-        this.resizeObserver = null;
-      }
+      // Clean up resize observer and orientation/resize listeners
+      this._removeResizeObserver();
 
       if (this.swipeGestures) {
         this.swipeGestures.removeGestures();
@@ -1907,6 +2069,38 @@ export class SimpleSwipeCard extends LitElement {
     this.resizeObserver = setupResizeObserver(this.cardContainer, () =>
       this.recalculateLayout(),
     );
+
+    // iOS Safari doesn't reliably fire ResizeObserver on orientation change
+    // Add explicit listeners for orientation and window resize as fallback
+    this._orientationHandler = () => {
+      // Delay slightly to let the browser finish the orientation change
+      setTimeout(() => this.recalculateLayout(), 100);
+    };
+    this._windowResizeHandler = () => {
+      this.recalculateLayout();
+    };
+
+    window.addEventListener("orientationchange", this._orientationHandler);
+    window.addEventListener("resize", this._windowResizeHandler);
+  }
+
+  /**
+   * Removes resize observer and orientation listeners
+   * @private
+   */
+  _removeResizeObserver() {
+    if (this.resizeObserver?.cleanup) {
+      this.resizeObserver.cleanup();
+      this.resizeObserver = null;
+    }
+    if (this._orientationHandler) {
+      window.removeEventListener("orientationchange", this._orientationHandler);
+      this._orientationHandler = null;
+    }
+    if (this._windowResizeHandler) {
+      window.removeEventListener("resize", this._windowResizeHandler);
+      this._windowResizeHandler = null;
+    }
   }
 
   /**
@@ -1931,7 +2125,27 @@ export class SimpleSwipeCard extends LitElement {
       });
       this.slideWidth = newWidth;
       this.slideHeight = newHeight;
-      this.updateSlider(false);
+
+      // For carousel mode, recalculate card dimensions (width, CSS variable, cached values)
+      // and then update slider position. For other modes, update slide widths directly.
+      if (this._config?.view_mode === "carousel" && this.cardBuilder) {
+        this.cardBuilder.recalculateCarouselLayout();
+      } else {
+        // Update single mode slide widths directly on each slide element
+        // CSS variables alone may not trigger re-layout in all browsers
+        this.style.setProperty("--single-slide-width", `${newWidth}px`);
+        if (this.sliderElement) {
+          const slides = this.sliderElement.querySelectorAll(
+            ".slide:not(.carousel-mode)",
+          );
+          slides.forEach((slide) => {
+            slide.style.width = `${newWidth}px`;
+            slide.style.minWidth = `${newWidth}px`;
+            slide.style.flexBasis = `${newWidth}px`;
+          });
+        }
+        this.updateSlider(false);
+      }
     }
   }
 

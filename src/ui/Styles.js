@@ -211,9 +211,9 @@ export function getStyles() {
      }
      
      .slide {
-        flex: 0 0 100%;
-        width: 100%;
-        min-width: 100%;
+        flex: 0 0 var(--single-slide-width, 100%);
+        width: var(--single-slide-width, 100%);
+        min-width: var(--single-slide-width, 100%);
         height: 100%;
         min-height: 100%;
         box-sizing: border-box;
@@ -226,6 +226,9 @@ export function getStyles() {
         transform: translateZ(0); /* Force GPU acceleration for better iOS/Safari rendering */
         -webkit-transform: translateZ(0);
         pointer-events: none; /* Allow clicks to pass through to elements below/behind */
+        /* Fix iPad Safari: ensure font-size inheritance through transform boundary */
+        font-size: inherit;
+        -webkit-text-size-adjust: 100%;
      }
 
      /* Vertical mode: Clip inactive slides to hide adjacent cards */
@@ -264,6 +267,12 @@ export function getStyles() {
       flex: 0 0 auto; /* Don't grow/shrink, use calculated width */
       width: var(--carousel-card-width); /* Will be set dynamically */
       min-width: var(--carousel-card-width);
+    }
+
+    /* Fix iPad Safari: prevent flex stretching from overriding aspect-ratio in carousel mode */
+    .slide.carousel-mode > *:first-child {
+      flex-grow: 0;
+      align-self: flex-start;
     }
 
     /* Carousel container adjustments */
