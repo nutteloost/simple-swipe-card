@@ -3,7 +3,10 @@
  */
 
 import { logDebug } from "../utils/Debug.js";
-import { SWIPE_CONSTANTS } from "../utils/Constants.js";
+import {
+  SWIPE_CONSTANTS,
+  INTERACTIVE_CONTROL_TAGS,
+} from "../utils/Constants.js";
 
 /**
  * Swipe gesture manager class
@@ -208,7 +211,9 @@ export class SwipeGestures {
         "input",
         "select",
         "textarea",
+        ...INTERACTIVE_CONTROL_TAGS,
       ];
+      const allowedClickRoles = ["button", "switch", "checkbox", "radio"];
 
       // Check first 10 elements in the path for buttons
       for (let i = 0; i < Math.min(10, path.length); i++) {
@@ -225,10 +230,13 @@ export class SwipeGestures {
           const tagName = element.localName?.toLowerCase();
           const role = element.getAttribute?.("role");
 
-          if (allowedClickElements.includes(tagName) || role === "button") {
+          if (
+            allowedClickElements.includes(tagName) ||
+            allowedClickRoles.includes(role)
+          ) {
             logDebug(
               "SWIPE",
-              "Allowing click - button found in path:",
+              "Allowing click - interactive control found in path:",
               tagName || role,
             );
             return; // Let the click proceed normally
@@ -267,7 +275,9 @@ export class SwipeGestures {
         "input",
         "select",
         "textarea",
+        ...INTERACTIVE_CONTROL_TAGS,
       ];
+      const allowedPointerRoles = ["button", "switch", "checkbox", "radio"];
 
       // Check first 10 elements in the path for buttons
       for (let i = 0; i < Math.min(10, path.length); i++) {
@@ -284,10 +294,13 @@ export class SwipeGestures {
           const tagName = element.localName?.toLowerCase();
           const role = element.getAttribute?.("role");
 
-          if (allowedPointerElements.includes(tagName) || role === "button") {
+          if (
+            allowedPointerElements.includes(tagName) ||
+            allowedPointerRoles.includes(role)
+          ) {
             logDebug(
               "SWIPE",
-              "Allowing pointer event - button found in path:",
+              "Allowing pointer event - interactive control found in path:",
               tagName || role,
             );
             return; // Let the pointer event proceed normally
@@ -822,7 +835,10 @@ export class SwipeGestures {
       return false;
     }
 
-    // Block swipes ONLY on actual button/icon elements
+    // Block swipes ONLY on actual button/icon elements and form-control hosts.
+    // INTERACTIVE_CONTROL_TAGS covers toggles/checkboxes/radios whose visible tap
+    // target (thumb/control/label spans) carries no interactive role of its own
+    // since the HA 2026.5 Web Awesome migration - see #112.
     const blockSwipeElements = [
       "button",
       "ha-icon-button",
@@ -831,6 +847,7 @@ export class SwipeGestures {
       "mwc-button",
       "paper-button",
       "ha-cover-controls",
+      ...INTERACTIVE_CONTROL_TAGS,
     ];
 
     if (blockSwipeElements.includes(tagName)) {
