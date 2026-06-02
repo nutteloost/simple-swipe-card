@@ -262,18 +262,12 @@ export class SimpleSwipeCardEditor extends LitElement {
    */
   render() {
     if (!this.hass || !this._config) {
-      return html`<ha-circular-progress
-        active
-        alt="Loading editor"
-      ></ha-circular-progress>`;
+      return html`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
     }
 
     // Safety check: if managers are null (during disconnection), show loading
     if (!this.uiManager || !this.configManager || !this.cardManagement) {
-      return html`<ha-circular-progress
-        active
-        alt="Loading editor"
-      ></ha-circular-progress>`;
+      return html`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
     }
 
     const cards = this._config.cards || [];

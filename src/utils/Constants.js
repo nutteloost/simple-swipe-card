@@ -46,23 +46,69 @@ export const SWIPE_CONSTANTS = {
   swipeVelocityThreshold: 0.3,
 };
 
-// Interactive form-control host elements. Tapping these must toggle the control,
+// Interactive form-control host elements. Tapping these must operate the control,
 // never start a swipe and never have its click blocked. Covers Web Awesome
-// (`wa-*`, used by ha-switch/ha-checkbox since HA 2026.5), legacy Material
+// (`wa-*`, the target of HA's ongoing 2026.5+ migration), legacy Material
 // (`mwc-*`), and Home Assistant wrappers (`ha-*`). The host element reliably
-// appears in the event composedPath even when an inner part (thumb/control/label)
-// is the actual tap target.
+// appears in the event composedPath even when an inner part (thumb/control/label
+// span) is the actual tap target - which is precisely why per-element role/tag
+// checks alone missed the migrated controls (see #112). New `ha-*`/`wa-*` form
+// controls should be added here as HA migrates them.
 export const INTERACTIVE_CONTROL_TAGS = [
+  // Switches / checkboxes (migrated to Web Awesome in HA 2026.5)
   "ha-switch",
   "wa-switch",
   "mwc-switch",
   "ha-checkbox",
   "wa-checkbox",
   "mwc-checkbox",
+  // Radios (HA 2026.6 removed ha-radio in favour of ha-radio-group/ha-radio-option)
   "ha-radio",
   "wa-radio",
   "mwc-radio",
+  "ha-radio-group",
+  "ha-radio-option",
+  "wa-radio-group",
+  // Dropdowns / pickers (opening these must not swipe)
+  "ha-select",
+  "wa-select",
+  "mwc-select",
+  "ha-combo-box",
+  "wa-combobox",
+  "ha-entity-picker",
+  // Text inputs (the native input/textarea is usually the tap target and is
+  // already detected, but list the hosts so detection never depends on that)
+  "ha-textfield",
+  "wa-textfield",
+  "mwc-textfield",
+  "ha-textarea",
+  "wa-textarea",
+  "mwc-textarea",
+  // Entity toggle wrapper used by HA entity rows
   "ha-entity-toggle",
+];
+
+// Button host elements - never start a swipe, always allow the click/tap.
+export const BUTTON_CONTROL_TAGS = [
+  "button",
+  "ha-button",
+  "wa-button",
+  "mwc-button",
+  "paper-button",
+  "ha-icon-button",
+  "wa-icon-button",
+  "mwc-icon-button",
+];
+
+// Slider host elements. Matched by tag (in addition to the existing role/class
+// checks) so a migrated slider whose visible thumb is a non-semantic span - the
+// same shape as the #112 switch bug - is still recognised as interactive.
+export const SLIDER_CONTROL_TAGS = [
+  "ha-slider",
+  "wa-slider",
+  "md-slider",
+  "mwc-slider",
+  "paper-slider",
 ];
 
 // Global state management

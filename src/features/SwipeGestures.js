@@ -6,6 +6,8 @@ import { logDebug } from "../utils/Debug.js";
 import {
   SWIPE_CONSTANTS,
   INTERACTIVE_CONTROL_TAGS,
+  BUTTON_CONTROL_TAGS,
+  SLIDER_CONTROL_TAGS,
 } from "../utils/Constants.js";
 
 /**
@@ -201,12 +203,7 @@ export class SwipeGestures {
       const path = e.composedPath();
 
       const allowedClickElements = [
-        "button",
-        "ha-icon-button",
-        "mwc-icon-button",
-        "ha-button",
-        "mwc-button",
-        "paper-button",
+        ...BUTTON_CONTROL_TAGS,
         "a",
         "input",
         "select",
@@ -265,12 +262,7 @@ export class SwipeGestures {
       const path = e.composedPath();
 
       const allowedPointerElements = [
-        "button",
-        "ha-icon-button",
-        "mwc-icon-button",
-        "ha-button",
-        "mwc-button",
-        "paper-button",
+        ...BUTTON_CONTROL_TAGS,
         "a",
         "input",
         "select",
@@ -840,18 +832,13 @@ export class SwipeGestures {
     // target (thumb/control/label spans) carries no interactive role of its own
     // since the HA 2026.5 Web Awesome migration - see #112.
     const blockSwipeElements = [
-      "button",
-      "ha-icon-button",
-      "mwc-icon-button",
-      "ha-button",
-      "mwc-button",
-      "paper-button",
+      ...BUTTON_CONTROL_TAGS,
       "ha-cover-controls",
       ...INTERACTIVE_CONTROL_TAGS,
     ];
 
     if (blockSwipeElements.includes(tagName)) {
-      logDebug("SWIPE", "Blocking swipe on button/icon element:", tagName);
+      logDebug("SWIPE", "Blocking swipe on interactive control:", tagName);
       return true;
     }
 
@@ -863,6 +850,7 @@ export class SwipeGestures {
     const id = element.id || "";
 
     if (
+      SLIDER_CONTROL_TAGS.includes(tagName) ||
       className.includes("slider") ||
       id.includes("slider") ||
       role === "slider" ||
