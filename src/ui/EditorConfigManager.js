@@ -300,6 +300,13 @@ export class EditorConfigManager {
           value = 0;
         }
       }
+    } else if (target.localName === "ha-select") {
+      // Modern HA's ha-select (Web Awesome) is fully controlled: it reports the
+      // chosen value via the `selected` event detail and never mutates
+      // target.value. Legacy ha-select updates target.value before firing.
+      // Prefer the event detail when present so both behave correctly (#107).
+      value =
+        ev.detail && "value" in ev.detail ? ev.detail.value : target.value;
     } else {
       value = target.value;
     }

@@ -5,6 +5,83 @@
 import { html } from "../core/Dependencies.js";
 import { CARD_VERSION } from "../utils/Constants.js";
 import { evaluateVisibilityConditions } from "../features/VisibilityConditions.js";
+import {
+  mdiGestureSwipeHorizontal,
+  mdiGestureSwipeVertical,
+  mdiNumeric1Circle,
+  mdiGestureSwipe,
+  mdiArrowRight,
+  mdiArrowOscillating,
+  mdiVibrate,
+  mdiFlash,
+  mdiBlur,
+  mdiFlipHorizontal,
+  mdiViewCarousel,
+  mdiPalette,
+  mdiCards,
+  mdiCompare,
+  mdiMagnifyPlusOutline,
+  mdiDoor,
+} from "@mdi/js";
+
+/**
+ * Renders a dropdown that works across Home Assistant versions.
+ *
+ * Modern HA migrated `ha-select` to Web Awesome: it renders its choices from an
+ * `.options` property (each becomes a selectable `ha-dropdown-item`) and only
+ * falls back to a `<slot>` when `options` is absent. Legacy slotted
+ * `ha-list-item`s therefore still render but can no longer be selected (#107).
+ * We detect the new component and feed it `.options`; on older HA we keep the
+ * slotted markup that version still needs. Both report selection through the
+ * same `valueChanged` handler.
+ *
+ * @param {Object} params
+ * @param {string} params.value - Currently selected value
+ * @param {string} params.dataOption - Config key (rendered as data-option)
+ * @param {Array<{value:string,label:string,iconPath?:string}>} params.options
+ * @param {Function} params.valueChanged - Value change handler
+ * @returns {TemplateResult} The dropdown template
+ */
+function renderSelect({ value, dataOption, options, valueChanged }) {
+  const useOptionsApi = !!customElements.get("ha-dropdown-item");
+
+  if (useOptionsApi) {
+    return html`
+      <ha-select
+        .value=${value ?? ""}
+        data-option=${dataOption}
+        .options=${options}
+        @selected=${valueChanged}
+        @closed=${(ev) => ev.stopPropagation()}
+      ></ha-select>
+    `;
+  }
+
+  return html`
+    <ha-select
+      .value=${value ?? ""}
+      data-option=${dataOption}
+      @selected=${valueChanged}
+      @change=${valueChanged}
+      @closed=${(ev) => ev.stopPropagation()}
+    >
+      ${options.map(
+        (option) => html`
+          <ha-list-item .value=${option.value}>
+            ${option.label}
+            ${option.iconPath
+              ? html`<ha-svg-icon
+                  slot="graphic"
+                  class="direction-icon"
+                  .path=${option.iconPath}
+                ></ha-svg-icon>`
+              : ""}
+          </ha-list-item>
+        `,
+      )}
+    </ha-select>
+  `;
+}
 
 /**
  * Renders the information panel at the top of the editor
@@ -165,29 +242,23 @@ export function renderDisplayOptions(config, valueChanged) {
                 </div>
               </div>
               <div class="option-control">
-                <ha-select
-                  .value=${swipeDirection}
-                  data-option="swipe_direction"
-                  @change=${valueChanged}
-                  @closed=${(ev) => ev.stopPropagation()}
-                >
-                  <ha-list-item .value=${"horizontal"}>
-                    Horizontal
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:gesture-swipe-horizontal"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"vertical"}>
-                    Vertical
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:gesture-swipe-vertical"
-                    ></ha-icon>
-                  </ha-list-item>
-                </ha-select>
+                ${renderSelect({
+                  value: swipeDirection,
+                  dataOption: "swipe_direction",
+                  options: [
+                    {
+                      value: "horizontal",
+                      label: "Horizontal",
+                      iconPath: mdiGestureSwipeHorizontal,
+                    },
+                    {
+                      value: "vertical",
+                      label: "Vertical",
+                      iconPath: mdiGestureSwipeVertical,
+                    },
+                  ],
+                  valueChanged,
+                })}
               </div>
             </div>
           `
@@ -302,29 +373,23 @@ export function renderDisplayOptions(config, valueChanged) {
                 <div class="option-help">How many cards to swipe at once</div>
               </div>
               <div class="option-control">
-                <ha-select
-                  .value=${swipeBehavior}
-                  data-option="swipe_behavior"
-                  @change=${valueChanged}
-                  @closed=${(ev) => ev.stopPropagation()}
-                >
-                  <ha-list-item .value=${"single"}>
-                    Single card
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:numeric-1-circle"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"free"}>
-                    Free swipe
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:gesture-swipe"
-                    ></ha-icon>
-                  </ha-list-item>
-                </ha-select>
+                ${renderSelect({
+                  value: swipeBehavior,
+                  dataOption: "swipe_behavior",
+                  options: [
+                    {
+                      value: "single",
+                      label: "Single card",
+                      iconPath: mdiNumeric1Circle,
+                    },
+                    {
+                      value: "free",
+                      label: "Free swipe",
+                      iconPath: mdiGestureSwipe,
+                    },
+                  ],
+                  valueChanged,
+                })}
               </div>
             </div>
           `
@@ -350,109 +415,45 @@ export function renderDisplayOptions(config, valueChanged) {
                 <div class="option-help">Visual transition between cards</div>
               </div>
               <div class="option-control">
-                <ha-select
-                  .value=${config.swipe_effect || "slide"}
-                  data-option="swipe_effect"
-                  @change=${valueChanged}
-                  @closed=${(ev) => ev.stopPropagation()}
-                >
-                  <ha-list-item .value=${"slide"}>
-                    Slide
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:arrow-right"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"bounce"}>
-                    Bounce
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:arrow-oscillating"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"spring"}>
-                    Spring
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:spring"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"instant"}>
-                    Instant
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:flash"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"fade"}>
-                    Fade
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:blur"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"flip"}>
-                    Flip
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:flip-horizontal"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"coverflow"}>
-                    Coverflow
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:view-carousel"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"creative"}>
-                    Creative
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:palette"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"cards"}>
-                    Cards
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:cards"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"reveal"}>
-                    Reveal
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:compare"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"zoom"}>
-                    Zoom
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:magnify-plus-outline"
-                    ></ha-icon>
-                  </ha-list-item>
-                  <ha-list-item .value=${"swing"}>
-                    Swing
-                    <ha-icon
-                      slot="graphic"
-                      class="direction-icon"
-                      icon="mdi:door"
-                    ></ha-icon>
-                  </ha-list-item>
-                </ha-select>
+                ${renderSelect({
+                  value: config.swipe_effect || "slide",
+                  dataOption: "swipe_effect",
+                  options: [
+                    { value: "slide", label: "Slide", iconPath: mdiArrowRight },
+                    {
+                      value: "bounce",
+                      label: "Bounce",
+                      iconPath: mdiArrowOscillating,
+                    },
+                    { value: "spring", label: "Spring", iconPath: mdiVibrate },
+                    { value: "instant", label: "Instant", iconPath: mdiFlash },
+                    { value: "fade", label: "Fade", iconPath: mdiBlur },
+                    {
+                      value: "flip",
+                      label: "Flip",
+                      iconPath: mdiFlipHorizontal,
+                    },
+                    {
+                      value: "coverflow",
+                      label: "Coverflow",
+                      iconPath: mdiViewCarousel,
+                    },
+                    {
+                      value: "creative",
+                      label: "Creative",
+                      iconPath: mdiPalette,
+                    },
+                    { value: "cards", label: "Cards", iconPath: mdiCards },
+                    { value: "reveal", label: "Reveal", iconPath: mdiCompare },
+                    {
+                      value: "zoom",
+                      label: "Zoom",
+                      iconPath: mdiMagnifyPlusOutline,
+                    },
+                    { value: "swing", label: "Swing", iconPath: mdiDoor },
+                  ],
+                  valueChanged,
+                })}
               </div>
             </div>
           `
@@ -640,16 +641,16 @@ function renderLoopModeOption(loopMode, valueChanged) {
         </div>
       </div>
       <div class="option-control">
-        <ha-select
-          .value=${loopMode}
-          data-option="loop_mode"
-          @change=${valueChanged}
-          @closed=${(ev) => ev.stopPropagation()}
-        >
-          <ha-list-item .value=${"none"}> No looping </ha-list-item>
-          <ha-list-item .value=${"loopback"}> Jump to start/end </ha-list-item>
-          <ha-list-item .value=${"infinite"}> Continuous loop </ha-list-item>
-        </ha-select>
+        ${renderSelect({
+          value: loopMode,
+          dataOption: "loop_mode",
+          options: [
+            { value: "none", label: "No looping" },
+            { value: "loopback", label: "Jump to start/end" },
+            { value: "infinite", label: "Continuous loop" },
+          ],
+          valueChanged,
+        })}
       </div>
     </div>
   `;
@@ -805,23 +806,6 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
       stateEntity.includes("{%") ||
       stateEntity.includes("[[["));
 
-  // Get all input_select and input_number entities
-  const inputEntities = Object.keys(hass.states || {})
-    .filter(
-      (entityId) =>
-        entityId.startsWith("input_select.") ||
-        entityId.startsWith("input_number."),
-    )
-    .sort()
-    .map((entityId) => ({
-      entityId,
-      friendlyName:
-        hass.states[entityId].attributes.friendly_name ||
-        entityId
-          .replace(/^(input_select\.|input_number\.)/, "")
-          .replace(/_/g, " "),
-    }));
-
   // If it's a template, show a text field instead of dropdown
   if (isTemplate) {
     return html`
@@ -860,31 +844,16 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
           Two-way sync with input_select/input_number entity
         </div>
       </div>
-      <div class="option-control">
-        <ha-select
+      <div class="option-control" style="flex: 1;">
+        <ha-entity-picker
+          .hass=${hass}
           .value=${stateEntity || ""}
           data-option="state_entity"
-          @change=${valueChanged}
-          @closed=${(ev) => ev.stopPropagation()}
-        >
-          <ha-list-item .value=${""}>
-            <span style="color: var(--secondary-text-color);"
-              >Select an entity</span
-            >
-          </ha-list-item>
-          ${inputEntities.map(
-            (entity) => html`
-              <ha-list-item .value=${entity.entityId}>
-                ${entity.friendlyName}
-                <span
-                  style="color: var(--secondary-text-color); font-size: 0.9em; margin-left: 8px;"
-                >
-                  (${entity.entityId})
-                </span>
-              </ha-list-item>
-            `,
-          )}
-        </ha-select>
+          .includeDomains=${["input_select", "input_number"]}
+          allow-custom-entity
+          @value-changed=${valueChanged}
+          style="width: 100%;"
+        ></ha-entity-picker>
       </div>
     </div>
   `;
