@@ -343,12 +343,9 @@ export class SwipeEffects {
       return;
     }
 
-    // Apply stacked layout positioning
-    slide.style.position = "absolute";
-    slide.style.top = "0";
-    slide.style.left = "0";
-    slide.style.width = "100%";
-    slide.style.height = "100%";
+    // Apply stacked layout positioning (single grid cell, see _setupStackedLayout)
+    slide.style.gridColumn = "1";
+    slide.style.gridRow = "1";
 
     // Calculate offset from current position
     const loopMode = this.card._config.loop_mode || "none";
@@ -376,15 +373,15 @@ export class SwipeEffects {
     const slides = this.card.sliderElement?.querySelectorAll(".slide");
     if (!slides) return;
 
-    // Position all slides at the same location
-    // Set default opacity=0 and z-index=0 to prevent flash of wrong card
-    // The actual values will be set by _applySlideTransformsImmediate
+    // Stack every slide in the same grid cell so they overlap. Unlike
+    // position:absolute (which removes slides from flow and collapses the card
+    // to height 0 whenever the host height is content-based), grid items still
+    // contribute to the track's intrinsic size.
+    // Set default opacity=0 and z-index=0 to prevent flash of wrong card.
+    // The actual values will be set by _applySlideTransformsImmediate.
     slides.forEach((slide) => {
-      slide.style.position = "absolute";
-      slide.style.top = "0";
-      slide.style.left = "0";
-      slide.style.width = "100%";
-      slide.style.height = "100%";
+      slide.style.gridColumn = "1";
+      slide.style.gridRow = "1";
       // Default to hidden - transforms will make the correct slide visible
       if (!slide.style.opacity) {
         slide.style.opacity = "0";
@@ -394,10 +391,15 @@ export class SwipeEffects {
       }
     });
 
-    // Make slider non-scrolling
+    // Single-cell grid: a 1fr row fills a definite container (sections grid) and
+    // self-sizes to the tallest card when the height is indefinite (editor
+    // preview, masonry) - mirroring how the non-stacked flex layout sizes itself.
     if (this.card.sliderElement) {
       this.card.sliderElement.style.position = "relative";
       this.card.sliderElement.style.overflow = "hidden";
+      this.card.sliderElement.style.display = "grid";
+      this.card.sliderElement.style.gridTemplateColumns = "1fr";
+      this.card.sliderElement.style.gridTemplateRows = "1fr";
     }
 
     logDebug("EFFECTS", "Stacked layout setup complete");
@@ -884,6 +886,8 @@ export class SwipeEffects {
         slide.style.left = "";
         slide.style.width = "";
         slide.style.height = "";
+        slide.style.gridColumn = "";
+        slide.style.gridRow = "";
         slide.style.clipPath = "";
       });
     }
@@ -894,10 +898,14 @@ export class SwipeEffects {
       this.card.cardContainer.style.perspectiveOrigin = "";
     }
 
+    // Restore the slider to its default flex flow (grid stacking is removed).
     if (this.card.sliderElement) {
       this.card.sliderElement.style.transformStyle = "";
       this.card.sliderElement.style.position = "";
       this.card.sliderElement.style.overflow = "";
+      this.card.sliderElement.style.display = "";
+      this.card.sliderElement.style.gridTemplateColumns = "";
+      this.card.sliderElement.style.gridTemplateRows = "";
     }
 
     this._initialized = false;

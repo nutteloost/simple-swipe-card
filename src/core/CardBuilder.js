@@ -2397,13 +2397,12 @@ export class CardBuilder {
       }
 
       // For stacked mode: hide slide BEFORE inserting into DOM to prevent flicker
-      // The slide will be made visible with proper transforms after insertion
+      // The slide will be made visible with proper transforms after insertion.
+      // Stack into a single grid cell (see SwipeEffects._setupStackedLayout) so
+      // the slide still contributes to the slider's intrinsic height.
       if (this.card.swipeEffects?.usesStackedMode()) {
-        cardData.slide.style.position = "absolute";
-        cardData.slide.style.top = "0";
-        cardData.slide.style.left = "0";
-        cardData.slide.style.width = "100%";
-        cardData.slide.style.height = "100%";
+        cardData.slide.style.gridColumn = "1";
+        cardData.slide.style.gridRow = "1";
         cardData.slide.style.opacity = "0";
         cardData.slide.style.zIndex = "0";
       }
