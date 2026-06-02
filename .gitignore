@@ -38,3 +38,9 @@ RELEASE-NOTES.md
 scripts/
 
 *.map
+
+# Claude Code (keep local, never commit)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json

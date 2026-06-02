@@ -28,8 +28,7 @@
     "release": "npm run clean && npm run pre-release && npm run deploy:minified && echo 'ðŸŽ‰ Release ready! File: build/simple-swipe-card.js'",
     "release:auto": "node scripts/release.js",
     "clean": "rimraf build/*.js *.map",
-    "test:build": "npm run deploy:prod && echo 'âœ… Production build test passed'",
-    "backup": "node scripts/backup.js"
+    "test:build": "npm run deploy:prod && echo 'âœ… Production build test passed'"
   },
   "dependencies": {
     "lit": "^3.0.0"
