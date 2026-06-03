@@ -125,6 +125,7 @@ const DEBUG_CATEGORIES = {
   VISIBILITY: true,
   RESET: true,
   AUTO_HEIGHT: true,
+  UIX: true,
 };
 
 // Rate limiting for frequent messages
@@ -184,6 +185,7 @@ const logDebug = (category, ...args) => {
     VISIBILITY: "color: #ff5722; font-weight: bold",
     RESET: "color: #8bc34a; font-weight: bold",
     AUTO_HEIGHT: "color: #ffc107; font-weight: bold",
+    UIX: "color: #009688; font-weight: bold",
   };
 
   const style = categoryColors[category] || categoryColors.DEFAULT;
@@ -195,32 +197,2854 @@ const logDebug = (category, ...args) => {
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const t$1=globalThis,e$2=t$1.ShadowRoot&&(void 0===t$1.ShadyCSS||t$1.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s$2=Symbol(),o$4=new WeakMap;let n$2 = class n{constructor(t,e,o){if(this._$cssResult$=true,o!==s$2)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e;}get styleSheet(){let t=this.o;const s=this.t;if(e$2&&void 0===t){const e=void 0!==s&&1===s.length;e&&(t=o$4.get(s)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&o$4.set(s,t));}return t}toString(){return this.cssText}};const r$2=t=>new n$2("string"==typeof t?t:t+"",void 0,s$2),i$3=(t,...e)=>{const o=1===t.length?t[0]:e.reduce(((e,s,o)=>e+(t=>{if(true===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(s)+t[o+1]),t[0]);return new n$2(o,t,s$2)},S$1=(s,o)=>{if(e$2)s.adoptedStyleSheets=o.map((t=>t instanceof CSSStyleSheet?t:t.styleSheet));else for(const e of o){const o=document.createElement("style"),n=t$1.litNonce;void 0!==n&&o.setAttribute("nonce",n),o.textContent=e.cssText,s.appendChild(o);}},c$2=e$2?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const s of t.cssRules)e+=s.cssText;return r$2(e)})(t):t;
-
+const NODE_MODE = false;
+// Allows minifiers to rename references to globalThis
+const global$3 = globalThis;
 /**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */const{is:i$2,defineProperty:e$1,getOwnPropertyDescriptor:h$1,getOwnPropertyNames:r$1,getOwnPropertySymbols:o$3,getPrototypeOf:n$1}=Object,a$1=globalThis,c$1=a$1.trustedTypes,l$1=c$1?c$1.emptyScript:"",p$1=a$1.reactiveElementPolyfillSupport,d$1=(t,s)=>t,u$1={toAttribute(t,s){switch(s){case Boolean:t=t?l$1:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t);}return t},fromAttribute(t,s){let i=t;switch(s){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t);}catch(t){i=null;}}return i}},f$1=(t,s)=>!i$2(t,s),b={attribute:true,type:String,converter:u$1,reflect:false,useDefault:false,hasChanged:f$1};Symbol.metadata??=Symbol("metadata"),a$1.litPropertyMetadata??=new WeakMap;let y$1 = class y extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t);}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,s=b){if(s.state&&(s.attribute=false),this._$Ei(),this.prototype.hasOwnProperty(t)&&((s=Object.create(s)).wrapped=true),this.elementProperties.set(t,s),!s.noAccessor){const i=Symbol(),h=this.getPropertyDescriptor(t,i,s);void 0!==h&&e$1(this.prototype,t,h);}}static getPropertyDescriptor(t,s,i){const{get:e,set:r}=h$1(this.prototype,t)??{get(){return this[s]},set(t){this[s]=t;}};return {get:e,set(s){const h=e?.call(this);r?.call(this,s),this.requestUpdate(t,h,i);},configurable:true,enumerable:true}}static getPropertyOptions(t){return this.elementProperties.get(t)??b}static _$Ei(){if(this.hasOwnProperty(d$1("elementProperties")))return;const t=n$1(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties);}static finalize(){if(this.hasOwnProperty(d$1("finalized")))return;if(this.finalized=true,this._$Ei(),this.hasOwnProperty(d$1("properties"))){const t=this.properties,s=[...r$1(t),...o$3(t)];for(const i of s)this.createProperty(i,t[i]);}const t=this[Symbol.metadata];if(null!==t){const s=litPropertyMetadata.get(t);if(void 0!==s)for(const[t,i]of s)this.elementProperties.set(t,i);}this._$Eh=new Map;for(const[t,s]of this.elementProperties){const i=this._$Eu(t,s);void 0!==i&&this._$Eh.set(i,t);}this.elementStyles=this.finalizeStyles(this.styles);}static finalizeStyles(s){const i=[];if(Array.isArray(s)){const e=new Set(s.flat(1/0).reverse());for(const s of e)i.unshift(c$2(s));}else void 0!==s&&i.push(c$2(s));return i}static _$Eu(t,s){const i=s.attribute;return  false===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=false,this.hasUpdated=false,this._$Em=null,this._$Ev();}_$Ev(){this._$ES=new Promise((t=>this.enableUpdating=t)),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach((t=>t(this)));}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.();}removeController(t){this._$EO?.delete(t);}_$E_(){const t=new Map,s=this.constructor.elementProperties;for(const i of s.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t);}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return S$1(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(true),this._$EO?.forEach((t=>t.hostConnected?.()));}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach((t=>t.hostDisconnected?.()));}attributeChangedCallback(t,s,i){this._$AK(t,i);}_$ET(t,s){const i=this.constructor.elementProperties.get(t),e=this.constructor._$Eu(t,i);if(void 0!==e&&true===i.reflect){const h=(void 0!==i.converter?.toAttribute?i.converter:u$1).toAttribute(s,i.type);this._$Em=t,null==h?this.removeAttribute(e):this.setAttribute(e,h),this._$Em=null;}}_$AK(t,s){const i=this.constructor,e=i._$Eh.get(t);if(void 0!==e&&this._$Em!==e){const t=i.getPropertyOptions(e),h="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:u$1;this._$Em=e;const r=h.fromAttribute(s,t.type);this[e]=r??this._$Ej?.get(e)??r,this._$Em=null;}}requestUpdate(t,s,i){if(void 0!==t){const e=this.constructor,h=this[t];if(i??=e.getPropertyOptions(t),!((i.hasChanged??f$1)(h,s)||i.useDefault&&i.reflect&&h===this._$Ej?.get(t)&&!this.hasAttribute(e._$Eu(t,i))))return;this.C(t,s,i);} false===this.isUpdatePending&&(this._$ES=this._$EP());}C(t,s,{useDefault:i,reflect:e,wrapped:h},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??s??this[t]),true!==h||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(s=void 0),this._$AL.set(t,s)),true===e&&this._$Em!==t&&(this._$Eq??=new Set).add(t));}async _$EP(){this.isUpdatePending=true;try{await this._$ES;}catch(t){Promise.reject(t);}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,s]of this._$Ep)this[t]=s;this._$Ep=void 0;}const t=this.constructor.elementProperties;if(t.size>0)for(const[s,i]of t){const{wrapped:t}=i,e=this[s];true!==t||this._$AL.has(s)||void 0===e||this.C(s,void 0,i,e);}}let t=false;const s=this._$AL;try{t=this.shouldUpdate(s),t?(this.willUpdate(s),this._$EO?.forEach((t=>t.hostUpdate?.())),this.update(s)):this._$EM();}catch(s){throw t=false,this._$EM(),s}t&&this._$AE(s);}willUpdate(t){}_$AE(t){this._$EO?.forEach((t=>t.hostUpdated?.())),this.hasUpdated||(this.hasUpdated=true,this.firstUpdated(t)),this.updated(t);}_$EM(){this._$AL=new Map,this.isUpdatePending=false;}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return  true}update(t){this._$Eq&&=this._$Eq.forEach((t=>this._$ET(t,this[t]))),this._$EM();}updated(t){}firstUpdated(t){}};y$1.elementStyles=[],y$1.shadowRootOptions={mode:"open"},y$1[d$1("elementProperties")]=new Map,y$1[d$1("finalized")]=new Map,p$1?.({ReactiveElement:y$1}),(a$1.reactiveElementVersions??=[]).push("2.1.1");
+ * Whether the current browser supports `adoptedStyleSheets`.
+ */
+const supportsAdoptingStyleSheets = global$3.ShadowRoot &&
+    (global$3.ShadyCSS === undefined || global$3.ShadyCSS.nativeShadow) &&
+    'adoptedStyleSheets' in Document.prototype &&
+    'replace' in CSSStyleSheet.prototype;
+const constructionToken = Symbol();
+const cssTagCache = new WeakMap();
+/**
+ * A container for a string of CSS text, that may be used to create a CSSStyleSheet.
+ *
+ * CSSResult is the return value of `css`-tagged template literals and
+ * `unsafeCSS()`. In order to ensure that CSSResults are only created via the
+ * `css` tag and `unsafeCSS()`, CSSResult cannot be constructed directly.
+ */
+class CSSResult {
+    constructor(cssText, strings, safeToken) {
+        // This property needs to remain unminified.
+        this['_$cssResult$'] = true;
+        if (safeToken !== constructionToken) {
+            throw new Error('CSSResult is not constructable. Use `unsafeCSS` or `css` instead.');
+        }
+        this.cssText = cssText;
+        this._strings = strings;
+    }
+    // This is a getter so that it's lazy. In practice, this means stylesheets
+    // are not created until the first element instance is made.
+    get styleSheet() {
+        // If `supportsAdoptingStyleSheets` is true then we assume CSSStyleSheet is
+        // constructable.
+        let styleSheet = this._styleSheet;
+        const strings = this._strings;
+        if (supportsAdoptingStyleSheets && styleSheet === undefined) {
+            const cacheable = strings !== undefined && strings.length === 1;
+            if (cacheable) {
+                styleSheet = cssTagCache.get(strings);
+            }
+            if (styleSheet === undefined) {
+                (this._styleSheet = styleSheet = new CSSStyleSheet()).replaceSync(this.cssText);
+                if (cacheable) {
+                    cssTagCache.set(strings, styleSheet);
+                }
+            }
+        }
+        return styleSheet;
+    }
+    toString() {
+        return this.cssText;
+    }
+}
+const textFromCSSResult = (value) => {
+    // This property needs to remain unminified.
+    if (value['_$cssResult$'] === true) {
+        return value.cssText;
+    }
+    else if (typeof value === 'number') {
+        return value;
+    }
+    else {
+        throw new Error(`Value passed to 'css' function must be a 'css' function result: ` +
+            `${value}. Use 'unsafeCSS' to pass non-literal values, but take care ` +
+            `to ensure page security.`);
+    }
+};
+/**
+ * Wrap a value for interpolation in a {@linkcode css} tagged template literal.
+ *
+ * This is unsafe because untrusted CSS text can be used to phone home
+ * or exfiltrate data to an attacker controlled site. Take care to only use
+ * this with trusted input.
+ */
+const unsafeCSS = (value) => new CSSResult(typeof value === 'string' ? value : String(value), undefined, constructionToken);
+/**
+ * A template literal tag which can be used with LitElement's
+ * {@linkcode LitElement.styles} property to set element styles.
+ *
+ * For security reasons, only literal string values and number may be used in
+ * embedded expressions. To incorporate non-literal values {@linkcode unsafeCSS}
+ * may be used inside an expression.
+ */
+const css = (strings, ...values) => {
+    const cssText = strings.length === 1
+        ? strings[0]
+        : values.reduce((acc, v, idx) => acc + textFromCSSResult(v) + strings[idx + 1], strings[0]);
+    return new CSSResult(cssText, strings, constructionToken);
+};
+/**
+ * Applies the given styles to a `shadowRoot`. When Shadow DOM is
+ * available but `adoptedStyleSheets` is not, styles are appended to the
+ * `shadowRoot` to [mimic the native feature](https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot/adoptedStyleSheets).
+ * Note, when shimming is used, any styles that are subsequently placed into
+ * the shadowRoot should be placed *before* any shimmed adopted styles. This
+ * will match spec behavior that gives adopted sheets precedence over styles in
+ * shadowRoot.
+ */
+const adoptStyles = (renderRoot, styles) => {
+    if (supportsAdoptingStyleSheets) {
+        renderRoot.adoptedStyleSheets = styles.map((s) => s instanceof CSSStyleSheet ? s : s.styleSheet);
+    }
+    else {
+        for (const s of styles) {
+            const style = document.createElement('style');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const nonce = global$3['litNonce'];
+            if (nonce !== undefined) {
+                style.setAttribute('nonce', nonce);
+            }
+            style.textContent = s.cssText;
+            renderRoot.appendChild(style);
+        }
+    }
+};
+const cssResultFromStyleSheet = (sheet) => {
+    let cssText = '';
+    for (const rule of sheet.cssRules) {
+        cssText += rule.cssText;
+    }
+    return unsafeCSS(cssText);
+};
+const getCompatibleStyle = supportsAdoptingStyleSheets ||
+    (NODE_MODE)
+    ? (s) => s
+    : (s) => s instanceof CSSStyleSheet ? cssResultFromStyleSheet(s) : s;
 
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const t=globalThis,i$1=t.trustedTypes,s$1=i$1?i$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,e="$lit$",h=`lit$${Math.random().toFixed(9).slice(2)}$`,o$2="?"+h,n=`<${o$2}>`,r=document,l=()=>r.createComment(""),c=t=>null===t||"object"!=typeof t&&"function"!=typeof t,a=Array.isArray,u=t=>a(t)||"function"==typeof t?.[Symbol.iterator],d="[ \t\n\f\r]",f=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,v=/-->/g,_=/>/g,m=RegExp(`>|${d}(?:([^\\s"'>=/]+)(${d}*=${d}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),p=/'/g,g=/"/g,$=/^(?:script|style|textarea|title)$/i,y=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),x=y(1),T=Symbol.for("lit-noChange"),E=Symbol.for("lit-nothing"),A=new WeakMap,C=r.createTreeWalker(r,129);function P(t,i){if(!a(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==s$1?s$1.createHTML(i):i}const V=(t,i)=>{const s=t.length-1,o=[];let r,l=2===i?"<svg>":3===i?"<math>":"",c=f;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,y=0;for(;y<s.length&&(c.lastIndex=y,u=c.exec(s),null!==u);)y=c.lastIndex,c===f?"!--"===u[1]?c=v:void 0!==u[1]?c=_:void 0!==u[2]?($.test(u[2])&&(r=RegExp("</"+u[2],"g")),c=m):void 0!==u[3]&&(c=m):c===m?">"===u[0]?(c=r??f,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?m:'"'===u[3]?g:p):c===g||c===p?c=m:c===v||c===_?c=f:(c=m,r=void 0);const x=c===m&&t[i+1].startsWith("/>")?" ":"";l+=c===f?s+n:d>=0?(o.push(a),s.slice(0,d)+e+s.slice(d)+h+x):s+h+(-2===d?i:x);}return [P(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),o]};class N{constructor({strings:t,_$litType$:s},n){let r;this.parts=[];let c=0,a=0;const u=t.length-1,d=this.parts,[f,v]=V(t,s);if(this.el=N.createElement(f,n),C.currentNode=this.el.content,2===s||3===s){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=C.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(e)){const i=v[a++],s=r.getAttribute(t).split(h),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:c,name:e[2],strings:s,ctor:"."===e[1]?H:"?"===e[1]?I:"@"===e[1]?L:k}),r.removeAttribute(t);}else t.startsWith(h)&&(d.push({type:6,index:c}),r.removeAttribute(t));if($.test(r.tagName)){const t=r.textContent.split(h),s=t.length-1;if(s>0){r.textContent=i$1?i$1.emptyScript:"";for(let i=0;i<s;i++)r.append(t[i],l()),C.nextNode(),d.push({type:2,index:++c});r.append(t[s],l());}}}else if(8===r.nodeType)if(r.data===o$2)d.push({type:2,index:c});else {let t=-1;for(;-1!==(t=r.data.indexOf(h,t+1));)d.push({type:7,index:c}),t+=h.length-1;}c++;}}static createElement(t,i){const s=r.createElement("template");return s.innerHTML=t,s}}function S(t,i,s=t,e){if(i===T)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=c(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(false),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=S(t,h._$AS(t,i.values),h,e)),i}class M{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??r).importNode(i,true);C.currentNode=e;let h=C.nextNode(),o=0,n=0,l=s[0];for(;void 0!==l;){if(o===l.index){let i;2===l.type?i=new R(h,h.nextSibling,this,t):1===l.type?i=new l.ctor(h,l.name,l.strings,this,t):6===l.type&&(i=new z(h,this,t)),this._$AV.push(i),l=s[++n];}o!==l?.index&&(h=C.nextNode(),o++);}return C.currentNode=r,e}p(t){let i=0;for(const s of this._$AV) void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class R{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=E,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??true;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=S(this,t,i),c(t)?t===E||null==t||""===t?(this._$AH!==E&&this._$AR(),this._$AH=E):t!==this._$AH&&t!==T&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):u(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==E&&c(this._$AH)?this._$AA.nextSibling.data=t:this.T(r.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=N.createElement(P(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new M(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=A.get(t.strings);return void 0===i&&A.set(t.strings,i=new N(t)),i}k(t){a(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new R(this.O(l()),this.O(l()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,i){for(this._$AP?.(false,true,i);t!==this._$AB;){const i=t.nextSibling;t.remove(),t=i;}}setConnected(t){ void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class k{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=E,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=E;}_$AI(t,i=this,s,e){const h=this.strings;let o=false;if(void 0===h)t=S(this,t,i,0),o=!c(t)||t!==this._$AH&&t!==T,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=S(this,e[s+n],i,n),r===T&&(r=this._$AH[n]),o||=!c(r)||r!==this._$AH[n],r===E?t=E:t!==E&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===E?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class H extends k{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===E?void 0:t;}}class I extends k{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==E);}}class L extends k{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=S(this,t,i,0)??E)===T)return;const s=this._$AH,e=t===E&&s!==E||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==E&&(s===E||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){S(this,t);}}const j=t.litHtmlPolyfillSupport;j?.(N,R),(t.litHtmlVersions??=[]).push("3.3.1");const B=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new R(i.insertBefore(l(),t),t,void 0,s??{});}return h._$AI(t),h};
+/**
+ * Use this module if you want to create your own base class extending
+ * {@link ReactiveElement}.
+ * @packageDocumentation
+ */
+// TODO (justinfagnani): Add `hasOwn` here when we ship ES2022
+const { is, defineProperty, getOwnPropertyDescriptor, getOwnPropertyNames, getOwnPropertySymbols, getPrototypeOf, } = Object;
+// Lets a minifier replace globalThis references with a minified name
+const global$2 = globalThis;
+let issueWarning$2;
+const trustedTypes$1 = global$2
+    .trustedTypes;
+// Temporary workaround for https://crbug.com/993268
+// Currently, any attribute starting with "on" is considered to be a
+// TrustedScript source. Such boolean attributes must be set to the equivalent
+// trusted emptyScript value.
+const emptyStringForBooleanAttribute = trustedTypes$1
+    ? trustedTypes$1.emptyScript
+    : '';
+const polyfillSupport$2 = global$2.reactiveElementPolyfillSupportDevMode
+    ;
+{
+    // Ensure warnings are issued only 1x, even if multiple versions of Lit
+    // are loaded.
+    global$2.litIssuedWarnings ??= new Set();
+    /**
+     * Issue a warning if we haven't already, based either on `code` or `warning`.
+     * Warnings are disabled automatically only by `warning`; disabling via `code`
+     * can be done by users.
+     */
+    issueWarning$2 = (code, warning) => {
+        warning += ` See https://lit.dev/msg/${code} for more information.`;
+        if (!global$2.litIssuedWarnings.has(warning) &&
+            !global$2.litIssuedWarnings.has(code)) {
+            console.warn(warning);
+            global$2.litIssuedWarnings.add(warning);
+        }
+    };
+    queueMicrotask(() => {
+        issueWarning$2('dev-mode', `Lit is in dev mode. Not recommended for production!`);
+        // Issue polyfill support warning.
+        if (global$2.ShadyDOM?.inUse && polyfillSupport$2 === undefined) {
+            issueWarning$2('polyfill-support-missing', `Shadow DOM is being polyfilled via \`ShadyDOM\` but ` +
+                `the \`polyfill-support\` module has not been loaded.`);
+        }
+    });
+}
+/**
+ * Useful for visualizing and logging insights into what the Lit template system is doing.
+ *
+ * Compiled out of prod mode builds.
+ */
+const debugLogEvent$1 = (event) => {
+        const shouldEmit = global$2
+            .emitLitDebugLogEvents;
+        if (!shouldEmit) {
+            return;
+        }
+        global$2.dispatchEvent(new CustomEvent('lit-debug', {
+            detail: event,
+        }));
+    }
+    ;
+/*
+ * When using Closure Compiler, JSCompiler_renameProperty(property, object) is
+ * replaced at compile time by the munged name for object[property]. We cannot
+ * alias this function, so we have to use a small shim that has the same
+ * behavior when not compiling.
+ */
+/*@__INLINE__*/
+const JSCompiler_renameProperty$1 = (prop, _obj) => prop;
+const defaultConverter = {
+    toAttribute(value, type) {
+        switch (type) {
+            case Boolean:
+                value = value ? emptyStringForBooleanAttribute : null;
+                break;
+            case Object:
+            case Array:
+                // if the value is `null` or `undefined` pass this through
+                // to allow removing/no change behavior.
+                value = value == null ? value : JSON.stringify(value);
+                break;
+        }
+        return value;
+    },
+    fromAttribute(value, type) {
+        let fromValue = value;
+        switch (type) {
+            case Boolean:
+                fromValue = value !== null;
+                break;
+            case Number:
+                fromValue = value === null ? null : Number(value);
+                break;
+            case Object:
+            case Array:
+                // Do *not* generate exception when invalid JSON is set as elements
+                // don't normally complain on being mis-configured.
+                // TODO(sorvell): Do generate exception in *dev mode*.
+                try {
+                    // Assert to adhere to Bazel's "must type assert JSON parse" rule.
+                    fromValue = JSON.parse(value);
+                }
+                catch (e) {
+                    fromValue = null;
+                }
+                break;
+        }
+        return fromValue;
+    },
+};
+/**
+ * Change function that returns true if `value` is different from `oldValue`.
+ * This method is used as the default for a property's `hasChanged` function.
+ */
+const notEqual = (value, old) => !is(value, old);
+const defaultPropertyDeclaration = {
+    attribute: true,
+    type: String,
+    converter: defaultConverter,
+    reflect: false,
+    useDefault: false,
+    hasChanged: notEqual,
+};
+// Ensure metadata is enabled. TypeScript does not polyfill
+// Symbol.metadata, so we must ensure that it exists.
+Symbol.metadata ??= Symbol('metadata');
+// Map from a class's metadata object to property options
+// Note that we must use nullish-coalescing assignment so that we only use one
+// map even if we load multiple version of this module.
+global$2.litPropertyMetadata ??= new WeakMap();
+/**
+ * Base element class which manages element properties and attributes. When
+ * properties change, the `update` method is asynchronously called. This method
+ * should be supplied by subclasses to render updates as desired.
+ * @noInheritDoc
+ */
+class ReactiveElement
+// In the Node build, this `extends` clause will be substituted with
+// `(globalThis.HTMLElement ?? HTMLElement)`.
+//
+// This way, we will first prefer any global `HTMLElement` polyfill that the
+// user has assigned, and then fall back to the `HTMLElement` shim which has
+// been imported (see note at the top of this file about how this import is
+// generated by Rollup). Note that the `HTMLElement` variable has been
+// shadowed by this import, so it no longer refers to the global.
+ extends HTMLElement {
+    /**
+     * Adds an initializer function to the class that is called during instance
+     * construction.
+     *
+     * This is useful for code that runs against a `ReactiveElement`
+     * subclass, such as a decorator, that needs to do work for each
+     * instance, such as setting up a `ReactiveController`.
+     *
+     * ```ts
+     * const myDecorator = (target: typeof ReactiveElement, key: string) => {
+     *   target.addInitializer((instance: ReactiveElement) => {
+     *     // This is run during construction of the element
+     *     new MyController(instance);
+     *   });
+     * }
+     * ```
+     *
+     * Decorating a field will then cause each instance to run an initializer
+     * that adds a controller:
+     *
+     * ```ts
+     * class MyElement extends LitElement {
+     *   @myDecorator foo;
+     * }
+     * ```
+     *
+     * Initializers are stored per-constructor. Adding an initializer to a
+     * subclass does not add it to a superclass. Since initializers are run in
+     * constructors, initializers will run in order of the class hierarchy,
+     * starting with superclasses and progressing to the instance's class.
+     *
+     * @nocollapse
+     */
+    static addInitializer(initializer) {
+        this.__prepare();
+        (this._initializers ??= []).push(initializer);
+    }
+    /**
+     * Returns a list of attributes corresponding to the registered properties.
+     * @nocollapse
+     * @category attributes
+     */
+    static get observedAttributes() {
+        // Ensure we've created all properties
+        this.finalize();
+        // this.__attributeToPropertyMap is only undefined after finalize() in
+        // ReactiveElement itself. ReactiveElement.observedAttributes is only
+        // accessed with ReactiveElement as the receiver when a subclass or mixin
+        // calls super.observedAttributes
+        return (this.__attributeToPropertyMap && [...this.__attributeToPropertyMap.keys()]);
+    }
+    /**
+     * Creates a property accessor on the element prototype if one does not exist
+     * and stores a {@linkcode PropertyDeclaration} for the property with the
+     * given options. The property setter calls the property's `hasChanged`
+     * property option or uses a strict identity check to determine whether or not
+     * to request an update.
+     *
+     * This method may be overridden to customize properties; however,
+     * when doing so, it's important to call `super.createProperty` to ensure
+     * the property is setup correctly. This method calls
+     * `getPropertyDescriptor` internally to get a descriptor to install.
+     * To customize what properties do when they are get or set, override
+     * `getPropertyDescriptor`. To customize the options for a property,
+     * implement `createProperty` like this:
+     *
+     * ```ts
+     * static createProperty(name, options) {
+     *   options = Object.assign(options, {myOption: true});
+     *   super.createProperty(name, options);
+     * }
+     * ```
+     *
+     * @nocollapse
+     * @category properties
+     */
+    static createProperty(name, options = defaultPropertyDeclaration) {
+        // If this is a state property, force the attribute to false.
+        if (options.state) {
+            options.attribute = false;
+        }
+        this.__prepare();
+        // Whether this property is wrapping accessors.
+        // Helps control the initial value change and reflection logic.
+        if (this.prototype.hasOwnProperty(name)) {
+            options = Object.create(options);
+            options.wrapped = true;
+        }
+        this.elementProperties.set(name, options);
+        if (!options.noAccessor) {
+            const key = // Use Symbol.for in dev mode to make it easier to maintain state
+                    // when doing HMR.
+                    Symbol.for(`${String(name)} (@property() cache)`)
+                ;
+            const descriptor = this.getPropertyDescriptor(name, key, options);
+            if (descriptor !== undefined) {
+                defineProperty(this.prototype, name, descriptor);
+            }
+        }
+    }
+    /**
+     * Returns a property descriptor to be defined on the given named property.
+     * If no descriptor is returned, the property will not become an accessor.
+     * For example,
+     *
+     * ```ts
+     * class MyElement extends LitElement {
+     *   static getPropertyDescriptor(name, key, options) {
+     *     const defaultDescriptor =
+     *         super.getPropertyDescriptor(name, key, options);
+     *     const setter = defaultDescriptor.set;
+     *     return {
+     *       get: defaultDescriptor.get,
+     *       set(value) {
+     *         setter.call(this, value);
+     *         // custom action.
+     *       },
+     *       configurable: true,
+     *       enumerable: true
+     *     }
+     *   }
+     * }
+     * ```
+     *
+     * @nocollapse
+     * @category properties
+     */
+    static getPropertyDescriptor(name, key, options) {
+        const { get, set } = getOwnPropertyDescriptor(this.prototype, name) ?? {
+            get() {
+                return this[key];
+            },
+            set(v) {
+                this[key] = v;
+            },
+        };
+        if (get == null) {
+            if ('value' in (getOwnPropertyDescriptor(this.prototype, name) ?? {})) {
+                throw new Error(`Field ${JSON.stringify(String(name))} on ` +
+                    `${this.name} was declared as a reactive property ` +
+                    `but it's actually declared as a value on the prototype. ` +
+                    `Usually this is due to using @property or @state on a method.`);
+            }
+            issueWarning$2('reactive-property-without-getter', `Field ${JSON.stringify(String(name))} on ` +
+                `${this.name} was declared as a reactive property ` +
+                `but it does not have a getter. This will be an error in a ` +
+                `future version of Lit.`);
+        }
+        return {
+            get,
+            set(value) {
+                const oldValue = get?.call(this);
+                set?.call(this, value);
+                this.requestUpdate(name, oldValue, options);
+            },
+            configurable: true,
+            enumerable: true,
+        };
+    }
+    /**
+     * Returns the property options associated with the given property.
+     * These options are defined with a `PropertyDeclaration` via the `properties`
+     * object or the `@property` decorator and are registered in
+     * `createProperty(...)`.
+     *
+     * Note, this method should be considered "final" and not overridden. To
+     * customize the options for a given property, override
+     * {@linkcode createProperty}.
+     *
+     * @nocollapse
+     * @final
+     * @category properties
+     */
+    static getPropertyOptions(name) {
+        return this.elementProperties.get(name) ?? defaultPropertyDeclaration;
+    }
+    /**
+     * Initializes static own properties of the class used in bookkeeping
+     * for element properties, initializers, etc.
+     *
+     * Can be called multiple times by code that needs to ensure these
+     * properties exist before using them.
+     *
+     * This method ensures the superclass is finalized so that inherited
+     * property metadata can be copied down.
+     * @nocollapse
+     */
+    static __prepare() {
+        if (this.hasOwnProperty(JSCompiler_renameProperty$1('elementProperties'))) {
+            // Already prepared
+            return;
+        }
+        // Finalize any superclasses
+        const superCtor = getPrototypeOf(this);
+        superCtor.finalize();
+        // Create own set of initializers for this class if any exist on the
+        // superclass and copy them down. Note, for a small perf boost, avoid
+        // creating initializers unless needed.
+        if (superCtor._initializers !== undefined) {
+            this._initializers = [...superCtor._initializers];
+        }
+        // Initialize elementProperties from the superclass
+        this.elementProperties = new Map(superCtor.elementProperties);
+    }
+    /**
+     * Finishes setting up the class so that it's ready to be registered
+     * as a custom element and instantiated.
+     *
+     * This method is called by the ReactiveElement.observedAttributes getter.
+     * If you override the observedAttributes getter, you must either call
+     * super.observedAttributes to trigger finalization, or call finalize()
+     * yourself.
+     *
+     * @nocollapse
+     */
+    static finalize() {
+        if (this.hasOwnProperty(JSCompiler_renameProperty$1('finalized'))) {
+            return;
+        }
+        this.finalized = true;
+        this.__prepare();
+        // Create properties from the static properties block:
+        if (this.hasOwnProperty(JSCompiler_renameProperty$1('properties'))) {
+            const props = this.properties;
+            const propKeys = [
+                ...getOwnPropertyNames(props),
+                ...getOwnPropertySymbols(props),
+            ];
+            for (const p of propKeys) {
+                this.createProperty(p, props[p]);
+            }
+        }
+        // Create properties from standard decorator metadata:
+        const metadata = this[Symbol.metadata];
+        if (metadata !== null) {
+            const properties = litPropertyMetadata.get(metadata);
+            if (properties !== undefined) {
+                for (const [p, options] of properties) {
+                    this.elementProperties.set(p, options);
+                }
+            }
+        }
+        // Create the attribute-to-property map
+        this.__attributeToPropertyMap = new Map();
+        for (const [p, options] of this.elementProperties) {
+            const attr = this.__attributeNameForProperty(p, options);
+            if (attr !== undefined) {
+                this.__attributeToPropertyMap.set(attr, p);
+            }
+        }
+        this.elementStyles = this.finalizeStyles(this.styles);
+        {
+            if (this.hasOwnProperty('createProperty')) {
+                issueWarning$2('no-override-create-property', 'Overriding ReactiveElement.createProperty() is deprecated. ' +
+                    'The override will not be called with standard decorators');
+            }
+            if (this.hasOwnProperty('getPropertyDescriptor')) {
+                issueWarning$2('no-override-get-property-descriptor', 'Overriding ReactiveElement.getPropertyDescriptor() is deprecated. ' +
+                    'The override will not be called with standard decorators');
+            }
+        }
+    }
+    /**
+     * Takes the styles the user supplied via the `static styles` property and
+     * returns the array of styles to apply to the element.
+     * Override this method to integrate into a style management system.
+     *
+     * Styles are deduplicated preserving the _last_ instance in the list. This
+     * is a performance optimization to avoid duplicated styles that can occur
+     * especially when composing via subclassing. The last item is kept to try
+     * to preserve the cascade order with the assumption that it's most important
+     * that last added styles override previous styles.
+     *
+     * @nocollapse
+     * @category styles
+     */
+    static finalizeStyles(styles) {
+        const elementStyles = [];
+        if (Array.isArray(styles)) {
+            // Dedupe the flattened array in reverse order to preserve the last items.
+            // Casting to Array<unknown> works around TS error that
+            // appears to come from trying to flatten a type CSSResultArray.
+            const set = new Set(styles.flat(Infinity).reverse());
+            // Then preserve original order by adding the set items in reverse order.
+            for (const s of set) {
+                elementStyles.unshift(getCompatibleStyle(s));
+            }
+        }
+        else if (styles !== undefined) {
+            elementStyles.push(getCompatibleStyle(styles));
+        }
+        return elementStyles;
+    }
+    /**
+     * Returns the property name for the given attribute `name`.
+     * @nocollapse
+     */
+    static __attributeNameForProperty(name, options) {
+        const attribute = options.attribute;
+        return attribute === false
+            ? undefined
+            : typeof attribute === 'string'
+                ? attribute
+                : typeof name === 'string'
+                    ? name.toLowerCase()
+                    : undefined;
+    }
+    constructor() {
+        super();
+        this.__instanceProperties = undefined;
+        /**
+         * True if there is a pending update as a result of calling `requestUpdate()`.
+         * Should only be read.
+         * @category updates
+         */
+        this.isUpdatePending = false;
+        /**
+         * Is set to `true` after the first update. The element code cannot assume
+         * that `renderRoot` exists before the element `hasUpdated`.
+         * @category updates
+         */
+        this.hasUpdated = false;
+        /**
+         * Name of currently reflecting property
+         */
+        this.__reflectingProperty = null;
+        this.__initialize();
+    }
+    /**
+     * Internal only override point for customizing work done when elements
+     * are constructed.
+     */
+    __initialize() {
+        this.__updatePromise = new Promise((res) => (this.enableUpdating = res));
+        this._$changedProperties = new Map();
+        // This enqueues a microtask that must run before the first update, so it
+        // must be called before requestUpdate()
+        this.__saveInstanceProperties();
+        // ensures first update will be caught by an early access of
+        // `updateComplete`
+        this.requestUpdate();
+        this.constructor._initializers?.forEach((i) => i(this));
+    }
+    /**
+     * Registers a `ReactiveController` to participate in the element's reactive
+     * update cycle. The element automatically calls into any registered
+     * controllers during its lifecycle callbacks.
+     *
+     * If the element is connected when `addController()` is called, the
+     * controller's `hostConnected()` callback will be immediately called.
+     * @category controllers
+     */
+    addController(controller) {
+        (this.__controllers ??= new Set()).add(controller);
+        // If a controller is added after the element has been connected,
+        // call hostConnected. Note, re-using existence of `renderRoot` here
+        // (which is set in connectedCallback) to avoid the need to track a
+        // first connected state.
+        if (this.renderRoot !== undefined && this.isConnected) {
+            controller.hostConnected?.();
+        }
+    }
+    /**
+     * Removes a `ReactiveController` from the element.
+     * @category controllers
+     */
+    removeController(controller) {
+        this.__controllers?.delete(controller);
+    }
+    /**
+     * Fixes any properties set on the instance before upgrade time.
+     * Otherwise these would shadow the accessor and break these properties.
+     * The properties are stored in a Map which is played back after the
+     * constructor runs.
+     */
+    __saveInstanceProperties() {
+        const instanceProperties = new Map();
+        const elementProperties = this.constructor
+            .elementProperties;
+        for (const p of elementProperties.keys()) {
+            if (this.hasOwnProperty(p)) {
+                instanceProperties.set(p, this[p]);
+                delete this[p];
+            }
+        }
+        if (instanceProperties.size > 0) {
+            this.__instanceProperties = instanceProperties;
+        }
+    }
+    /**
+     * Returns the node into which the element should render and by default
+     * creates and returns an open shadowRoot. Implement to customize where the
+     * element's DOM is rendered. For example, to render into the element's
+     * childNodes, return `this`.
+     *
+     * @return Returns a node into which to render.
+     * @category rendering
+     */
+    createRenderRoot() {
+        const renderRoot = this.shadowRoot ??
+            this.attachShadow(this.constructor.shadowRootOptions);
+        adoptStyles(renderRoot, this.constructor.elementStyles);
+        return renderRoot;
+    }
+    /**
+     * On first connection, creates the element's renderRoot, sets up
+     * element styling, and enables updating.
+     * @category lifecycle
+     */
+    connectedCallback() {
+        // Create renderRoot before controllers `hostConnected`
+        this.renderRoot ??=
+            this.createRenderRoot();
+        this.enableUpdating(true);
+        this.__controllers?.forEach((c) => c.hostConnected?.());
+    }
+    /**
+     * Note, this method should be considered final and not overridden. It is
+     * overridden on the element instance with a function that triggers the first
+     * update.
+     * @category updates
+     */
+    enableUpdating(_requestedUpdate) { }
+    /**
+     * Allows for `super.disconnectedCallback()` in extensions while
+     * reserving the possibility of making non-breaking feature additions
+     * when disconnecting at some point in the future.
+     * @category lifecycle
+     */
+    disconnectedCallback() {
+        this.__controllers?.forEach((c) => c.hostDisconnected?.());
+    }
+    /**
+     * Synchronizes property values when attributes change.
+     *
+     * Specifically, when an attribute is set, the corresponding property is set.
+     * You should rarely need to implement this callback. If this method is
+     * overridden, `super.attributeChangedCallback(name, _old, value)` must be
+     * called.
+     *
+     * See [responding to attribute changes](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements#responding_to_attribute_changes)
+     * on MDN for more information about the `attributeChangedCallback`.
+     * @category attributes
+     */
+    attributeChangedCallback(name, _old, value) {
+        this._$attributeToProperty(name, value);
+    }
+    __propertyToAttribute(name, value) {
+        const elemProperties = this.constructor.elementProperties;
+        const options = elemProperties.get(name);
+        const attr = this.constructor.__attributeNameForProperty(name, options);
+        if (attr !== undefined && options.reflect === true) {
+            const converter = options.converter?.toAttribute !==
+                undefined
+                ? options.converter
+                : defaultConverter;
+            const attrValue = converter.toAttribute(value, options.type);
+            if (this.constructor.enabledWarnings.includes('migration') &&
+                attrValue === undefined) {
+                issueWarning$2('undefined-attribute-value', `The attribute value for the ${name} property is ` +
+                    `undefined on element ${this.localName}. The attribute will be ` +
+                    `removed, but in the previous version of \`ReactiveElement\`, ` +
+                    `the attribute would not have changed.`);
+            }
+            // Track if the property is being reflected to avoid
+            // setting the property again via `attributeChangedCallback`. Note:
+            // 1. this takes advantage of the fact that the callback is synchronous.
+            // 2. will behave incorrectly if multiple attributes are in the reaction
+            // stack at time of calling. However, since we process attributes
+            // in `update` this should not be possible (or an extreme corner case
+            // that we'd like to discover).
+            // mark state reflecting
+            this.__reflectingProperty = name;
+            if (attrValue == null) {
+                this.removeAttribute(attr);
+            }
+            else {
+                this.setAttribute(attr, attrValue);
+            }
+            // mark state not reflecting
+            this.__reflectingProperty = null;
+        }
+    }
+    /** @internal */
+    _$attributeToProperty(name, value) {
+        const ctor = this.constructor;
+        // Note, hint this as an `AttributeMap` so closure clearly understands
+        // the type; it has issues with tracking types through statics
+        const propName = ctor.__attributeToPropertyMap.get(name);
+        // Use tracking info to avoid reflecting a property value to an attribute
+        // if it was just set because the attribute changed.
+        if (propName !== undefined && this.__reflectingProperty !== propName) {
+            const options = ctor.getPropertyOptions(propName);
+            const converter = typeof options.converter === 'function'
+                ? { fromAttribute: options.converter }
+                : options.converter?.fromAttribute !== undefined
+                    ? options.converter
+                    : defaultConverter;
+            // mark state reflecting
+            this.__reflectingProperty = propName;
+            const convertedValue = converter.fromAttribute(value, options.type);
+            this[propName] =
+                convertedValue ??
+                    this.__defaultValues?.get(propName) ??
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    convertedValue;
+            // mark state not reflecting
+            this.__reflectingProperty = null;
+        }
+    }
+    /**
+     * Requests an update which is processed asynchronously. This should be called
+     * when an element should update based on some state not triggered by setting
+     * a reactive property. In this case, pass no arguments. It should also be
+     * called when manually implementing a property setter. In this case, pass the
+     * property `name` and `oldValue` to ensure that any configured property
+     * options are honored.
+     *
+     * @param name name of requesting property
+     * @param oldValue old value of requesting property
+     * @param options property options to use instead of the previously
+     *     configured options
+     * @category updates
+     */
+    requestUpdate(name, oldValue, options) {
+        // If we have a property key, perform property update steps.
+        if (name !== undefined) {
+            if (name instanceof Event) {
+                issueWarning$2(``, `The requestUpdate() method was called with an Event as the property name. This is probably a mistake caused by binding this.requestUpdate as an event listener. Instead bind a function that will call it with no arguments: () => this.requestUpdate()`);
+            }
+            const ctor = this.constructor;
+            const newValue = this[name];
+            options ??= ctor.getPropertyOptions(name);
+            const changed = (options.hasChanged ?? notEqual)(newValue, oldValue) ||
+                // When there is no change, check a corner case that can occur when
+                // 1. there's a initial value which was not reflected
+                // 2. the property is subsequently set to this value.
+                // For example, `prop: {useDefault: true, reflect: true}`
+                // and el.prop = 'foo'. This should be considered a change if the
+                // attribute is not set because we will now reflect the property to the attribute.
+                (options.useDefault &&
+                    options.reflect &&
+                    newValue === this.__defaultValues?.get(name) &&
+                    !this.hasAttribute(ctor.__attributeNameForProperty(name, options)));
+            if (changed) {
+                this._$changeProperty(name, oldValue, options);
+            }
+            else {
+                // Abort the request if the property should not be considered changed.
+                return;
+            }
+        }
+        if (this.isUpdatePending === false) {
+            this.__updatePromise = this.__enqueueUpdate();
+        }
+    }
+    /**
+     * @internal
+     */
+    _$changeProperty(name, oldValue, { useDefault, reflect, wrapped }, initializeValue) {
+        // Record default value when useDefault is used. This allows us to
+        // restore this value when the attribute is removed.
+        if (useDefault && !(this.__defaultValues ??= new Map()).has(name)) {
+            this.__defaultValues.set(name, initializeValue ?? oldValue ?? this[name]);
+            // if this is not wrapping an accessor, it must be an initial setting
+            // and in this case we do not want to record the change or reflect.
+            if (wrapped !== true || initializeValue !== undefined) {
+                return;
+            }
+        }
+        // TODO (justinfagnani): Create a benchmark of Map.has() + Map.set(
+        // vs just Map.set()
+        if (!this._$changedProperties.has(name)) {
+            // On the initial change, the old value should be `undefined`, except
+            // with `useDefault`
+            if (!this.hasUpdated && !useDefault) {
+                oldValue = undefined;
+            }
+            this._$changedProperties.set(name, oldValue);
+        }
+        // Add to reflecting properties set.
+        // Note, it's important that every change has a chance to add the
+        // property to `__reflectingProperties`. This ensures setting
+        // attribute + property reflects correctly.
+        if (reflect === true && this.__reflectingProperty !== name) {
+            (this.__reflectingProperties ??= new Set()).add(name);
+        }
+    }
+    /**
+     * Sets up the element to asynchronously update.
+     */
+    async __enqueueUpdate() {
+        this.isUpdatePending = true;
+        try {
+            // Ensure any previous update has resolved before updating.
+            // This `await` also ensures that property changes are batched.
+            await this.__updatePromise;
+        }
+        catch (e) {
+            // Refire any previous errors async so they do not disrupt the update
+            // cycle. Errors are refired so developers have a chance to observe
+            // them, and this can be done by implementing
+            // `window.onunhandledrejection`.
+            Promise.reject(e);
+        }
+        const result = this.scheduleUpdate();
+        // If `scheduleUpdate` returns a Promise, we await it. This is done to
+        // enable coordinating updates with a scheduler. Note, the result is
+        // checked to avoid delaying an additional microtask unless we need to.
+        if (result != null) {
+            await result;
+        }
+        return !this.isUpdatePending;
+    }
+    /**
+     * Schedules an element update. You can override this method to change the
+     * timing of updates by returning a Promise. The update will await the
+     * returned Promise, and you should resolve the Promise to allow the update
+     * to proceed. If this method is overridden, `super.scheduleUpdate()`
+     * must be called.
+     *
+     * For instance, to schedule updates to occur just before the next frame:
+     *
+     * ```ts
+     * override protected async scheduleUpdate(): Promise<unknown> {
+     *   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+     *   super.scheduleUpdate();
+     * }
+     * ```
+     * @category updates
+     */
+    scheduleUpdate() {
+        const result = this.performUpdate();
+        if (this.constructor.enabledWarnings.includes('async-perform-update') &&
+            typeof result?.then ===
+                'function') {
+            issueWarning$2('async-perform-update', `Element ${this.localName} returned a Promise from performUpdate(). ` +
+                `This behavior is deprecated and will be removed in a future ` +
+                `version of ReactiveElement.`);
+        }
+        return result;
+    }
+    /**
+     * Performs an element update. Note, if an exception is thrown during the
+     * update, `firstUpdated` and `updated` will not be called.
+     *
+     * Call `performUpdate()` to immediately process a pending update. This should
+     * generally not be needed, but it can be done in rare cases when you need to
+     * update synchronously.
+     *
+     * @category updates
+     */
+    performUpdate() {
+        // Abort any update if one is not pending when this is called.
+        // This can happen if `performUpdate` is called early to "flush"
+        // the update.
+        if (!this.isUpdatePending) {
+            return;
+        }
+        debugLogEvent$1?.({ kind: 'update' });
+        if (!this.hasUpdated) {
+            // Create renderRoot before first update. This occurs in `connectedCallback`
+            // but is done here to support out of tree calls to `enableUpdating`/`performUpdate`.
+            this.renderRoot ??=
+                this.createRenderRoot();
+            {
+                // Produce warning if any reactive properties on the prototype are
+                // shadowed by class fields. Instance fields set before upgrade are
+                // deleted by this point, so any own property is caused by class field
+                // initialization in the constructor.
+                const ctor = this.constructor;
+                const shadowedProperties = [...ctor.elementProperties.keys()].filter((p) => this.hasOwnProperty(p) && p in getPrototypeOf(this));
+                if (shadowedProperties.length) {
+                    throw new Error(`The following properties on element ${this.localName} will not ` +
+                        `trigger updates as expected because they are set using class ` +
+                        `fields: ${shadowedProperties.join(', ')}. ` +
+                        `Native class fields and some compiled output will overwrite ` +
+                        `accessors used for detecting changes. See ` +
+                        `https://lit.dev/msg/class-field-shadowing ` +
+                        `for more information.`);
+                }
+            }
+            // Mixin instance properties once, if they exist.
+            if (this.__instanceProperties) {
+                // TODO (justinfagnani): should we use the stored value? Could a new value
+                // have been set since we stored the own property value?
+                for (const [p, value] of this.__instanceProperties) {
+                    this[p] = value;
+                }
+                this.__instanceProperties = undefined;
+            }
+            // Trigger initial value reflection and populate the initial
+            // `changedProperties` map, but only for the case of properties created
+            // via `createProperty` on accessors, which will not have already
+            // populated the `changedProperties` map since they are not set.
+            // We can't know if these accessors had initializers, so we just set
+            // them anyway - a difference from experimental decorators on fields and
+            // standard decorators on auto-accessors.
+            // For context see:
+            // https://github.com/lit/lit/pull/4183#issuecomment-1711959635
+            const elementProperties = this.constructor
+                .elementProperties;
+            if (elementProperties.size > 0) {
+                for (const [p, options] of elementProperties) {
+                    const { wrapped } = options;
+                    const value = this[p];
+                    if (wrapped === true &&
+                        !this._$changedProperties.has(p) &&
+                        value !== undefined) {
+                        this._$changeProperty(p, undefined, options, value);
+                    }
+                }
+            }
+        }
+        let shouldUpdate = false;
+        const changedProperties = this._$changedProperties;
+        try {
+            shouldUpdate = this.shouldUpdate(changedProperties);
+            if (shouldUpdate) {
+                this.willUpdate(changedProperties);
+                this.__controllers?.forEach((c) => c.hostUpdate?.());
+                this.update(changedProperties);
+            }
+            else {
+                this.__markUpdated();
+            }
+        }
+        catch (e) {
+            // Prevent `firstUpdated` and `updated` from running when there's an
+            // update exception.
+            shouldUpdate = false;
+            // Ensure element can accept additional updates after an exception.
+            this.__markUpdated();
+            throw e;
+        }
+        // The update is no longer considered pending and further updates are now allowed.
+        if (shouldUpdate) {
+            this._$didUpdate(changedProperties);
+        }
+    }
+    /**
+     * Invoked before `update()` to compute values needed during the update.
+     *
+     * Implement `willUpdate` to compute property values that depend on other
+     * properties and are used in the rest of the update process.
+     *
+     * ```ts
+     * willUpdate(changedProperties) {
+     *   // only need to check changed properties for an expensive computation.
+     *   if (changedProperties.has('firstName') || changedProperties.has('lastName')) {
+     *     this.sha = computeSHA(`${this.firstName} ${this.lastName}`);
+     *   }
+     * }
+     *
+     * render() {
+     *   return html`SHA: ${this.sha}`;
+     * }
+     * ```
+     *
+     * @category updates
+     */
+    willUpdate(_changedProperties) { }
+    // Note, this is an override point for polyfill-support.
+    // @internal
+    _$didUpdate(changedProperties) {
+        this.__controllers?.forEach((c) => c.hostUpdated?.());
+        if (!this.hasUpdated) {
+            this.hasUpdated = true;
+            this.firstUpdated(changedProperties);
+        }
+        this.updated(changedProperties);
+        if (this.isUpdatePending &&
+            this.constructor.enabledWarnings.includes('change-in-update')) {
+            issueWarning$2('change-in-update', `Element ${this.localName} scheduled an update ` +
+                `(generally because a property was set) ` +
+                `after an update completed, causing a new update to be scheduled. ` +
+                `This is inefficient and should be avoided unless the next update ` +
+                `can only be scheduled as a side effect of the previous update.`);
+        }
+    }
+    __markUpdated() {
+        this._$changedProperties = new Map();
+        this.isUpdatePending = false;
+    }
+    /**
+     * Returns a Promise that resolves when the element has completed updating.
+     * The Promise value is a boolean that is `true` if the element completed the
+     * update without triggering another update. The Promise result is `false` if
+     * a property was set inside `updated()`. If the Promise is rejected, an
+     * exception was thrown during the update.
+     *
+     * To await additional asynchronous work, override the `getUpdateComplete`
+     * method. For example, it is sometimes useful to await a rendered element
+     * before fulfilling this Promise. To do this, first await
+     * `super.getUpdateComplete()`, then any subsequent state.
+     *
+     * @return A promise of a boolean that resolves to true if the update completed
+     *     without triggering another update.
+     * @category updates
+     */
+    get updateComplete() {
+        return this.getUpdateComplete();
+    }
+    /**
+     * Override point for the `updateComplete` promise.
+     *
+     * It is not safe to override the `updateComplete` getter directly due to a
+     * limitation in TypeScript which means it is not possible to call a
+     * superclass getter (e.g. `super.updateComplete.then(...)`) when the target
+     * language is ES5 (https://github.com/microsoft/TypeScript/issues/338).
+     * This method should be overridden instead. For example:
+     *
+     * ```ts
+     * class MyElement extends LitElement {
+     *   override async getUpdateComplete() {
+     *     const result = await super.getUpdateComplete();
+     *     await this._myChild.updateComplete;
+     *     return result;
+     *   }
+     * }
+     * ```
+     *
+     * @return A promise of a boolean that resolves to true if the update completed
+     *     without triggering another update.
+     * @category updates
+     */
+    getUpdateComplete() {
+        return this.__updatePromise;
+    }
+    /**
+     * Controls whether or not `update()` should be called when the element requests
+     * an update. By default, this method always returns `true`, but this can be
+     * customized to control when to update.
+     *
+     * @param _changedProperties Map of changed properties with old values
+     * @category updates
+     */
+    shouldUpdate(_changedProperties) {
+        return true;
+    }
+    /**
+     * Updates the element. This method reflects property values to attributes.
+     * It can be overridden to render and keep updated element DOM.
+     * Setting properties inside this method will *not* trigger
+     * another update.
+     *
+     * @param _changedProperties Map of changed properties with old values
+     * @category updates
+     */
+    update(_changedProperties) {
+        // The forEach() expression will only run when __reflectingProperties is
+        // defined, and it returns undefined, setting __reflectingProperties to
+        // undefined
+        this.__reflectingProperties &&= this.__reflectingProperties.forEach((p) => this.__propertyToAttribute(p, this[p]));
+        this.__markUpdated();
+    }
+    /**
+     * Invoked whenever the element is updated. Implement to perform
+     * post-updating tasks via DOM APIs, for example, focusing an element.
+     *
+     * Setting properties inside this method will trigger the element to update
+     * again after this update cycle completes.
+     *
+     * @param _changedProperties Map of changed properties with old values
+     * @category updates
+     */
+    updated(_changedProperties) { }
+    /**
+     * Invoked when the element is first updated. Implement to perform one time
+     * work on the element after update.
+     *
+     * ```ts
+     * firstUpdated() {
+     *   this.renderRoot.getElementById('my-text-area').focus();
+     * }
+     * ```
+     *
+     * Setting properties inside this method will trigger the element to update
+     * again after this update cycle completes.
+     *
+     * @param _changedProperties Map of changed properties with old values
+     * @category updates
+     */
+    firstUpdated(_changedProperties) { }
+}
+/**
+ * Memoized list of all element styles.
+ * Created lazily on user subclasses when finalizing the class.
+ * @nocollapse
+ * @category styles
+ */
+ReactiveElement.elementStyles = [];
+/**
+ * Options used when calling `attachShadow`. Set this property to customize
+ * the options for the shadowRoot; for example, to create a closed
+ * shadowRoot: `{mode: 'closed'}`.
+ *
+ * Note, these options are used in `createRenderRoot`. If this method
+ * is customized, options should be respected if possible.
+ * @nocollapse
+ * @category rendering
+ */
+ReactiveElement.shadowRootOptions = { mode: 'open' };
+// Assigned here to work around a jscompiler bug with static fields
+// when compiling to ES5.
+// https://github.com/google/closure-compiler/issues/3177
+ReactiveElement[JSCompiler_renameProperty$1('elementProperties')] = new Map();
+ReactiveElement[JSCompiler_renameProperty$1('finalized')] = new Map();
+// Apply polyfills if available
+polyfillSupport$2?.({ ReactiveElement });
+// Dev mode warnings...
+{
+    // Default warning set.
+    ReactiveElement.enabledWarnings = [
+        'change-in-update',
+        'async-perform-update',
+    ];
+    const ensureOwnWarnings = function (ctor) {
+        if (!ctor.hasOwnProperty(JSCompiler_renameProperty$1('enabledWarnings'))) {
+            ctor.enabledWarnings = ctor.enabledWarnings.slice();
+        }
+    };
+    ReactiveElement.enableWarning = function (warning) {
+        ensureOwnWarnings(this);
+        if (!this.enabledWarnings.includes(warning)) {
+            this.enabledWarnings.push(warning);
+        }
+    };
+    ReactiveElement.disableWarning = function (warning) {
+        ensureOwnWarnings(this);
+        const i = this.enabledWarnings.indexOf(warning);
+        if (i >= 0) {
+            this.enabledWarnings.splice(i, 1);
+        }
+    };
+}
+// IMPORTANT: do not change the property name or the assignment expression.
+// This line will be used in regexes to search for ReactiveElement usage.
+(global$2.reactiveElementVersions ??= []).push('2.1.1');
+if (global$2.reactiveElementVersions.length > 1) {
+    queueMicrotask(() => {
+        issueWarning$2('multiple-versions', `Multiple versions of Lit loaded. Loading multiple versions ` +
+            `is not recommended.`);
+    });
+}
 
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */const s=globalThis;class i extends y$1{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0;}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const r=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=B(r,this.renderRoot,this.renderOptions);}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(true);}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(false);}render(){return T}}i._$litElement$=true,i["finalized"]=true,s.litElementHydrateSupport?.({LitElement:i});const o$1=s.litElementPolyfillSupport;o$1?.({LitElement:i});(s.litElementVersions??=[]).push("4.2.1");
+ */
+// Allows minifiers to rename references to globalThis
+const global$1 = globalThis;
+/**
+ * Useful for visualizing and logging insights into what the Lit template system is doing.
+ *
+ * Compiled out of prod mode builds.
+ */
+const debugLogEvent = (event) => {
+        const shouldEmit = global$1
+            .emitLitDebugLogEvents;
+        if (!shouldEmit) {
+            return;
+        }
+        global$1.dispatchEvent(new CustomEvent('lit-debug', {
+            detail: event,
+        }));
+    }
+    ;
+// Used for connecting beginRender and endRender events when there are nested
+// renders when errors are thrown preventing an endRender event from being
+// called.
+let debugLogRenderId = 0;
+let issueWarning$1;
+{
+    global$1.litIssuedWarnings ??= new Set();
+    /**
+     * Issue a warning if we haven't already, based either on `code` or `warning`.
+     * Warnings are disabled automatically only by `warning`; disabling via `code`
+     * can be done by users.
+     */
+    issueWarning$1 = (code, warning) => {
+        warning += code
+            ? ` See https://lit.dev/msg/${code} for more information.`
+            : '';
+        if (!global$1.litIssuedWarnings.has(warning) &&
+            !global$1.litIssuedWarnings.has(code)) {
+            console.warn(warning);
+            global$1.litIssuedWarnings.add(warning);
+        }
+    };
+    queueMicrotask(() => {
+        issueWarning$1('dev-mode', `Lit is in dev mode. Not recommended for production!`);
+    });
+}
+const wrap = global$1.ShadyDOM?.inUse &&
+    global$1.ShadyDOM?.noPatch === true
+    ? global$1.ShadyDOM.wrap
+    : (node) => node;
+const trustedTypes = global$1.trustedTypes;
+/**
+ * Our TrustedTypePolicy for HTML which is declared using the html template
+ * tag function.
+ *
+ * That HTML is a developer-authored constant, and is parsed with innerHTML
+ * before any untrusted expressions have been mixed in. Therefor it is
+ * considered safe by construction.
+ */
+const policy = trustedTypes
+    ? trustedTypes.createPolicy('lit-html', {
+        createHTML: (s) => s,
+    })
+    : undefined;
+const identityFunction = (value) => value;
+const noopSanitizer = (_node, _name, _type) => identityFunction;
+/** Sets the global sanitizer factory. */
+const setSanitizer = (newSanitizer) => {
+    if (sanitizerFactoryInternal !== noopSanitizer) {
+        throw new Error(`Attempted to overwrite existing lit-html security policy.` +
+            ` setSanitizeDOMValueFactory should be called at most once.`);
+    }
+    sanitizerFactoryInternal = newSanitizer;
+};
+/**
+ * Only used in internal tests, not a part of the public API.
+ */
+const _testOnlyClearSanitizerFactoryDoNotCallOrElse = () => {
+    sanitizerFactoryInternal = noopSanitizer;
+};
+const createSanitizer = (node, name, type) => {
+    return sanitizerFactoryInternal(node, name, type);
+};
+// Added to an attribute name to mark the attribute as bound so we can find
+// it easily.
+const boundAttributeSuffix = '$lit$';
+// This marker is used in many syntactic positions in HTML, so it must be
+// a valid element name and attribute name. We don't support dynamic names (yet)
+// but this at least ensures that the parse tree is closer to the template
+// intention.
+const marker = `lit$${Math.random().toFixed(9).slice(2)}$`;
+// String used to tell if a comment is a marker comment
+const markerMatch = '?' + marker;
+// Text used to insert a comment marker node. We use processing instruction
+// syntax because it's slightly smaller, but parses as a comment node.
+const nodeMarker = `<${markerMatch}>`;
+const d = document;
+// Creates a dynamic marker. We never have to search for these in the DOM.
+const createMarker = () => d.createComment('');
+const isPrimitive = (value) => value === null || (typeof value != 'object' && typeof value != 'function');
+const isArray = Array.isArray;
+const isIterable = (value) => isArray(value) ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof value?.[Symbol.iterator] === 'function';
+const SPACE_CHAR = `[ \t\n\f\r]`;
+const ATTR_VALUE_CHAR = `[^ \t\n\f\r"'\`<>=]`;
+const NAME_CHAR = `[^\\s"'>=/]`;
+// These regexes represent the five parsing states that we care about in the
+// Template's HTML scanner. They match the *end* of the state they're named
+// after.
+// Depending on the match, we transition to a new state. If there's no match,
+// we stay in the same state.
+// Note that the regexes are stateful. We utilize lastIndex and sync it
+// across the multiple regexes used. In addition to the five regexes below
+// we also dynamically create a regex to find the matching end tags for raw
+// text elements.
+/**
+ * End of text is: `<` followed by:
+ *   (comment start) or (tag) or (dynamic tag binding)
+ */
+const textEndRegex = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g;
+const COMMENT_START = 1;
+const TAG_NAME = 2;
+const DYNAMIC_TAG_NAME = 3;
+const commentEndRegex = /-->/g;
+/**
+ * Comments not started with <!--, like </{, can be ended by a single `>`
+ */
+const comment2EndRegex = />/g;
+/**
+ * The tagEnd regex matches the end of the "inside an opening" tag syntax
+ * position. It either matches a `>`, an attribute-like sequence, or the end
+ * of the string after a space (attribute-name position ending).
+ *
+ * See attributes in the HTML spec:
+ * https://www.w3.org/TR/html5/syntax.html#elements-attributes
+ *
+ * " \t\n\f\r" are HTML space characters:
+ * https://infra.spec.whatwg.org/#ascii-whitespace
+ *
+ * So an attribute is:
+ *  * The name: any character except a whitespace character, ("), ('), ">",
+ *    "=", or "/". Note: this is different from the HTML spec which also excludes control characters.
+ *  * Followed by zero or more space characters
+ *  * Followed by "="
+ *  * Followed by zero or more space characters
+ *  * Followed by:
+ *    * Any character except space, ('), ("), "<", ">", "=", (`), or
+ *    * (") then any non-("), or
+ *    * (') then any non-(')
+ */
+const tagEndRegex = new RegExp(`>|${SPACE_CHAR}(?:(${NAME_CHAR}+)(${SPACE_CHAR}*=${SPACE_CHAR}*(?:${ATTR_VALUE_CHAR}|("|')|))|$)`, 'g');
+const ENTIRE_MATCH = 0;
+const ATTRIBUTE_NAME = 1;
+const SPACES_AND_EQUALS = 2;
+const QUOTE_CHAR = 3;
+const singleQuoteAttrEndRegex = /'/g;
+const doubleQuoteAttrEndRegex = /"/g;
+/**
+ * Matches the raw text elements.
+ *
+ * Comments are not parsed within raw text elements, so we need to search their
+ * text content for marker strings.
+ */
+const rawTextElement = /^(?:script|style|textarea|title)$/i;
+/** TemplateResult types */
+const HTML_RESULT = 1;
+const SVG_RESULT = 2;
+const MATHML_RESULT = 3;
+// TemplatePart types
+// IMPORTANT: these must match the values in PartType
+const ATTRIBUTE_PART = 1;
+const CHILD_PART = 2;
+const PROPERTY_PART = 3;
+const BOOLEAN_ATTRIBUTE_PART = 4;
+const EVENT_PART = 5;
+const ELEMENT_PART = 6;
+const COMMENT_PART = 7;
+/**
+ * Generates a template literal tag function that returns a TemplateResult with
+ * the given result type.
+ */
+const tag = (type) => (strings, ...values) => {
+    // Warn against templates octal escape sequences
+    // We do this here rather than in render so that the warning is closer to the
+    // template definition.
+    if (strings.some((s) => s === undefined)) {
+        console.warn('Some template strings are undefined.\n' +
+            'This is probably caused by illegal octal escape sequences.');
+    }
+    {
+        // Import static-html.js results in a circular dependency which g3 doesn't
+        // handle. Instead we know that static values must have the field
+        // `_$litStatic$`.
+        if (values.some((val) => val?.['_$litStatic$'])) {
+            issueWarning$1('', `Static values 'literal' or 'unsafeStatic' cannot be used as values to non-static templates.\n` +
+                `Please use the static 'html' tag function. See https://lit.dev/docs/templates/expressions/#static-expressions`);
+        }
+    }
+    return {
+        // This property needs to remain unminified.
+        ['_$litType$']: type,
+        strings,
+        values,
+    };
+};
+/**
+ * Interprets a template literal as an HTML template that can efficiently
+ * render to and update a container.
+ *
+ * ```ts
+ * const header = (title: string) => html`<h1>${title}</h1>`;
+ * ```
+ *
+ * The `html` tag returns a description of the DOM to render as a value. It is
+ * lazy, meaning no work is done until the template is rendered. When rendering,
+ * if a template comes from the same expression as a previously rendered result,
+ * it's efficiently updated instead of replaced.
+ */
+const html = tag(HTML_RESULT);
+/**
+ * A sentinel value that signals that a value was handled by a directive and
+ * should not be written to the DOM.
+ */
+const noChange = Symbol.for('lit-noChange');
+/**
+ * A sentinel value that signals a ChildPart to fully clear its content.
+ *
+ * ```ts
+ * const button = html`${
+ *  user.isAdmin
+ *    ? html`<button>DELETE</button>`
+ *    : nothing
+ * }`;
+ * ```
+ *
+ * Prefer using `nothing` over other falsy values as it provides a consistent
+ * behavior between various expression binding contexts.
+ *
+ * In child expressions, `undefined`, `null`, `''`, and `nothing` all behave the
+ * same and render no nodes. In attribute expressions, `nothing` _removes_ the
+ * attribute, while `undefined` and `null` will render an empty string. In
+ * property expressions `nothing` becomes `undefined`.
+ */
+const nothing = Symbol.for('lit-nothing');
+/**
+ * The cache of prepared templates, keyed by the tagged TemplateStringsArray
+ * and _not_ accounting for the specific template tag used. This means that
+ * template tags cannot be dynamic - they must statically be one of html, svg,
+ * or attr. This restriction simplifies the cache lookup, which is on the hot
+ * path for rendering.
+ */
+const templateCache = new WeakMap();
+const walker = d.createTreeWalker(d, 129 /* NodeFilter.SHOW_{ELEMENT|COMMENT} */);
+let sanitizerFactoryInternal = noopSanitizer;
+function trustFromTemplateString(tsa, stringFromTSA) {
+    // A security check to prevent spoofing of Lit template results.
+    // In the future, we may be able to replace this with Array.isTemplateObject,
+    // though we might need to make that check inside of the html and svg
+    // functions, because precompiled templates don't come in as
+    // TemplateStringArray objects.
+    if (!isArray(tsa) || !tsa.hasOwnProperty('raw')) {
+        let message = 'invalid template strings array';
+        {
+            message = `
+          Internal Error: expected template strings to be an array
+          with a 'raw' field. Faking a template strings array by
+          calling html or svg like an ordinary function is effectively
+          the same as calling unsafeHtml and can lead to major security
+          issues, e.g. opening your code up to XSS attacks.
+          If you're using the html or svg tagged template functions normally
+          and still seeing this error, please file a bug at
+          https://github.com/lit/lit/issues/new?template=bug_report.md
+          and include information about your build tooling, if any.
+        `
+                .trim()
+                .replace(/\n */g, '\n');
+        }
+        throw new Error(message);
+    }
+    return policy !== undefined
+        ? policy.createHTML(stringFromTSA)
+        : stringFromTSA;
+}
+/**
+ * Returns an HTML string for the given TemplateStringsArray and result type
+ * (HTML or SVG), along with the case-sensitive bound attribute names in
+ * template order. The HTML contains comment markers denoting the `ChildPart`s
+ * and suffixes on bound attributes denoting the `AttributeParts`.
+ *
+ * @param strings template strings array
+ * @param type HTML or SVG
+ * @return Array containing `[html, attrNames]` (array returned for terseness,
+ *     to avoid object fields since this code is shared with non-minified SSR
+ *     code)
+ */
+const getTemplateHtml = (strings, type) => {
+    // Insert makers into the template HTML to represent the position of
+    // bindings. The following code scans the template strings to determine the
+    // syntactic position of the bindings. They can be in text position, where
+    // we insert an HTML comment, attribute value position, where we insert a
+    // sentinel string and re-write the attribute name, or inside a tag where
+    // we insert the sentinel string.
+    const l = strings.length - 1;
+    // Stores the case-sensitive bound attribute names in the order of their
+    // parts. ElementParts are also reflected in this array as undefined
+    // rather than a string, to disambiguate from attribute bindings.
+    const attrNames = [];
+    let html = type === SVG_RESULT ? '<svg>' : type === MATHML_RESULT ? '<math>' : '';
+    // When we're inside a raw text tag (not it's text content), the regex
+    // will still be tagRegex so we can find attributes, but will switch to
+    // this regex when the tag ends.
+    let rawTextEndRegex;
+    // The current parsing state, represented as a reference to one of the
+    // regexes
+    let regex = textEndRegex;
+    for (let i = 0; i < l; i++) {
+        const s = strings[i];
+        // The index of the end of the last attribute name. When this is
+        // positive at end of a string, it means we're in an attribute value
+        // position and need to rewrite the attribute name.
+        // We also use a special value of -2 to indicate that we encountered
+        // the end of a string in attribute name position.
+        let attrNameEndIndex = -1;
+        let attrName;
+        let lastIndex = 0;
+        let match;
+        // The conditions in this loop handle the current parse state, and the
+        // assignments to the `regex` variable are the state transitions.
+        while (lastIndex < s.length) {
+            // Make sure we start searching from where we previously left off
+            regex.lastIndex = lastIndex;
+            match = regex.exec(s);
+            if (match === null) {
+                break;
+            }
+            lastIndex = regex.lastIndex;
+            if (regex === textEndRegex) {
+                if (match[COMMENT_START] === '!--') {
+                    regex = commentEndRegex;
+                }
+                else if (match[COMMENT_START] !== undefined) {
+                    // We started a weird comment, like </{
+                    regex = comment2EndRegex;
+                }
+                else if (match[TAG_NAME] !== undefined) {
+                    if (rawTextElement.test(match[TAG_NAME])) {
+                        // Record if we encounter a raw-text element. We'll switch to
+                        // this regex at the end of the tag.
+                        rawTextEndRegex = new RegExp(`</${match[TAG_NAME]}`, 'g');
+                    }
+                    regex = tagEndRegex;
+                }
+                else if (match[DYNAMIC_TAG_NAME] !== undefined) {
+                    {
+                        throw new Error('Bindings in tag names are not supported. Please use static templates instead. ' +
+                            'See https://lit.dev/docs/templates/expressions/#static-expressions');
+                    }
+                }
+            }
+            else if (regex === tagEndRegex) {
+                if (match[ENTIRE_MATCH] === '>') {
+                    // End of a tag. If we had started a raw-text element, use that
+                    // regex
+                    regex = rawTextEndRegex ?? textEndRegex;
+                    // We may be ending an unquoted attribute value, so make sure we
+                    // clear any pending attrNameEndIndex
+                    attrNameEndIndex = -1;
+                }
+                else if (match[ATTRIBUTE_NAME] === undefined) {
+                    // Attribute name position
+                    attrNameEndIndex = -2;
+                }
+                else {
+                    attrNameEndIndex = regex.lastIndex - match[SPACES_AND_EQUALS].length;
+                    attrName = match[ATTRIBUTE_NAME];
+                    regex =
+                        match[QUOTE_CHAR] === undefined
+                            ? tagEndRegex
+                            : match[QUOTE_CHAR] === '"'
+                                ? doubleQuoteAttrEndRegex
+                                : singleQuoteAttrEndRegex;
+                }
+            }
+            else if (regex === doubleQuoteAttrEndRegex ||
+                regex === singleQuoteAttrEndRegex) {
+                regex = tagEndRegex;
+            }
+            else if (regex === commentEndRegex || regex === comment2EndRegex) {
+                regex = textEndRegex;
+            }
+            else {
+                // Not one of the five state regexes, so it must be the dynamically
+                // created raw text regex and we're at the close of that element.
+                regex = tagEndRegex;
+                rawTextEndRegex = undefined;
+            }
+        }
+        {
+            // If we have a attrNameEndIndex, which indicates that we should
+            // rewrite the attribute name, assert that we're in a valid attribute
+            // position - either in a tag, or a quoted attribute value.
+            console.assert(attrNameEndIndex === -1 ||
+                regex === tagEndRegex ||
+                regex === singleQuoteAttrEndRegex ||
+                regex === doubleQuoteAttrEndRegex, 'unexpected parse state B');
+        }
+        // We have four cases:
+        //  1. We're in text position, and not in a raw text element
+        //     (regex === textEndRegex): insert a comment marker.
+        //  2. We have a non-negative attrNameEndIndex which means we need to
+        //     rewrite the attribute name to add a bound attribute suffix.
+        //  3. We're at the non-first binding in a multi-binding attribute, use a
+        //     plain marker.
+        //  4. We're somewhere else inside the tag. If we're in attribute name
+        //     position (attrNameEndIndex === -2), add a sequential suffix to
+        //     generate a unique attribute name.
+        // Detect a binding next to self-closing tag end and insert a space to
+        // separate the marker from the tag end:
+        const end = regex === tagEndRegex && strings[i + 1].startsWith('/>') ? ' ' : '';
+        html +=
+            regex === textEndRegex
+                ? s + nodeMarker
+                : attrNameEndIndex >= 0
+                    ? (attrNames.push(attrName),
+                        s.slice(0, attrNameEndIndex) +
+                            boundAttributeSuffix +
+                            s.slice(attrNameEndIndex)) +
+                        marker +
+                        end
+                    : s + marker + (attrNameEndIndex === -2 ? i : end);
+    }
+    const htmlResult = html +
+        (strings[l] || '<?>') +
+        (type === SVG_RESULT ? '</svg>' : type === MATHML_RESULT ? '</math>' : '');
+    // Returned as an array for terseness
+    return [trustFromTemplateString(strings, htmlResult), attrNames];
+};
+class Template {
+    constructor(
+    // This property needs to remain unminified.
+    { strings, ['_$litType$']: type }, options) {
+        this.parts = [];
+        let node;
+        let nodeIndex = 0;
+        let attrNameIndex = 0;
+        const partCount = strings.length - 1;
+        const parts = this.parts;
+        // Create template element
+        const [html, attrNames] = getTemplateHtml(strings, type);
+        this.el = Template.createElement(html, options);
+        walker.currentNode = this.el.content;
+        // Re-parent SVG or MathML nodes into template root
+        if (type === SVG_RESULT || type === MATHML_RESULT) {
+            const wrapper = this.el.content.firstChild;
+            wrapper.replaceWith(...wrapper.childNodes);
+        }
+        // Walk the template to find binding markers and create TemplateParts
+        while ((node = walker.nextNode()) !== null && parts.length < partCount) {
+            if (node.nodeType === 1) {
+                {
+                    const tag = node.localName;
+                    // Warn if `textarea` includes an expression and throw if `template`
+                    // does since these are not supported. We do this by checking
+                    // innerHTML for anything that looks like a marker. This catches
+                    // cases like bindings in textarea there markers turn into text nodes.
+                    if (/^(?:textarea|template)$/i.test(tag) &&
+                        node.innerHTML.includes(marker)) {
+                        const m = `Expressions are not supported inside \`${tag}\` ` +
+                            `elements. See https://lit.dev/msg/expression-in-${tag} for more ` +
+                            `information.`;
+                        if (tag === 'template') {
+                            throw new Error(m);
+                        }
+                        else
+                            issueWarning$1('', m);
+                    }
+                }
+                // TODO (justinfagnani): for attempted dynamic tag names, we don't
+                // increment the bindingIndex, and it'll be off by 1 in the element
+                // and off by two after it.
+                if (node.hasAttributes()) {
+                    for (const name of node.getAttributeNames()) {
+                        if (name.endsWith(boundAttributeSuffix)) {
+                            const realName = attrNames[attrNameIndex++];
+                            const value = node.getAttribute(name);
+                            const statics = value.split(marker);
+                            const m = /([.?@])?(.*)/.exec(realName);
+                            parts.push({
+                                type: ATTRIBUTE_PART,
+                                index: nodeIndex,
+                                name: m[2],
+                                strings: statics,
+                                ctor: m[1] === '.'
+                                    ? PropertyPart
+                                    : m[1] === '?'
+                                        ? BooleanAttributePart
+                                        : m[1] === '@'
+                                            ? EventPart
+                                            : AttributePart,
+                            });
+                            node.removeAttribute(name);
+                        }
+                        else if (name.startsWith(marker)) {
+                            parts.push({
+                                type: ELEMENT_PART,
+                                index: nodeIndex,
+                            });
+                            node.removeAttribute(name);
+                        }
+                    }
+                }
+                // TODO (justinfagnani): benchmark the regex against testing for each
+                // of the 3 raw text element names.
+                if (rawTextElement.test(node.tagName)) {
+                    // For raw text elements we need to split the text content on
+                    // markers, create a Text node for each segment, and create
+                    // a TemplatePart for each marker.
+                    const strings = node.textContent.split(marker);
+                    const lastIndex = strings.length - 1;
+                    if (lastIndex > 0) {
+                        node.textContent = trustedTypes
+                            ? trustedTypes.emptyScript
+                            : '';
+                        // Generate a new text node for each literal section
+                        // These nodes are also used as the markers for child parts
+                        for (let i = 0; i < lastIndex; i++) {
+                            node.append(strings[i], createMarker());
+                            // Walk past the marker node we just added
+                            walker.nextNode();
+                            parts.push({ type: CHILD_PART, index: ++nodeIndex });
+                        }
+                        // Note because this marker is added after the walker's current
+                        // node, it will be walked to in the outer loop (and ignored), so
+                        // we don't need to adjust nodeIndex here
+                        node.append(strings[lastIndex], createMarker());
+                    }
+                }
+            }
+            else if (node.nodeType === 8) {
+                const data = node.data;
+                if (data === markerMatch) {
+                    parts.push({ type: CHILD_PART, index: nodeIndex });
+                }
+                else {
+                    let i = -1;
+                    while ((i = node.data.indexOf(marker, i + 1)) !== -1) {
+                        // Comment node has a binding marker inside, make an inactive part
+                        // The binding won't work, but subsequent bindings will
+                        parts.push({ type: COMMENT_PART, index: nodeIndex });
+                        // Move to the end of the match
+                        i += marker.length - 1;
+                    }
+                }
+            }
+            nodeIndex++;
+        }
+        {
+            // If there was a duplicate attribute on a tag, then when the tag is
+            // parsed into an element the attribute gets de-duplicated. We can detect
+            // this mismatch if we haven't precisely consumed every attribute name
+            // when preparing the template. This works because `attrNames` is built
+            // from the template string and `attrNameIndex` comes from processing the
+            // resulting DOM.
+            if (attrNames.length !== attrNameIndex) {
+                throw new Error(`Detected duplicate attribute bindings. This occurs if your template ` +
+                    `has duplicate attributes on an element tag. For example ` +
+                    `"<input ?disabled=\${true} ?disabled=\${false}>" contains a ` +
+                    `duplicate "disabled" attribute. The error was detected in ` +
+                    `the following template: \n` +
+                    '`' +
+                    strings.join('${...}') +
+                    '`');
+            }
+        }
+        // We could set walker.currentNode to another node here to prevent a memory
+        // leak, but every time we prepare a template, we immediately render it
+        // and re-use the walker in new TemplateInstance._clone().
+        debugLogEvent &&
+            debugLogEvent({
+                kind: 'template prep',
+                template: this,
+                clonableTemplate: this.el,
+                parts: this.parts,
+                strings,
+            });
+    }
+    // Overridden via `litHtmlPolyfillSupport` to provide platform support.
+    /** @nocollapse */
+    static createElement(html, _options) {
+        const el = d.createElement('template');
+        el.innerHTML = html;
+        return el;
+    }
+}
+function resolveDirective(part, value, parent = part, attributeIndex) {
+    // Bail early if the value is explicitly noChange. Note, this means any
+    // nested directive is still attached and is not run.
+    if (value === noChange) {
+        return value;
+    }
+    let currentDirective = attributeIndex !== undefined
+        ? parent.__directives?.[attributeIndex]
+        : parent.__directive;
+    const nextDirectiveConstructor = isPrimitive(value)
+        ? undefined
+        : // This property needs to remain unminified.
+            value['_$litDirective$'];
+    if (currentDirective?.constructor !== nextDirectiveConstructor) {
+        // This property needs to remain unminified.
+        currentDirective?.['_$notifyDirectiveConnectionChanged']?.(false);
+        if (nextDirectiveConstructor === undefined) {
+            currentDirective = undefined;
+        }
+        else {
+            currentDirective = new nextDirectiveConstructor(part);
+            currentDirective._$initialize(part, parent, attributeIndex);
+        }
+        if (attributeIndex !== undefined) {
+            (parent.__directives ??= [])[attributeIndex] =
+                currentDirective;
+        }
+        else {
+            parent.__directive = currentDirective;
+        }
+    }
+    if (currentDirective !== undefined) {
+        value = resolveDirective(part, currentDirective._$resolve(part, value.values), currentDirective, attributeIndex);
+    }
+    return value;
+}
+/**
+ * An updateable instance of a Template. Holds references to the Parts used to
+ * update the template instance.
+ */
+class TemplateInstance {
+    constructor(template, parent) {
+        this._$parts = [];
+        /** @internal */
+        this._$disconnectableChildren = undefined;
+        this._$template = template;
+        this._$parent = parent;
+    }
+    // Called by ChildPart parentNode getter
+    get parentNode() {
+        return this._$parent.parentNode;
+    }
+    // See comment in Disconnectable interface for why this is a getter
+    get _$isConnected() {
+        return this._$parent._$isConnected;
+    }
+    // This method is separate from the constructor because we need to return a
+    // DocumentFragment and we don't want to hold onto it with an instance field.
+    _clone(options) {
+        const { el: { content }, parts: parts, } = this._$template;
+        const fragment = (options?.creationScope ?? d).importNode(content, true);
+        walker.currentNode = fragment;
+        let node = walker.nextNode();
+        let nodeIndex = 0;
+        let partIndex = 0;
+        let templatePart = parts[0];
+        while (templatePart !== undefined) {
+            if (nodeIndex === templatePart.index) {
+                let part;
+                if (templatePart.type === CHILD_PART) {
+                    part = new ChildPart(node, node.nextSibling, this, options);
+                }
+                else if (templatePart.type === ATTRIBUTE_PART) {
+                    part = new templatePart.ctor(node, templatePart.name, templatePart.strings, this, options);
+                }
+                else if (templatePart.type === ELEMENT_PART) {
+                    part = new ElementPart(node, this, options);
+                }
+                this._$parts.push(part);
+                templatePart = parts[++partIndex];
+            }
+            if (nodeIndex !== templatePart?.index) {
+                node = walker.nextNode();
+                nodeIndex++;
+            }
+        }
+        // We need to set the currentNode away from the cloned tree so that we
+        // don't hold onto the tree even if the tree is detached and should be
+        // freed.
+        walker.currentNode = d;
+        return fragment;
+    }
+    _update(values) {
+        let i = 0;
+        for (const part of this._$parts) {
+            if (part !== undefined) {
+                debugLogEvent &&
+                    debugLogEvent({
+                        kind: 'set part',
+                        part,
+                        value: values[i],
+                        valueIndex: i,
+                        values,
+                        templateInstance: this,
+                    });
+                if (part.strings !== undefined) {
+                    part._$setValue(values, part, i);
+                    // The number of values the part consumes is part.strings.length - 1
+                    // since values are in between template spans. We increment i by 1
+                    // later in the loop, so increment it by part.strings.length - 2 here
+                    i += part.strings.length - 2;
+                }
+                else {
+                    part._$setValue(values[i]);
+                }
+            }
+            i++;
+        }
+    }
+}
+class ChildPart {
+    // See comment in Disconnectable interface for why this is a getter
+    get _$isConnected() {
+        // ChildParts that are not at the root should always be created with a
+        // parent; only RootChildNode's won't, so they return the local isConnected
+        // state
+        return this._$parent?._$isConnected ?? this.__isConnected;
+    }
+    constructor(startNode, endNode, parent, options) {
+        this.type = CHILD_PART;
+        this._$committedValue = nothing;
+        // The following fields will be patched onto ChildParts when required by
+        // AsyncDirective
+        /** @internal */
+        this._$disconnectableChildren = undefined;
+        this._$startNode = startNode;
+        this._$endNode = endNode;
+        this._$parent = parent;
+        this.options = options;
+        // Note __isConnected is only ever accessed on RootParts (i.e. when there is
+        // no _$parent); the value on a non-root-part is "don't care", but checking
+        // for parent would be more code
+        this.__isConnected = options?.isConnected ?? true;
+        {
+            // Explicitly initialize for consistent class shape.
+            this._textSanitizer = undefined;
+        }
+    }
+    /**
+     * The parent node into which the part renders its content.
+     *
+     * A ChildPart's content consists of a range of adjacent child nodes of
+     * `.parentNode`, possibly bordered by 'marker nodes' (`.startNode` and
+     * `.endNode`).
+     *
+     * - If both `.startNode` and `.endNode` are non-null, then the part's content
+     * consists of all siblings between `.startNode` and `.endNode`, exclusively.
+     *
+     * - If `.startNode` is non-null but `.endNode` is null, then the part's
+     * content consists of all siblings following `.startNode`, up to and
+     * including the last child of `.parentNode`. If `.endNode` is non-null, then
+     * `.startNode` will always be non-null.
+     *
+     * - If both `.endNode` and `.startNode` are null, then the part's content
+     * consists of all child nodes of `.parentNode`.
+     */
+    get parentNode() {
+        let parentNode = wrap(this._$startNode).parentNode;
+        const parent = this._$parent;
+        if (parent !== undefined &&
+            parentNode?.nodeType === 11 /* Node.DOCUMENT_FRAGMENT */) {
+            // If the parentNode is a DocumentFragment, it may be because the DOM is
+            // still in the cloned fragment during initial render; if so, get the real
+            // parentNode the part will be committed into by asking the parent.
+            parentNode = parent.parentNode;
+        }
+        return parentNode;
+    }
+    /**
+     * The part's leading marker node, if any. See `.parentNode` for more
+     * information.
+     */
+    get startNode() {
+        return this._$startNode;
+    }
+    /**
+     * The part's trailing marker node, if any. See `.parentNode` for more
+     * information.
+     */
+    get endNode() {
+        return this._$endNode;
+    }
+    _$setValue(value, directiveParent = this) {
+        if (this.parentNode === null) {
+            throw new Error(`This \`ChildPart\` has no \`parentNode\` and therefore cannot accept a value. This likely means the element containing the part was manipulated in an unsupported way outside of Lit's control such that the part's marker nodes were ejected from DOM. For example, setting the element's \`innerHTML\` or \`textContent\` can do this.`);
+        }
+        value = resolveDirective(this, value, directiveParent);
+        if (isPrimitive(value)) {
+            // Non-rendering child values. It's important that these do not render
+            // empty text nodes to avoid issues with preventing default <slot>
+            // fallback content.
+            if (value === nothing || value == null || value === '') {
+                if (this._$committedValue !== nothing) {
+                    debugLogEvent &&
+                        debugLogEvent({
+                            kind: 'commit nothing to child',
+                            start: this._$startNode,
+                            end: this._$endNode,
+                            parent: this._$parent,
+                            options: this.options,
+                        });
+                    this._$clear();
+                }
+                this._$committedValue = nothing;
+            }
+            else if (value !== this._$committedValue && value !== noChange) {
+                this._commitText(value);
+            }
+            // This property needs to remain unminified.
+        }
+        else if (value['_$litType$'] !== undefined) {
+            this._commitTemplateResult(value);
+        }
+        else if (value.nodeType !== undefined) {
+            if (this.options?.host === value) {
+                this._commitText(`[probable mistake: rendered a template's host in itself ` +
+                    `(commonly caused by writing \${this} in a template]`);
+                console.warn(`Attempted to render the template host`, value, `inside itself. This is almost always a mistake, and in dev mode `, `we render some warning text. In production however, we'll `, `render it, which will usually result in an error, and sometimes `, `in the element disappearing from the DOM.`);
+                return;
+            }
+            this._commitNode(value);
+        }
+        else if (isIterable(value)) {
+            this._commitIterable(value);
+        }
+        else {
+            // Fallback, will render the string representation
+            this._commitText(value);
+        }
+    }
+    _insert(node) {
+        return wrap(wrap(this._$startNode).parentNode).insertBefore(node, this._$endNode);
+    }
+    _commitNode(value) {
+        if (this._$committedValue !== value) {
+            this._$clear();
+            if (sanitizerFactoryInternal !== noopSanitizer) {
+                const parentNodeName = this._$startNode.parentNode?.nodeName;
+                if (parentNodeName === 'STYLE' || parentNodeName === 'SCRIPT') {
+                    let message = 'Forbidden';
+                    {
+                        if (parentNodeName === 'STYLE') {
+                            message =
+                                `Lit does not support binding inside style nodes. ` +
+                                    `This is a security risk, as style injection attacks can ` +
+                                    `exfiltrate data and spoof UIs. ` +
+                                    `Consider instead using css\`...\` literals ` +
+                                    `to compose styles, and do dynamic styling with ` +
+                                    `css custom properties, ::parts, <slot>s, ` +
+                                    `and by mutating the DOM rather than stylesheets.`;
+                        }
+                        else {
+                            message =
+                                `Lit does not support binding inside script nodes. ` +
+                                    `This is a security risk, as it could allow arbitrary ` +
+                                    `code execution.`;
+                        }
+                    }
+                    throw new Error(message);
+                }
+            }
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'commit node',
+                    start: this._$startNode,
+                    parent: this._$parent,
+                    value: value,
+                    options: this.options,
+                });
+            this._$committedValue = this._insert(value);
+        }
+    }
+    _commitText(value) {
+        // If the committed value is a primitive it means we called _commitText on
+        // the previous render, and we know that this._$startNode.nextSibling is a
+        // Text node. We can now just replace the text content (.data) of the node.
+        if (this._$committedValue !== nothing &&
+            isPrimitive(this._$committedValue)) {
+            const node = wrap(this._$startNode).nextSibling;
+            {
+                if (this._textSanitizer === undefined) {
+                    this._textSanitizer = createSanitizer(node, 'data', 'property');
+                }
+                value = this._textSanitizer(value);
+            }
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'commit text',
+                    node,
+                    value,
+                    options: this.options,
+                });
+            node.data = value;
+        }
+        else {
+            {
+                const textNode = d.createTextNode('');
+                this._commitNode(textNode);
+                // When setting text content, for security purposes it matters a lot
+                // what the parent is. For example, <style> and <script> need to be
+                // handled with care, while <span> does not. So first we need to put a
+                // text node into the document, then we can sanitize its content.
+                if (this._textSanitizer === undefined) {
+                    this._textSanitizer = createSanitizer(textNode, 'data', 'property');
+                }
+                value = this._textSanitizer(value);
+                debugLogEvent &&
+                    debugLogEvent({
+                        kind: 'commit text',
+                        node: textNode,
+                        value,
+                        options: this.options,
+                    });
+                textNode.data = value;
+            }
+        }
+        this._$committedValue = value;
+    }
+    _commitTemplateResult(result) {
+        // This property needs to remain unminified.
+        const { values, ['_$litType$']: type } = result;
+        // If $litType$ is a number, result is a plain TemplateResult and we get
+        // the template from the template cache. If not, result is a
+        // CompiledTemplateResult and _$litType$ is a CompiledTemplate and we need
+        // to create the <template> element the first time we see it.
+        const template = typeof type === 'number'
+            ? this._$getTemplate(result)
+            : (type.el === undefined &&
+                (type.el = Template.createElement(trustFromTemplateString(type.h, type.h[0]), this.options)),
+                type);
+        if (this._$committedValue?._$template === template) {
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'template updating',
+                    template,
+                    instance: this._$committedValue,
+                    parts: this._$committedValue._$parts,
+                    options: this.options,
+                    values,
+                });
+            this._$committedValue._update(values);
+        }
+        else {
+            const instance = new TemplateInstance(template, this);
+            const fragment = instance._clone(this.options);
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'template instantiated',
+                    template,
+                    instance,
+                    parts: instance._$parts,
+                    options: this.options,
+                    fragment,
+                    values,
+                });
+            instance._update(values);
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'template instantiated and updated',
+                    template,
+                    instance,
+                    parts: instance._$parts,
+                    options: this.options,
+                    fragment,
+                    values,
+                });
+            this._commitNode(fragment);
+            this._$committedValue = instance;
+        }
+    }
+    // Overridden via `litHtmlPolyfillSupport` to provide platform support.
+    /** @internal */
+    _$getTemplate(result) {
+        let template = templateCache.get(result.strings);
+        if (template === undefined) {
+            templateCache.set(result.strings, (template = new Template(result)));
+        }
+        return template;
+    }
+    _commitIterable(value) {
+        // For an Iterable, we create a new InstancePart per item, then set its
+        // value to the item. This is a little bit of overhead for every item in
+        // an Iterable, but it lets us recurse easily and efficiently update Arrays
+        // of TemplateResults that will be commonly returned from expressions like:
+        // array.map((i) => html`${i}`), by reusing existing TemplateInstances.
+        // If value is an array, then the previous render was of an
+        // iterable and value will contain the ChildParts from the previous
+        // render. If value is not an array, clear this part and make a new
+        // array for ChildParts.
+        if (!isArray(this._$committedValue)) {
+            this._$committedValue = [];
+            this._$clear();
+        }
+        // Lets us keep track of how many items we stamped so we can clear leftover
+        // items from a previous render
+        const itemParts = this._$committedValue;
+        let partIndex = 0;
+        let itemPart;
+        for (const item of value) {
+            if (partIndex === itemParts.length) {
+                // If no existing part, create a new one
+                // TODO (justinfagnani): test perf impact of always creating two parts
+                // instead of sharing parts between nodes
+                // https://github.com/lit/lit/issues/1266
+                itemParts.push((itemPart = new ChildPart(this._insert(createMarker()), this._insert(createMarker()), this, this.options)));
+            }
+            else {
+                // Reuse an existing part
+                itemPart = itemParts[partIndex];
+            }
+            itemPart._$setValue(item);
+            partIndex++;
+        }
+        if (partIndex < itemParts.length) {
+            // itemParts always have end nodes
+            this._$clear(itemPart && wrap(itemPart._$endNode).nextSibling, partIndex);
+            // Truncate the parts array so _value reflects the current state
+            itemParts.length = partIndex;
+        }
+    }
+    /**
+     * Removes the nodes contained within this Part from the DOM.
+     *
+     * @param start Start node to clear from, for clearing a subset of the part's
+     *     DOM (used when truncating iterables)
+     * @param from  When `start` is specified, the index within the iterable from
+     *     which ChildParts are being removed, used for disconnecting directives
+     *     in those Parts.
+     *
+     * @internal
+     */
+    _$clear(start = wrap(this._$startNode).nextSibling, from) {
+        this._$notifyConnectionChanged?.(false, true, from);
+        while (start !== this._$endNode) {
+            // The non-null assertion is safe because if _$startNode.nextSibling is
+            // null, then _$endNode is also null, and we would not have entered this
+            // loop.
+            const n = wrap(start).nextSibling;
+            wrap(start).remove();
+            start = n;
+        }
+    }
+    /**
+     * Implementation of RootPart's `isConnected`. Note that this method
+     * should only be called on `RootPart`s (the `ChildPart` returned from a
+     * top-level `render()` call). It has no effect on non-root ChildParts.
+     * @param isConnected Whether to set
+     * @internal
+     */
+    setConnected(isConnected) {
+        if (this._$parent === undefined) {
+            this.__isConnected = isConnected;
+            this._$notifyConnectionChanged?.(isConnected);
+        }
+        else {
+            throw new Error('part.setConnected() may only be called on a ' +
+                'RootPart returned from render().');
+        }
+    }
+}
+class AttributePart {
+    get tagName() {
+        return this.element.tagName;
+    }
+    // See comment in Disconnectable interface for why this is a getter
+    get _$isConnected() {
+        return this._$parent._$isConnected;
+    }
+    constructor(element, name, strings, parent, options) {
+        this.type = ATTRIBUTE_PART;
+        /** @internal */
+        this._$committedValue = nothing;
+        /** @internal */
+        this._$disconnectableChildren = undefined;
+        this.element = element;
+        this.name = name;
+        this._$parent = parent;
+        this.options = options;
+        if (strings.length > 2 || strings[0] !== '' || strings[1] !== '') {
+            this._$committedValue = new Array(strings.length - 1).fill(new String());
+            this.strings = strings;
+        }
+        else {
+            this._$committedValue = nothing;
+        }
+        {
+            this._sanitizer = undefined;
+        }
+    }
+    /**
+     * Sets the value of this part by resolving the value from possibly multiple
+     * values and static strings and committing it to the DOM.
+     * If this part is single-valued, `this._strings` will be undefined, and the
+     * method will be called with a single value argument. If this part is
+     * multi-value, `this._strings` will be defined, and the method is called
+     * with the value array of the part's owning TemplateInstance, and an offset
+     * into the value array from which the values should be read.
+     * This method is overloaded this way to eliminate short-lived array slices
+     * of the template instance values, and allow a fast-path for single-valued
+     * parts.
+     *
+     * @param value The part value, or an array of values for multi-valued parts
+     * @param valueIndex the index to start reading values from. `undefined` for
+     *   single-valued parts
+     * @param noCommit causes the part to not commit its value to the DOM. Used
+     *   in hydration to prime attribute parts with their first-rendered value,
+     *   but not set the attribute, and in SSR to no-op the DOM operation and
+     *   capture the value for serialization.
+     *
+     * @internal
+     */
+    _$setValue(value, directiveParent = this, valueIndex, noCommit) {
+        const strings = this.strings;
+        // Whether any of the values has changed, for dirty-checking
+        let change = false;
+        if (strings === undefined) {
+            // Single-value binding case
+            value = resolveDirective(this, value, directiveParent, 0);
+            change =
+                !isPrimitive(value) ||
+                    (value !== this._$committedValue && value !== noChange);
+            if (change) {
+                this._$committedValue = value;
+            }
+        }
+        else {
+            // Interpolation case
+            const values = value;
+            value = strings[0];
+            let i, v;
+            for (i = 0; i < strings.length - 1; i++) {
+                v = resolveDirective(this, values[valueIndex + i], directiveParent, i);
+                if (v === noChange) {
+                    // If the user-provided value is `noChange`, use the previous value
+                    v = this._$committedValue[i];
+                }
+                change ||=
+                    !isPrimitive(v) || v !== this._$committedValue[i];
+                if (v === nothing) {
+                    value = nothing;
+                }
+                else if (value !== nothing) {
+                    value += (v ?? '') + strings[i + 1];
+                }
+                // We always record each value, even if one is `nothing`, for future
+                // change detection.
+                this._$committedValue[i] = v;
+            }
+        }
+        if (change && !noCommit) {
+            this._commitValue(value);
+        }
+    }
+    /** @internal */
+    _commitValue(value) {
+        if (value === nothing) {
+            wrap(this.element).removeAttribute(this.name);
+        }
+        else {
+            {
+                if (this._sanitizer === undefined) {
+                    this._sanitizer = sanitizerFactoryInternal(this.element, this.name, 'attribute');
+                }
+                value = this._sanitizer(value ?? '');
+            }
+            debugLogEvent &&
+                debugLogEvent({
+                    kind: 'commit attribute',
+                    element: this.element,
+                    name: this.name,
+                    value,
+                    options: this.options,
+                });
+            wrap(this.element).setAttribute(this.name, (value ?? ''));
+        }
+    }
+}
+class PropertyPart extends AttributePart {
+    constructor() {
+        super(...arguments);
+        this.type = PROPERTY_PART;
+    }
+    /** @internal */
+    _commitValue(value) {
+        {
+            if (this._sanitizer === undefined) {
+                this._sanitizer = sanitizerFactoryInternal(this.element, this.name, 'property');
+            }
+            value = this._sanitizer(value);
+        }
+        debugLogEvent &&
+            debugLogEvent({
+                kind: 'commit property',
+                element: this.element,
+                name: this.name,
+                value,
+                options: this.options,
+            });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.element[this.name] = value === nothing ? undefined : value;
+    }
+}
+class BooleanAttributePart extends AttributePart {
+    constructor() {
+        super(...arguments);
+        this.type = BOOLEAN_ATTRIBUTE_PART;
+    }
+    /** @internal */
+    _commitValue(value) {
+        debugLogEvent &&
+            debugLogEvent({
+                kind: 'commit boolean attribute',
+                element: this.element,
+                name: this.name,
+                value: !!(value && value !== nothing),
+                options: this.options,
+            });
+        wrap(this.element).toggleAttribute(this.name, !!value && value !== nothing);
+    }
+}
+class EventPart extends AttributePart {
+    constructor(element, name, strings, parent, options) {
+        super(element, name, strings, parent, options);
+        this.type = EVENT_PART;
+        if (this.strings !== undefined) {
+            throw new Error(`A \`<${element.localName}>\` has a \`@${name}=...\` listener with ` +
+                'invalid content. Event listeners in templates must have exactly ' +
+                'one expression and no surrounding text.');
+        }
+    }
+    // EventPart does not use the base _$setValue/_resolveValue implementation
+    // since the dirty checking is more complex
+    /** @internal */
+    _$setValue(newListener, directiveParent = this) {
+        newListener =
+            resolveDirective(this, newListener, directiveParent, 0) ?? nothing;
+        if (newListener === noChange) {
+            return;
+        }
+        const oldListener = this._$committedValue;
+        // If the new value is nothing or any options change we have to remove the
+        // part as a listener.
+        const shouldRemoveListener = (newListener === nothing && oldListener !== nothing) ||
+            newListener.capture !==
+                oldListener.capture ||
+            newListener.once !==
+                oldListener.once ||
+            newListener.passive !==
+                oldListener.passive;
+        // If the new value is not nothing and we removed the listener, we have
+        // to add the part as a listener.
+        const shouldAddListener = newListener !== nothing &&
+            (oldListener === nothing || shouldRemoveListener);
+        debugLogEvent &&
+            debugLogEvent({
+                kind: 'commit event listener',
+                element: this.element,
+                name: this.name,
+                value: newListener,
+                options: this.options,
+                removeListener: shouldRemoveListener,
+                addListener: shouldAddListener,
+                oldListener,
+            });
+        if (shouldRemoveListener) {
+            this.element.removeEventListener(this.name, this, oldListener);
+        }
+        if (shouldAddListener) {
+            this.element.addEventListener(this.name, this, newListener);
+        }
+        this._$committedValue = newListener;
+    }
+    handleEvent(event) {
+        if (typeof this._$committedValue === 'function') {
+            this._$committedValue.call(this.options?.host ?? this.element, event);
+        }
+        else {
+            this._$committedValue.handleEvent(event);
+        }
+    }
+}
+class ElementPart {
+    constructor(element, parent, options) {
+        this.element = element;
+        this.type = ELEMENT_PART;
+        /** @internal */
+        this._$disconnectableChildren = undefined;
+        this._$parent = parent;
+        this.options = options;
+    }
+    // See comment in Disconnectable interface for why this is a getter
+    get _$isConnected() {
+        return this._$parent._$isConnected;
+    }
+    _$setValue(value) {
+        debugLogEvent &&
+            debugLogEvent({
+                kind: 'commit to element binding',
+                element: this.element,
+                value,
+                options: this.options,
+            });
+        resolveDirective(this, value);
+    }
+}
+// Apply polyfills if available
+const polyfillSupport$1 = global$1.litHtmlPolyfillSupportDevMode
+    ;
+polyfillSupport$1?.(Template, ChildPart);
+// IMPORTANT: do not change the property name or the assignment expression.
+// This line will be used in regexes to search for lit-html usage.
+(global$1.litHtmlVersions ??= []).push('3.3.1');
+if (global$1.litHtmlVersions.length > 1) {
+    queueMicrotask(() => {
+        issueWarning$1('multiple-versions', `Multiple versions of Lit loaded. ` +
+            `Loading multiple versions is not recommended.`);
+    });
+}
+/**
+ * Renders a value, usually a lit-html TemplateResult, to the container.
+ *
+ * This example renders the text "Hello, Zoe!" inside a paragraph tag, appending
+ * it to the container `document.body`.
+ *
+ * ```js
+ * import {html, render} from 'lit';
+ *
+ * const name = "Zoe";
+ * render(html`<p>Hello, ${name}!</p>`, document.body);
+ * ```
+ *
+ * @param value Any [renderable
+ *   value](https://lit.dev/docs/templates/expressions/#child-expressions),
+ *   typically a {@linkcode TemplateResult} created by evaluating a template tag
+ *   like {@linkcode html} or {@linkcode svg}.
+ * @param container A DOM container to render to. The first render will append
+ *   the rendered value to the container, and subsequent renders will
+ *   efficiently update the rendered value if the same result type was
+ *   previously rendered there.
+ * @param options See {@linkcode RenderOptions} for options documentation.
+ * @see
+ * {@link https://lit.dev/docs/libraries/standalone-templates/#rendering-lit-html-templates| Rendering Lit HTML Templates}
+ */
+const render = (value, container, options) => {
+    if (container == null) {
+        // Give a clearer error message than
+        //     Uncaught TypeError: Cannot read properties of null (reading
+        //     '_$litPart$')
+        // which reads like an internal Lit error.
+        throw new TypeError(`The container to render into may not be ${container}`);
+    }
+    const renderId = debugLogRenderId++ ;
+    const partOwnerNode = options?.renderBefore ?? container;
+    // This property needs to remain unminified.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let part = partOwnerNode['_$litPart$'];
+    debugLogEvent &&
+        debugLogEvent({
+            kind: 'begin render',
+            id: renderId,
+            value,
+            container,
+            options,
+            part,
+        });
+    if (part === undefined) {
+        const endNode = options?.renderBefore ?? null;
+        // This property needs to remain unminified.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        partOwnerNode['_$litPart$'] = part = new ChildPart(container.insertBefore(createMarker(), endNode), endNode, undefined, options ?? {});
+    }
+    part._$setValue(value);
+    debugLogEvent &&
+        debugLogEvent({
+            kind: 'end render',
+            id: renderId,
+            value,
+            container,
+            options,
+            part,
+        });
+    return part;
+};
+{
+    render.setSanitizer = setSanitizer;
+    render.createSanitizer = createSanitizer;
+    {
+        render._testOnlyClearSanitizerFactoryDoNotCallOrElse =
+            _testOnlyClearSanitizerFactoryDoNotCallOrElse;
+    }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+/**
+ * The main LitElement module, which defines the {@linkcode LitElement} base
+ * class and related APIs.
+ *
+ * LitElement components can define a template and a set of observed
+ * properties. Changing an observed property triggers a re-render of the
+ * element.
+ *
+ * Import {@linkcode LitElement} and {@linkcode html} from this module to
+ * create a component:
+ *
+ *  ```js
+ * import {LitElement, html} from 'lit-element';
+ *
+ * class MyElement extends LitElement {
+ *
+ *   // Declare observed properties
+ *   static get properties() {
+ *     return {
+ *       adjective: {}
+ *     }
+ *   }
+ *
+ *   constructor() {
+ *     this.adjective = 'awesome';
+ *   }
+ *
+ *   // Define the element's template
+ *   render() {
+ *     return html`<p>your ${adjective} template here</p>`;
+ *   }
+ * }
+ *
+ * customElements.define('my-element', MyElement);
+ * ```
+ *
+ * `LitElement` extends {@linkcode ReactiveElement} and adds lit-html
+ * templating. The `ReactiveElement` class is provided for users that want to
+ * build their own custom element base classes that don't use lit-html.
+ *
+ * @packageDocumentation
+ */
+/*
+ * When using Closure Compiler, JSCompiler_renameProperty(property, object) is
+ * replaced at compile time by the munged name for object[property]. We cannot
+ * alias this function, so we have to use a small shim that has the same
+ * behavior when not compiling.
+ */
+/*@__INLINE__*/
+const JSCompiler_renameProperty = (prop, _obj) => prop;
+// Allows minifiers to rename references to globalThis
+const global = globalThis;
+let issueWarning;
+{
+    // Ensure warnings are issued only 1x, even if multiple versions of Lit
+    // are loaded.
+    global.litIssuedWarnings ??= new Set();
+    /**
+     * Issue a warning if we haven't already, based either on `code` or `warning`.
+     * Warnings are disabled automatically only by `warning`; disabling via `code`
+     * can be done by users.
+     */
+    issueWarning = (code, warning) => {
+        warning += ` See https://lit.dev/msg/${code} for more information.`;
+        if (!global.litIssuedWarnings.has(warning) &&
+            !global.litIssuedWarnings.has(code)) {
+            console.warn(warning);
+            global.litIssuedWarnings.add(warning);
+        }
+    };
+}
+/**
+ * Base element class that manages element properties and attributes, and
+ * renders a lit-html template.
+ *
+ * To define a component, subclass `LitElement` and implement a
+ * `render` method to provide the component's template. Define properties
+ * using the {@linkcode LitElement.properties properties} property or the
+ * {@linkcode property} decorator.
+ */
+class LitElement extends ReactiveElement {
+    constructor() {
+        super(...arguments);
+        /**
+         * @category rendering
+         */
+        this.renderOptions = { host: this };
+        this.__childPart = undefined;
+    }
+    /**
+     * @category rendering
+     */
+    createRenderRoot() {
+        const renderRoot = super.createRenderRoot();
+        // When adoptedStyleSheets are shimmed, they are inserted into the
+        // shadowRoot by createRenderRoot. Adjust the renderBefore node so that
+        // any styles in Lit content render before adoptedStyleSheets. This is
+        // important so that adoptedStyleSheets have precedence over styles in
+        // the shadowRoot.
+        this.renderOptions.renderBefore ??= renderRoot.firstChild;
+        return renderRoot;
+    }
+    /**
+     * Updates the element. This method reflects property values to attributes
+     * and calls `render` to render DOM via lit-html. Setting properties inside
+     * this method will *not* trigger another update.
+     * @param changedProperties Map of changed properties with old values
+     * @category updates
+     */
+    update(changedProperties) {
+        // Setting properties in `render` should not trigger an update. Since
+        // updates are allowed after super.update, it's important to call `render`
+        // before that.
+        const value = this.render();
+        if (!this.hasUpdated) {
+            this.renderOptions.isConnected = this.isConnected;
+        }
+        super.update(changedProperties);
+        this.__childPart = render(value, this.renderRoot, this.renderOptions);
+    }
+    /**
+     * Invoked when the component is added to the document's DOM.
+     *
+     * In `connectedCallback()` you should setup tasks that should only occur when
+     * the element is connected to the document. The most common of these is
+     * adding event listeners to nodes external to the element, like a keydown
+     * event handler added to the window.
+     *
+     * ```ts
+     * connectedCallback() {
+     *   super.connectedCallback();
+     *   addEventListener('keydown', this._handleKeydown);
+     * }
+     * ```
+     *
+     * Typically, anything done in `connectedCallback()` should be undone when the
+     * element is disconnected, in `disconnectedCallback()`.
+     *
+     * @category lifecycle
+     */
+    connectedCallback() {
+        super.connectedCallback();
+        this.__childPart?.setConnected(true);
+    }
+    /**
+     * Invoked when the component is removed from the document's DOM.
+     *
+     * This callback is the main signal to the element that it may no longer be
+     * used. `disconnectedCallback()` should ensure that nothing is holding a
+     * reference to the element (such as event listeners added to nodes external
+     * to the element), so that it is free to be garbage collected.
+     *
+     * ```ts
+     * disconnectedCallback() {
+     *   super.disconnectedCallback();
+     *   window.removeEventListener('keydown', this._handleKeydown);
+     * }
+     * ```
+     *
+     * An element may be re-connected after being disconnected.
+     *
+     * @category lifecycle
+     */
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.__childPart?.setConnected(false);
+    }
+    /**
+     * Invoked on each update to perform rendering tasks. This method may return
+     * any value renderable by lit-html's `ChildPart` - typically a
+     * `TemplateResult`. Setting properties inside this method will *not* trigger
+     * the element to update.
+     * @category rendering
+     */
+    render() {
+        return noChange;
+    }
+}
+// This property needs to remain unminified.
+LitElement['_$litElement$'] = true;
+/**
+ * Ensure this class is marked as `finalized` as an optimization ensuring
+ * it will not needlessly try to `finalize`.
+ *
+ * Note this property name is a string to prevent breaking Closure JS Compiler
+ * optimizations. See @lit/reactive-element for more information.
+ */
+LitElement[JSCompiler_renameProperty('finalized')] = true;
+// Install hydration if available
+global.litElementHydrateSupport?.({ LitElement });
+// Apply polyfills if available
+const polyfillSupport = global.litElementPolyfillSupportDevMode
+    ;
+polyfillSupport?.({ LitElement });
+// IMPORTANT: do not change the property name or the assignment expression.
+// This line will be used in regexes to search for LitElement usage.
+(global.litElementVersions ??= []).push('4.2.1');
+if (global.litElementVersions.length > 1) {
+    queueMicrotask(() => {
+        issueWarning('multiple-versions', `Multiple versions of Lit loaded. Loading multiple versions ` +
+            `is not recommended.`);
+    });
+}
 
 /**
  * @license
  * Copyright 2018 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */const o=o=>o??E;
+ */
+/**
+ * For AttributeParts, sets the attribute if the value is defined and removes
+ * the attribute if the value is undefined.
+ *
+ * For other part types, this directive is a no-op.
+ */
+const ifDefined = (value) => value ?? nothing;
 
 /**
  * SIMPLE DEPENDENCY LOADING - STATIC IMPORTS ONLY
@@ -3702,7 +6526,7 @@ function getStyles() {
  * Gets the editor CSS styles
  * @returns {CSSResult} LitElement CSS styles
  */
-const getEditorStyles = () => i$3`
+const getEditorStyles = () => css`
   .card-config {
     /* Let HA handle padding */
   }
@@ -4615,6 +7439,61 @@ function getGlobalRegistry(registryName, type = "Map") {
 }
 
 /**
+ * UIX integration for Simple Swipe Card
+ *
+ * UIX (https://uix.lf.technology) styles a card by injecting a `uix-node` element
+ * and styles into the card's shadow root. Because Simple Swipe Card wipes and rebuilds
+ * its shadow DOM (and recreates child cards) on every rebuild, any UIX styling that was
+ * auto-applied gets stripped. This module re-applies UIX explicitly after each build so
+ * the styling survives.
+ *
+ * When UIX is not installed, `customElements.whenDefined("uix-node")` never resolves,
+ * so the callbacks below never run and this becomes a pure no-op.
+ */
+
+
+let _uixPromise = null;
+
+/**
+ * Resolves with the UIX API object once the `uix-node` element is defined.
+ * The promise is cached so we register only one waiter. If UIX is never installed,
+ * the promise never resolves, so callers' `.then()` never fires.
+ * @returns {Promise<Object|null>}
+ */
+function getUix() {
+  if (_uixPromise) return _uixPromise;
+  _uixPromise = customElements.whenDefined("uix-node").catch(() => null);
+  return _uixPromise;
+}
+
+/**
+ * Apply UIX styling to an element. No-op when uixConfig is absent or UIX is not installed.
+ * @param {HTMLElement} element - host element or child card element to style
+ * @param {Object|undefined} uixConfig - the `uix:` block from the element's config
+ * @param {Object} elementConfig - full element config, passed as jinja vars `{ config }`
+ * @param {string} [type="card"] - UIX "type" (determines which theme variables apply)
+ */
+function applyUix(element, uixConfig, elementConfig, type = "card") {
+  if (!uixConfig || !element) return;
+  getUix().then((uix) => {
+    if (!uix || typeof uix.applyToElement !== "function") return;
+    try {
+      uix.applyToElement(
+        element,
+        type,
+        uixConfig,
+        { config: elementConfig },
+        true,
+        undefined,
+      );
+      logDebug("UIX", "Applied UIX to element", { type });
+    } catch (e) {
+      console.warn("SimpleSwipeCard: UIX applyToElement failed:", e);
+    }
+  });
+}
+
+/**
  * Card creation and DOM building for Simple Swipe Card
  */
 
@@ -5291,6 +8170,9 @@ class CardBuilder {
         );
         return; // Don't push this card - it's from an old build
       }
+
+      // Apply UIX styling to the child card if configured (no-op without UIX/uix config)
+      applyUix(cardElement, cardConfig?.uix, cardConfig, "card");
 
       // Special handling for specific card types
       requestAnimationFrame(() => {
@@ -6063,6 +8945,11 @@ class CardBuilder {
 
     // Setup dropdown detection for z-index elevation
     this.card._setupDropdownDetection();
+
+    // Apply UIX styling to the swipe card host if configured. The shadow DOM was wiped
+    // and rebuilt during build(), so re-applying here keeps UIX styling alive across
+    // rebuilds (no-op without UIX installed or without a top-level uix config).
+    applyUix(this.card, this.card._config?.uix, this.card._config, "card");
 
     await this._fadeInAfterLayoutSettles();
   }
@@ -6925,6 +9812,9 @@ class CardBuilder {
         cardData.slide.appendChild(cardElement);
         cardData.element = cardElement;
         cardData.contentLoaded = true;
+
+        // Apply UIX styling to the child card if configured (no-op without UIX/uix config)
+        applyUix(cardElement, cardInfo.config?.uix, cardInfo.config, "card");
 
         return cardElement;
       } catch (error) {
@@ -10504,7 +13394,7 @@ class TemplateEvaluator {
  * Main Simple Swipe Card class
  * @extends LitElement
  */
-class SimpleSwipeCard extends i {
+class SimpleSwipeCard extends LitElement {
   constructor() {
     logDebug("INIT", "SimpleSwipeCard Constructor starting...");
 
@@ -15871,7 +18761,7 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
   const useOptionsApi = !!customElements.get("ha-dropdown-item");
 
   if (useOptionsApi) {
-    return x`
+    return html`
       <ha-select
         .value=${value ?? ""}
         data-option=${dataOption}
@@ -15882,7 +18772,7 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
     `;
   }
 
-  return x`
+  return html`
     <ha-select
       .value=${value ?? ""}
       data-option=${dataOption}
@@ -15891,11 +18781,11 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
       @closed=${(ev) => ev.stopPropagation()}
     >
       ${options.map(
-        (option) => x`
+        (option) => html`
           <ha-list-item .value=${option.value}>
             ${option.label}
             ${option.iconPath
-              ? x`<ha-svg-icon
+              ? html`<ha-svg-icon
                   slot="graphic"
                   class="direction-icon"
                   .path=${option.iconPath}
@@ -15958,16 +18848,16 @@ function renderTextField({
   const useHaTextfield = !useHaInput && !!customElements.get("ha-textfield");
 
   if (useHaInput) {
-    return x`
+    return html`
       <ha-input
         label=${label}
         .value=${value ?? ""}
-        data-option=${o(dataOption)}
+        data-option=${ifDefined(dataOption)}
         type=${type}
-        min=${o(min)}
-        max=${o(max)}
-        step=${o(step)}
-        suffix=${o(suffix)}
+        min=${ifDefined(min)}
+        max=${ifDefined(max)}
+        step=${ifDefined(step)}
+        suffix=${ifDefined(suffix)}
         ?required=${required}
         ?disabled=${disabled}
         @value-changed=${changeHandler}
@@ -15979,17 +18869,17 @@ function renderTextField({
   }
 
   if (useHaTextfield) {
-    return x`
+    return html`
       <ha-textfield
         label=${label}
         .value=${value ?? ""}
-        data-option=${o(dataOption)}
+        data-option=${ifDefined(dataOption)}
         type=${type}
-        min=${o(min)}
-        max=${o(max)}
-        step=${o(step)}
-        suffix=${o(suffix)}
-        pattern=${o(pattern)}
+        min=${ifDefined(min)}
+        max=${ifDefined(max)}
+        step=${ifDefined(step)}
+        suffix=${ifDefined(suffix)}
+        pattern=${ifDefined(pattern)}
         ?required=${required}
         ?disabled=${disabled}
         ?autoValidate=${autoValidate}
@@ -16001,21 +18891,21 @@ function renderTextField({
   }
 
   // Native fallback - guaranteed to work on any HA version.
-  return x`
+  return html`
     <div class="native-textfield ${disabled ? "disabled" : ""}">
       ${label
-        ? x`<label class="native-textfield-label">${label}</label>`
+        ? html`<label class="native-textfield-label">${label}</label>`
         : ""}
       <div class="native-textfield-row">
         <input
           class="native-textfield-input"
           .value=${value ?? ""}
-          data-option=${o(dataOption)}
+          data-option=${ifDefined(dataOption)}
           type=${type}
-          min=${o(min)}
-          max=${o(max)}
-          step=${o(step)}
-          pattern=${o(pattern)}
+          min=${ifDefined(min)}
+          max=${ifDefined(max)}
+          step=${ifDefined(step)}
+          pattern=${ifDefined(pattern)}
           ?required=${required}
           ?disabled=${disabled}
           @change=${changeHandler}
@@ -16023,7 +18913,7 @@ function renderTextField({
           @keydown=${keydownHandler}
         />
         ${suffix
-          ? x`<span class="native-textfield-suffix">${suffix}</span>`
+          ? html`<span class="native-textfield-suffix">${suffix}</span>`
           : ""}
       </div>
     </div>
@@ -16035,7 +18925,7 @@ function renderTextField({
  * @returns {TemplateResult} The info panel template
  */
 function renderInfoPanel() {
-  return x`
+  return html`
     <div class="info-panel">
       <div class="info-icon">
         <ha-icon icon="mdi:information"></ha-icon>
@@ -16058,7 +18948,7 @@ function renderInfoPanel() {
 function renderViewModeOptions(config, valueChanged) {
   const viewMode = config.view_mode || "single";
 
-  return x`
+  return html`
     <div class="section">
       <div
         class="section-header-with-controls ${viewMode === "single"
@@ -16093,9 +18983,9 @@ function renderViewModeOptions(config, valueChanged) {
       </div>
 
       ${viewMode === "carousel"
-        ? x`
+        ? html`
             ${config.cards_visible !== undefined
-              ? x`
+              ? html`
                   <div class="option-info">
                     <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
                     <span
@@ -16159,7 +19049,7 @@ function renderDisplayOptions(config, valueChanged) {
   const autoHeight = config.auto_height === true;
   config.enable_backdrop_filter === true;
 
-  return x`
+  return html`
     <div class="section">
       <div class="section-header">Display Options</div>
 
@@ -16179,7 +19069,7 @@ function renderDisplayOptions(config, valueChanged) {
       <div class="help-text">Visual gap between cards</div>
 
       ${viewMode === "single"
-        ? x`
+        ? html`
             <div class="option-row">
               <div class="option-left">
                 <div class="option-label">Swipe direction</div>
@@ -16208,7 +19098,7 @@ function renderDisplayOptions(config, valueChanged) {
               </div>
             </div>
           `
-        : x`
+        : html`
             <!-- Carousel mode: Only horizontal direction supported -->
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
@@ -16218,7 +19108,7 @@ function renderDisplayOptions(config, valueChanged) {
       ${viewMode === "single" &&
       swipeDirection === "vertical" &&
       !config.grid_options
-        ? x`
+        ? html`
             <div class="option-info warning">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
               <span>
@@ -16256,7 +19146,7 @@ function renderDisplayOptions(config, valueChanged) {
 
       <!-- Warning messages when auto_height incompatible -->
       ${autoHeight && viewMode === "carousel"
-        ? x`
+        ? html`
             <div class="option-info warning">
               <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
               <span>
@@ -16267,7 +19157,7 @@ function renderDisplayOptions(config, valueChanged) {
           `
         : ""}
       ${autoHeight && swipeDirection === "vertical"
-        ? x`
+        ? html`
             <div class="option-info warning">
               <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
               <span>
@@ -16278,7 +19168,7 @@ function renderDisplayOptions(config, valueChanged) {
           `
         : ""}
       ${autoHeight && config.loop_mode === "infinite"
-        ? x`
+        ? html`
             <div class="option-info warning">
               <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
               <span>
@@ -16289,7 +19179,7 @@ function renderDisplayOptions(config, valueChanged) {
           `
         : ""}
       ${autoHeight && config.grid_options?.rows !== undefined
-        ? x`
+        ? html`
             <div class="option-info warning" style="display: block;">
               <div
                 style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"
@@ -16312,7 +19202,7 @@ function renderDisplayOptions(config, valueChanged) {
 
       <!-- Only show swipe behavior when infinite loop mode is selected -->
       ${config.loop_mode === "infinite"
-        ? x`
+        ? html`
             <div class="option-row">
               <div class="option-left">
                 <div class="option-label">Swipe behavior</div>
@@ -16339,7 +19229,7 @@ function renderDisplayOptions(config, valueChanged) {
               </div>
             </div>
           `
-        : x`
+        : html`
             <!-- Show info when not in infinite mode -->
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
@@ -16354,7 +19244,7 @@ function renderDisplayOptions(config, valueChanged) {
       ${viewMode === "single" &&
       swipeBehavior === "single" &&
       swipeDirection === "horizontal"
-        ? x`
+        ? html`
             <div class="option-row">
               <div class="option-left">
                 <div class="option-label">Swipe effect</div>
@@ -16403,7 +19293,7 @@ function renderDisplayOptions(config, valueChanged) {
               </div>
             </div>
           `
-        : x`
+        : html`
             <div class="option-info">
               <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
               <span>
@@ -16425,7 +19315,7 @@ function renderDisplayOptions(config, valueChanged) {
       </div>
 
       ${showPagination
-        ? x`
+        ? html`
             <div class="option-row">
               <div class="option-left">
                 <div class="option-help">
@@ -16516,7 +19406,7 @@ function renderAdvancedOptions(
     blockedBadge = `${blockedFeatures} blocked`;
   }
 
-  return x`
+  return html`
     <div class="collapsible-section">
       <div
         class="section-toggle ${collapsibleState.advanced ? "expanded" : ""}"
@@ -16530,10 +19420,10 @@ function renderAdvancedOptions(
         ></ha-icon>
         <div class="section-toggle-title">Advanced Options</div>
         ${activeBadge
-          ? x`<div class="section-toggle-badge">${activeBadge}</div>`
+          ? html`<div class="section-toggle-badge">${activeBadge}</div>`
           : ""}
         ${blockedBadge
-          ? x`<div class="section-toggle-badge blocked-only">
+          ? html`<div class="section-toggle-badge blocked-only">
               ${blockedBadge}
             </div>`
           : ""}
@@ -16574,7 +19464,7 @@ function renderAdvancedOptions(
  * @returns {TemplateResult} The loop mode options template
  */
 function renderLoopModeOption(loopMode, valueChanged) {
-  return x`
+  return html`
     <div class="option-row">
       <div class="option-left">
         <div class="option-label">Loop behavior</div>
@@ -16614,7 +19504,7 @@ function renderAutoSwipeOptions(
   autoSwipeInterval,
   valueChanged,
 ) {
-  return x`
+  return html`
     <div class="option-row">
       <div class="option-label">Enable auto-swipe</div>
       <div class="option-control">
@@ -16628,7 +19518,7 @@ function renderAutoSwipeOptions(
     <div class="help-text">Automatically cycle through cards</div>
 
     ${enableAutoSwipe
-      ? x`
+      ? html`
           ${renderTextField({
             label: "Auto-swipe interval (ms)",
             value: autoSwipeInterval.toString(),
@@ -16676,7 +19566,7 @@ function renderResetAfterOptions(
       resetTargetCard.includes("{%") ||
       resetTargetCard.includes("[[["));
 
-  return x`
+  return html`
     <!-- Start card option - always available -->
     ${renderTextField({
       label: "Start card",
@@ -16691,7 +19581,7 @@ function renderResetAfterOptions(
     })}
     <div class="help-text">
       ${isTemplate
-        ? x`Template: <code>${resetTargetCard}</code>`
+        ? html`Template: <code>${resetTargetCard}</code>`
         : cards.length === 0
           ? "Add cards first to set a start card."
           : `Card to show on load (1-${cards.length})`}
@@ -16716,7 +19606,7 @@ function renderResetAfterOptions(
     </div>
 
     ${enableResetAfter && !enableAutoSwipe
-      ? x`
+      ? html`
           ${renderTextField({
             label: "Reset timeout (seconds)",
             value: Math.round(resetAfterTimeout / 1000).toString(),
@@ -16754,7 +19644,7 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
 
   // If it's a template, show a text field instead of dropdown
   if (isTemplate) {
-    return x`
+    return html`
       <div class="option-row">
         <div class="option-left">
           <div class="option-label">State synchronization entity</div>
@@ -16781,7 +19671,7 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
     `;
   }
 
-  return x`
+  return html`
     <div class="option-row">
       <div class="option-left">
         <div class="option-label">State synchronization entity</div>
@@ -16811,7 +19701,7 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
  * @returns {TemplateResult} The backdrop filter option template
  */
 function renderBackdropFilterOption(enableBackdropFilter, valueChanged) {
-  return x`
+  return html`
     <div class="option-row">
       <div class="option-left">
         <div class="option-label">Enable Backdrop Filter (Advanced)</div>
@@ -16830,7 +19720,7 @@ function renderBackdropFilterOption(enableBackdropFilter, valueChanged) {
 
     <!-- Info/Warning when backdrop filter is enabled/disabled -->
     ${enableBackdropFilter
-      ? x`
+      ? html`
           <div class="option-info warning">
             <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
             <span>
@@ -16840,7 +19730,7 @@ function renderBackdropFilterOption(enableBackdropFilter, valueChanged) {
             </span>
           </div>
         `
-      : x`
+      : html`
           <div
             class="option-help"
             style="margin-top: -4px; margin-bottom: 12px;"
@@ -16882,13 +19772,13 @@ function renderCardsSection(
   editNestedCard,
   removeNestedCard,
 ) {
-  return x`
+  return html`
     <div class="section cards-section">
       <div class="section-header">Cards</div>
 
       <div class="card-list">
         ${cards.length === 0
-          ? x`<div class="no-cards">
+          ? html`<div class="no-cards">
               No cards added yet. Select a card type below to add your first
               card.
             </div>`
@@ -16957,7 +19847,7 @@ function renderCardRow(
     ? evaluateVisibilityConditions(card.visibility, hass)
     : true;
 
-  return x`
+  return html`
     <div
       class="card-row ${!isCurrentlyVisible ? "hidden-card" : ""}"
       data-index=${index}
@@ -16966,18 +19856,18 @@ function renderCardRow(
         <span class="card-index">${index + 1}</span>
         <span class="card-type">${descriptor.typeName}</span>
         ${descriptor.isPictureElements
-          ? x`<span class="picture-elements-badge">Elements</span>`
+          ? html`<span class="picture-elements-badge">Elements</span>`
           : ""}
         ${hasVisibility && isCurrentlyVisible
-          ? x`<span class="visibility-badge">Conditional</span>`
+          ? html`<span class="visibility-badge">Conditional</span>`
           : ""}
         ${descriptor.name
-          ? x`<span class="card-name">(${descriptor.name})</span>`
+          ? html`<span class="card-name">(${descriptor.name})</span>`
           : ""}
       </div>
       <div class="card-actions">
         ${hasVisibility && !isCurrentlyVisible
-          ? x`<ha-icon class="hidden-icon" icon="mdi:eye-off"></ha-icon>`
+          ? html`<ha-icon class="hidden-icon" icon="mdi:eye-off"></ha-icon>`
           : ""}
         <ha-icon-button
           label="Move Up"
@@ -17034,11 +19924,11 @@ function renderNestedCards(
   editNestedCard,
   removeNestedCard,
 ) {
-  return x`
+  return html`
     <div class="nested-cards-container">
       ${nestedCards.map((nestedCard, nestedIndex) => {
         const nestedDescriptor = getCardDescriptor(nestedCard);
-        return x`
+        return html`
           <div
             class="nested-card-row"
             data-parent-index=${parentIndex}
@@ -17050,10 +19940,10 @@ function renderNestedCards(
               >
               <span class="nested-card-type">${nestedDescriptor.typeName}</span>
               ${nestedDescriptor.isPictureElements
-                ? x`<span class="picture-elements-badge">Elements</span>`
+                ? html`<span class="picture-elements-badge">Elements</span>`
                 : ""}
               ${nestedDescriptor.name
-                ? x`<span class="nested-card-name"
+                ? html`<span class="nested-card-name"
                     >(${nestedDescriptor.name})</span
                   >`
                 : ""}
@@ -17098,7 +19988,7 @@ function renderNestedCards(
  * @returns {TemplateResult} The card picker template
  */
 function renderCardPicker(hass, lovelace, handleCardPicked) {
-  return x`
+  return html`
     <div id="card-picker-container">
       <hui-card-picker
         .hass=${hass}
@@ -17173,7 +20063,7 @@ function renderVersionDisplay() {
  * Editor class for the Simple Swipe Card with Visibility Support and Reset After
  * @extends LitElement
  */
-class SimpleSwipeCardEditor extends i {
+class SimpleSwipeCardEditor extends LitElement {
   static get properties() {
     return {
       hass: { type: Object },
@@ -17405,18 +20295,18 @@ class SimpleSwipeCardEditor extends i {
    */
   render() {
     if (!this.hass || !this._config) {
-      return x`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
+      return html`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
     }
 
     // Safety check: if managers are null (during disconnection), show loading
     if (!this.uiManager || !this.configManager || !this.cardManagement) {
-      return x`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
+      return html`<ha-spinner aria-label="Loading editor"></ha-spinner>`;
     }
 
     const cards = this._config.cards || [];
 
     try {
-      return x`
+      return html`
         <div class="card-config">
           ${renderInfoPanel()}
           ${renderViewModeOptions(this._config, this._valueChanged.bind(this))}
@@ -17455,7 +20345,7 @@ class SimpleSwipeCardEditor extends i {
       `;
     } catch (error) {
       console.error("Simple Swipe Card Editor render error:", error);
-      return x`<div style="color: red; padding: 16px;">
+      return html`<div style="color: red; padding: 16px;">
         <strong>Editor Error:</strong> ${error.message} <br /><br />
         <small
           >Please refresh the page or restart Home Assistant if this
@@ -17729,4 +20619,3 @@ window.addEventListener(
 );
 
 export { SimpleSwipeCard, SimpleSwipeCardEditor };
-//# sourceMappingURL=simple-swipe-card.js.map

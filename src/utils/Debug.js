@@ -19,6 +19,7 @@ const DEBUG_CATEGORIES = {
   VISIBILITY: true,
   RESET: true,
   AUTO_HEIGHT: true,
+  UIX: true,
 };
 
 export const enableElementDebug = () => {
@@ -90,6 +91,7 @@ export const logDebug = (category, ...args) => {
     VISIBILITY: "color: #ff5722; font-weight: bold",
     RESET: "color: #8bc34a; font-weight: bold",
     AUTO_HEIGHT: "color: #ffc107; font-weight: bold",
+    UIX: "color: #009688; font-weight: bold",
   };
 
   const style = categoryColors[category] || categoryColors.DEFAULT;

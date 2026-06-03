@@ -11,6 +11,7 @@ import {
 } from "../ui/DomHelpers.js";
 import { getStyles } from "../ui/Styles.js";
 import { handleEditClick } from "../utils/EventHelpers.js";
+import { applyUix } from "./UixIntegration.js";
 
 /**
  * Card builder class for managing card creation and layout
@@ -684,6 +685,9 @@ export class CardBuilder {
         );
         return; // Don't push this card - it's from an old build
       }
+
+      // Apply UIX styling to the child card if configured (no-op without UIX/uix config)
+      applyUix(cardElement, cardConfig?.uix, cardConfig, "card");
 
       // Special handling for specific card types
       requestAnimationFrame(() => {
@@ -1456,6 +1460,11 @@ export class CardBuilder {
 
     // Setup dropdown detection for z-index elevation
     this.card._setupDropdownDetection();
+
+    // Apply UIX styling to the swipe card host if configured. The shadow DOM was wiped
+    // and rebuilt during build(), so re-applying here keeps UIX styling alive across
+    // rebuilds (no-op without UIX installed or without a top-level uix config).
+    applyUix(this.card, this.card._config?.uix, this.card._config, "card");
 
     await this._fadeInAfterLayoutSettles();
   }
@@ -2318,6 +2327,9 @@ export class CardBuilder {
         cardData.slide.appendChild(cardElement);
         cardData.element = cardElement;
         cardData.contentLoaded = true;
+
+        // Apply UIX styling to the child card if configured (no-op without UIX/uix config)
+        applyUix(cardElement, cardInfo.config?.uix, cardInfo.config, "card");
 
         return cardElement;
       } catch (error) {
