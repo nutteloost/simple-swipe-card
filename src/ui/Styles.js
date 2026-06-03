@@ -614,7 +614,9 @@ export const getEditorStyles = () => css`
   }
 
   .collapsible-section .section-content {
-    overflow: visible; /* Allow dropdowns to overflow */
+    /* Overflow is governed by the .collapsed / .expanded modifiers below so that
+       collapsed content stays clipped and non-interactive, while expanded
+       dropdowns can still overflow the container. */
     position: relative;
   }
 
@@ -632,11 +634,17 @@ export const getEditorStyles = () => css`
   .collapsible-section .section-toggle {
     padding: 16px;
     margin: 0;
-    background-color: inherit;
+    /* No own background: the rounded container paints the background (clipped to
+       its border-radius). A background here would be a square rectangle and, with
+       the container's overflow:visible, would fill the rounded corners flat. */
+    background-color: transparent;
   }
 
-  .collapsible-section .section-toggle:hover {
-    background-color: var(--secondary-background-color);
+  /* Hover cue that doesn't paint a square over the container's rounded corners
+     (a background tint here would clip flat against the radius). */
+  .collapsible-section .section-toggle:hover .section-toggle-title,
+  .collapsible-section .section-toggle:hover .section-toggle-icon {
+    color: var(--primary-color);
   }
 
   .collapsible-section .section-content.expanded::before {
@@ -649,27 +657,22 @@ export const getEditorStyles = () => css`
 
   .collapsible-section .section-content.expanded {
     padding: 0 16px 16px 16px;
-    background-color: inherit;
+    /* Transparent so the container's rounded background shows through the bottom
+       corners; an inherited (square) background would square them off. */
+    background-color: transparent;
   }
 
+  /* Header acts as a plain section header (like .section-header) inside the
+     rounded container. No background tint or border-radius of its own, and no
+     border-bottom, so the container keeps clean rounded corners that match the
+     other .section blocks; the expanded divider is drawn by
+     .section-content.expanded::before and the chevron rotates to signal state. */
   .section-toggle {
     display: flex;
     align-items: center;
     cursor: pointer;
     padding: 8px 0;
-    border-bottom: 1px solid var(--divider-color);
-    margin-bottom: 12px;
     user-select: none;
-  }
-
-  .section-toggle:hover {
-    background-color: var(--secondary-background-color);
-    border-radius: 4px;
-  }
-
-  .section-toggle.expanded {
-    background-color: var(--secondary-background-color);
-    border-radius: 4px;
   }
 
   .section-toggle-icon {
@@ -726,6 +729,11 @@ export const getEditorStyles = () => css`
   .section-content.collapsed {
     max-height: 0;
     opacity: 0;
+    /* Fully hide collapsed content: clip it and block interaction so its
+       dropdowns can't be opened over the Cards section below. */
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .section-content.expanded {
@@ -931,8 +939,59 @@ export const getEditorStyles = () => css`
   }
 
   /* FORM CONTROLS */
-  ha-textfield {
+  ha-textfield,
+  ha-input {
     width: 100%;
+  }
+
+  /* Native <input> fallback for text/number fields (used only when HA ships
+     neither ha-input nor ha-textfield). Themed to read like the HA controls. */
+  .native-textfield {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .native-textfield-label {
+    font-size: 12px;
+    color: var(--secondary-text-color);
+  }
+
+  .native-textfield-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--divider-color);
+    border-radius: 4px;
+    padding: 0 10px;
+    background-color: var(--mdc-text-field-fill-color, rgba(0, 0, 0, 0.05));
+  }
+
+  .native-textfield-row:focus-within {
+    border-color: var(--primary-color);
+  }
+
+  .native-textfield.disabled {
+    opacity: 0.5;
+  }
+
+  .native-textfield-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--primary-text-color);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 10px 0;
+  }
+
+  .native-textfield-suffix {
+    color: var(--secondary-text-color);
+    font-size: 14px;
+    flex-shrink: 0;
   }
 
   ha-select {

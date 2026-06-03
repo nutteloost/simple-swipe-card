@@ -283,10 +283,23 @@ export class EditorConfigManager {
         value = ev.detail?.value || 0;
       }
     } else if (
-      target.localName === "ha-textfield" &&
-      target.type === "number"
+      // Text/number inputs render as ha-input (HA 2026.5+), ha-textfield (older
+      // HA), or a native <input> fallback. Treat all three the same and detect
+      // numeric fields by type or by known numeric option keys (ha-input may not
+      // reflect `type`). reset_after_timeout/reset_target_card use dedicated
+      // handlers and never reach here.
+      ["ha-textfield", "ha-input", "input"].includes(target.localName) &&
+      (target.type === "number" ||
+        [
+          "card_spacing",
+          "auto_swipe_interval",
+          "card_min_width",
+          "cards_visible",
+        ].includes(finalOption))
     ) {
-      value = parseFloat(target.value);
+      const raw =
+        ev.detail && "value" in ev.detail ? ev.detail.value : target.value;
+      value = parseFloat(raw);
       if (isNaN(value) || value < 0) {
         if (finalOption === "card_spacing") {
           value = 15;
@@ -294,6 +307,8 @@ export class EditorConfigManager {
           value = 2000;
         } else if (finalOption === "reset_after_timeout") {
           value = 30000;
+        } else if (finalOption === "card_min_width") {
+          value = 200;
         } else if (finalOption === "cards_visible") {
           value = 2.5;
         } else {
@@ -308,7 +323,10 @@ export class EditorConfigManager {
       value =
         ev.detail && "value" in ev.detail ? ev.detail.value : target.value;
     } else {
-      value = target.value;
+      // Text inputs (state_entity template, etc.). ha-input reports via the
+      // value-changed detail; native/ha-textfield expose target.value.
+      value =
+        ev.detail && "value" in ev.detail ? ev.detail.value : target.value;
     }
 
     // Special handling for auto_hide_pagination - convert seconds to milliseconds

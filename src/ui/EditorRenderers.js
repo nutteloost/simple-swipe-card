@@ -2,7 +2,7 @@
  * UI rendering functions for Simple Swipe Card Editor
  */
 
-import { html } from "../core/Dependencies.js";
+import { html, ifDefined } from "../core/Dependencies.js";
 import { CARD_VERSION } from "../utils/Constants.js";
 import { evaluateVisibilityConditions } from "../features/VisibilityConditions.js";
 import {
@@ -84,6 +84,128 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
 }
 
 /**
+ * Renders a text/number input that works across Home Assistant versions.
+ *
+ * HA 2026.5 removed `ha-textfield` (replaced by `ha-input`); older HA only ships
+ * `ha-textfield`. We feature-detect and prefer `ha-input`, fall back to
+ * `ha-textfield`, and finally to a styled native `<input>` so the field stays
+ * usable even if HA renames the control again. HA discourages depending on its
+ * internal components, so the native fallback is the safety net. All three report
+ * changes through the same handler (read `ev.detail?.value ?? ev.target.value`).
+ *
+ * @param {Object} params
+ * @param {string} params.label - Field label
+ * @param {string} params.value - Current value (as a string)
+ * @param {string} [params.dataOption] - Config key (rendered as data-option)
+ * @param {string} [params.type="text"] - Input type (e.g. "number")
+ * @param {string|number} [params.min]
+ * @param {string|number} [params.max]
+ * @param {string|number} [params.step]
+ * @param {string} [params.suffix] - Trailing unit (e.g. "px")
+ * @param {boolean} [params.required=false]
+ * @param {boolean} [params.disabled=false]
+ * @param {string} [params.pattern]
+ * @param {boolean} [params.autoValidate=false]
+ * @param {Function} params.changeHandler - Change handler (@change/@value-changed)
+ * @param {Function} [params.inputHandler] - Live @input handler (validation)
+ * @param {Function} [params.keydownHandler] - @keydown handler
+ * @returns {TemplateResult} The text field template
+ */
+function renderTextField({
+  label,
+  value,
+  dataOption,
+  type = "text",
+  min,
+  max,
+  step,
+  suffix,
+  required = false,
+  disabled = false,
+  pattern,
+  autoValidate = false,
+  changeHandler,
+  inputHandler,
+  keydownHandler,
+}) {
+  // Prefer HA's current control; ha-input replaced ha-textfield in HA 2026.5.
+  const useHaInput = !!customElements.get("ha-input");
+  const useHaTextfield = !useHaInput && !!customElements.get("ha-textfield");
+
+  if (useHaInput) {
+    return html`
+      <ha-input
+        label=${label}
+        .value=${value ?? ""}
+        data-option=${ifDefined(dataOption)}
+        type=${type}
+        min=${ifDefined(min)}
+        max=${ifDefined(max)}
+        step=${ifDefined(step)}
+        suffix=${ifDefined(suffix)}
+        ?required=${required}
+        ?disabled=${disabled}
+        @value-changed=${changeHandler}
+        @change=${changeHandler}
+        @input=${inputHandler}
+        @keydown=${keydownHandler}
+      ></ha-input>
+    `;
+  }
+
+  if (useHaTextfield) {
+    return html`
+      <ha-textfield
+        label=${label}
+        .value=${value ?? ""}
+        data-option=${ifDefined(dataOption)}
+        type=${type}
+        min=${ifDefined(min)}
+        max=${ifDefined(max)}
+        step=${ifDefined(step)}
+        suffix=${ifDefined(suffix)}
+        pattern=${ifDefined(pattern)}
+        ?required=${required}
+        ?disabled=${disabled}
+        ?autoValidate=${autoValidate}
+        @change=${changeHandler}
+        @input=${inputHandler}
+        @keydown=${keydownHandler}
+      ></ha-textfield>
+    `;
+  }
+
+  // Native fallback - guaranteed to work on any HA version.
+  return html`
+    <div class="native-textfield ${disabled ? "disabled" : ""}">
+      ${label
+        ? html`<label class="native-textfield-label">${label}</label>`
+        : ""}
+      <div class="native-textfield-row">
+        <input
+          class="native-textfield-input"
+          .value=${value ?? ""}
+          data-option=${ifDefined(dataOption)}
+          type=${type}
+          min=${ifDefined(min)}
+          max=${ifDefined(max)}
+          step=${ifDefined(step)}
+          pattern=${ifDefined(pattern)}
+          ?required=${required}
+          ?disabled=${disabled}
+          @change=${changeHandler}
+          @input=${inputHandler}
+          @keydown=${keydownHandler}
+        />
+        ${suffix
+          ? html`<span class="native-textfield-suffix">${suffix}</span>`
+          : ""}
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Renders the information panel at the top of the editor
  * @returns {TemplateResult} The info panel template
  */
@@ -158,35 +280,34 @@ export function renderViewModeOptions(config, valueChanged) {
                   </div>
                 `
               : ""}
-
-            <ha-textfield
-              label="Minimum Card Width (px)"
-              .value=${(config.card_min_width || 200).toString()}
-              data-option="card_min_width"
-              type="number"
-              min="50"
-              max="500"
-              step="10"
-              suffix="px"
-              @change=${valueChanged}
-              @keydown=${(e) => {
+            ${renderTextField({
+              label: "Minimum Card Width (px)",
+              value: (config.card_min_width || 200).toString(),
+              dataOption: "card_min_width",
+              type: "number",
+              min: "50",
+              max: "500",
+              step: "10",
+              suffix: "px",
+              required: true,
+              autoValidate: true,
+              changeHandler: valueChanged,
+              keydownHandler: (e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   e.stopPropagation();
                   e.target.blur();
                 }
-              }}
-              @input=${(e) => {
+              },
+              inputHandler: (e) => {
                 const value = parseFloat(e.target.value);
                 if (value < 50 || value > 500 || isNaN(value)) {
                   e.target.style.borderColor = "var(--error-color, #f44336)";
                 } else {
                   e.target.style.borderColor = "";
                 }
-              }}
-              autoValidate
-              required
-            ></ha-textfield>
+              },
+            })}
             <div class="help-text">
               ${config.cards_visible !== undefined
                 ? "Changing this value will switch to responsive mode and remove the cards_visible setting"
@@ -217,19 +338,19 @@ export function renderDisplayOptions(config, valueChanged) {
     <div class="section">
       <div class="section-header">Display Options</div>
 
-      <ha-textfield
-        label="Card Spacing (px)"
-        .value=${cardSpacing.toString()}
-        data-option="card_spacing"
-        type="number"
-        min="0"
-        max="100"
-        suffix="px"
-        @change=${valueChanged}
-        autoValidate
-        pattern="[0-9]+"
-        required
-      ></ha-textfield>
+      ${renderTextField({
+        label: "Card Spacing (px)",
+        value: cardSpacing.toString(),
+        dataOption: "card_spacing",
+        type: "number",
+        min: "0",
+        max: "100",
+        suffix: "px",
+        pattern: "[0-9]+",
+        required: true,
+        autoValidate: true,
+        changeHandler: valueChanged,
+      })}
       <div class="help-text">Visual gap between cards</div>
 
       ${viewMode === "single"
@@ -683,18 +804,18 @@ function renderAutoSwipeOptions(
 
     ${enableAutoSwipe
       ? html`
-          <ha-textfield
-            label="Auto-swipe interval (ms)"
-            .value=${autoSwipeInterval.toString()}
-            data-option="auto_swipe_interval"
-            type="number"
-            min="500"
-            suffix="ms"
-            @change=${valueChanged}
-            autoValidate
-            pattern="[0-9]+"
-            required
-          ></ha-textfield>
+          ${renderTextField({
+            label: "Auto-swipe interval (ms)",
+            value: autoSwipeInterval.toString(),
+            dataOption: "auto_swipe_interval",
+            type: "number",
+            min: "500",
+            suffix: "ms",
+            pattern: "[0-9]+",
+            required: true,
+            autoValidate: true,
+            changeHandler: valueChanged,
+          })}
           <div class="help-text">Time between swipes (min. 500ms).</div>
         `
       : ""}
@@ -732,17 +853,17 @@ function renderResetAfterOptions(
 
   return html`
     <!-- Start card option - always available -->
-    <ha-textfield
-      label="Start card"
-      .value=${resetTargetCard.toString()}
-      type=${isTemplate ? "text" : "number"}
-      min=${isTemplate ? undefined : "1"}
-      max=${isTemplate ? undefined : Math.max(1, cards.length).toString()}
-      @change=${handleTargetChange}
-      ?disabled=${cards.length === 0}
-      autoValidate
-      ?required=${!isTemplate}
-    ></ha-textfield>
+    ${renderTextField({
+      label: "Start card",
+      value: resetTargetCard.toString(),
+      type: isTemplate ? "text" : "number",
+      min: isTemplate ? undefined : "1",
+      max: isTemplate ? undefined : Math.max(1, cards.length).toString(),
+      disabled: cards.length === 0,
+      required: !isTemplate,
+      autoValidate: true,
+      changeHandler: handleTargetChange,
+    })}
     <div class="help-text">
       ${isTemplate
         ? html`Template: <code>${resetTargetCard}</code>`
@@ -771,18 +892,18 @@ function renderResetAfterOptions(
 
     ${enableResetAfter && !enableAutoSwipe
       ? html`
-          <ha-textfield
-            label="Reset timeout (seconds)"
-            .value=${Math.round(resetAfterTimeout / 1000).toString()}
-            type="number"
-            min="5"
-            max="3600"
-            suffix="sec"
-            @change=${handleTimeoutChange}
-            autoValidate
-            pattern="[0-9]+"
-            required
-          ></ha-textfield>
+          ${renderTextField({
+            label: "Reset timeout (seconds)",
+            value: Math.round(resetAfterTimeout / 1000).toString(),
+            type: "number",
+            min: "5",
+            max: "3600",
+            suffix: "sec",
+            pattern: "[0-9]+",
+            required: true,
+            autoValidate: true,
+            changeHandler: handleTimeoutChange,
+          })}
           <div class="help-text">
             Time of inactivity before resetting (5s to 1h)
           </div>
@@ -817,12 +938,11 @@ function renderStateSynchronizationOptions(stateEntity, hass, valueChanged) {
           </div>
         </div>
         <div class="option-control" style="flex: 1;">
-          <ha-textfield
-            .value=${stateEntity}
-            data-option="state_entity"
-            @change=${valueChanged}
-            style="width: 100%;"
-          ></ha-textfield>
+          ${renderTextField({
+            value: stateEntity,
+            dataOption: "state_entity",
+            changeHandler: valueChanged,
+          })}
         </div>
       </div>
       <div class="help-text">

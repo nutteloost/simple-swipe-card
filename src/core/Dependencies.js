@@ -9,6 +9,7 @@ import { logDebug } from "../utils/Debug.js";
 
 // Static imports - Rollup will bundle these into the final file
 import { LitElement, html, css } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 // Simple fireEvent implementation (no external dependencies)
 export const fireEvent = (node, type, detail = {}) => {
@@ -115,4 +116,4 @@ export function getHelpers() {
 }
 
 // Export the dependencies
-export { LitElement, html, css };
+export { LitElement, html, css, ifDefined };

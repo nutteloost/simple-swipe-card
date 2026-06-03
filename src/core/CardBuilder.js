@@ -25,25 +25,27 @@ export class CardBuilder {
    * @returns {boolean} True if in editor mode
    */
   _isInEditorMode() {
-    // Check if card is inside hui-card-preview (editor preview)
+    // Tags whose presence as an ancestor (or shadow host) means we're being
+    // rendered for editing/preview rather than on a live dashboard.
+    // `hui-card-picker` covers the "Add card" gallery, which renders the card
+    // outside hui-card-preview/editor (so it must be matched explicitly).
+    const editorTags = [
+      "hui-card-preview",
+      "hui-card-editor",
+      "hui-dialog-edit-card",
+      "hui-card-picker",
+    ];
+
     let parent = this.card.parentElement;
     while (parent) {
       const tagName = parent.tagName?.toLowerCase();
-      if (
-        tagName === "hui-card-preview" ||
-        tagName === "hui-card-editor" ||
-        tagName === "hui-dialog-edit-card"
-      ) {
+      if (editorTags.includes(tagName)) {
         return true;
       }
       // Also check shadow DOM hosts
       if (parent.getRootNode()?.host) {
         const hostTag = parent.getRootNode().host.tagName?.toLowerCase();
-        if (
-          hostTag === "hui-card-preview" ||
-          hostTag === "hui-card-editor" ||
-          hostTag === "hui-dialog-edit-card"
-        ) {
+        if (editorTags.includes(hostTag)) {
           return true;
         }
       }
@@ -190,12 +192,16 @@ export class CardBuilder {
     // Update visible card indices
     this.card._updateVisibleCardIndices();
 
-    // Handle empty state - show preview only in editor mode
+    // Handle empty state - show preview only in editor/picker contexts
     if (this.card._config.cards.length === 0) {
-      const isInEditor = this._isInEditorMode();
-      logDebug("INIT", `No cards configured, editor mode: ${isInEditor}`);
+      // HA's card picker sets `preview = true` on the instance it renders in the
+      // "Add card" gallery; the edit dialog is caught by _isInEditorMode(). Show
+      // the placeholder in both, but still render nothing on a live dashboard
+      // (e.g. auto-entities loading) to avoid a flash of the empty-state preview.
+      const showPreview = this._isInEditorMode() || this.card.preview === true;
+      logDebug("INIT", `No cards configured, show preview: ${showPreview}`);
 
-      if (isInEditor) {
+      if (showPreview) {
         // In editor mode: show the preview with "Edit Card" button
         logDebug("INIT", "Building preview state for editor.");
         const previewContainer = createPreviewContainer(
