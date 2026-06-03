@@ -33,6 +33,7 @@ export const DEFAULT_CONFIG = {
   reset_after_timeout: 30000,
   reset_target_card: 1,
   view_mode: "single",
+  carousel_alignment: "start",
   cards_visible: 2.5,
   card_min_width: 200,
   auto_height: false,

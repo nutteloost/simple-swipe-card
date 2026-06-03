@@ -313,6 +313,28 @@ export function renderViewModeOptions(config, valueChanged) {
                 ? "Changing this value will switch to responsive mode and remove the cards_visible setting"
                 : "Minimum width per card in pixels. Number of visible cards adjusts automatically based on screen size."}
             </div>
+
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-label">Alignment</div>
+                <div class="option-help">
+                  ${(config.carousel_alignment || "start") === "center"
+                    ? "Active card centered, previous/next cards peek on both sides (enable a loop mode for peeks at the ends)"
+                    : "Active card aligned to the left edge"}
+                </div>
+              </div>
+              <div class="option-control">
+                ${renderSelect({
+                  value: config.carousel_alignment || "start",
+                  dataOption: "carousel_alignment",
+                  options: [
+                    { value: "start", label: "Start (left-aligned)" },
+                    { value: "center", label: "Centered (peek)" },
+                  ],
+                  valueChanged,
+                })}
+              </div>
+            </div>
           `
         : ""}
     </div>

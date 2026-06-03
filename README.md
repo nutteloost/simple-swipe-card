@@ -42,6 +42,8 @@ Displays one card at a time with full support for all features. This is the trad
 
 Displays multiple cards simultaneously with partial visibility of adjacent cards, similar to a carousel. Users can see preview portions of neighboring cards while focusing on the current card.
 
+By default the cards are aligned to the left edge (`carousel_alignment: start`). Set `carousel_alignment: center` to keep the active card centered with the previous and next cards peeking in on both sides. The width of the centered card (and therefore how much of the neighbors peek in) is controlled by `card_min_width` or the legacy `cards_visible` option. Combine centered alignment with a `loop_mode` so neighboring cards also peek in at the first and last slides; with looping disabled, the outer edge of the first and last slides shows empty space instead.
+
 > [!NOTE]  
 > Vertical swiping is not available in carousel mode (horizontal only).
 
@@ -137,6 +139,7 @@ This card can be configured using the visual editor or YAML.
 | `cards` | list | Required | List of cards to display |
 | `view_mode` | string | 'single' | View mode for the card. Options: 'single' or 'carousel' |
 | `card_min_width` | number | 200 | Minimum width per card in pixels (50-500px). Number of visible cards adjusts automatically based on screen size. Only available in carousel mode |
+| `carousel_alignment` | string | 'start' | Horizontal alignment of cards in carousel mode. Options: 'start' (cards aligned to the left edge) or 'center' (active card centered with the previous/next cards peeking in on both sides). Only available in carousel mode |
 | `auto_height` | boolean | false | Automatically adjust card height to match each card's content. Only available with single view mode, horizontal swiping, and non-infinite loop modes |
 | `show_pagination` | boolean | true | Show/hide pagination dots |
 | `auto_hide_pagination` | number | 0 | Auto-hide pagination dots after inactivity in milliseconds (0 = disabled, max 30000ms). Dots reappear on hover/touch |

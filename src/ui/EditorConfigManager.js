@@ -243,6 +243,13 @@ export class EditorConfigManager {
         }
       }
       // If cards_visible is undefined, we'll use the responsive approach
+
+      // Validate carousel_alignment (start = left-aligned, center = peek neighbors)
+      if (
+        !["start", "center"].includes(this.editor._config.carousel_alignment)
+      ) {
+        this.editor._config.carousel_alignment = "start";
+      }
     }
 
     delete this.editor._config.title;
@@ -541,6 +548,11 @@ export class EditorConfigManager {
       ) {
         // New approach - include card_min_width (only if not default)
         cleanConfig.card_min_width = config.card_min_width;
+      }
+
+      // Include carousel alignment only when non-default (start)
+      if (config.carousel_alignment === "center") {
+        cleanConfig.carousel_alignment = config.carousel_alignment;
       }
     }
 

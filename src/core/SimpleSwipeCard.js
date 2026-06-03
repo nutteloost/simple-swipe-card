@@ -468,6 +468,11 @@ export class SimpleSwipeCard extends LitElement {
           }
         }
         // If cards_visible is undefined, we'll use the responsive approach
+
+        // Validate carousel_alignment (start = left-aligned, center = peek neighbors)
+        if (!["start", "center"].includes(this._config.carousel_alignment)) {
+          this._config.carousel_alignment = "start";
+        }
       }
 
       // Store the card_mod configuration if present

@@ -67,9 +67,12 @@ export class CarouselView {
 
     const totalCards = this.card.visibleCardIndices.length;
     const loopMode = this.card._config.loop_mode || "none";
+    const centered = this.card._config.carousel_alignment === "center";
 
-    // Edge case: If we have fewer cards than cards_visible, don't transform at all
+    // Edge case: If we have fewer cards than cards_visible, don't transform at all.
+    // In centered mode we still need the offset to keep the active card centered.
     if (
+      !centered &&
       totalCards <= Math.floor(cardsVisible) &&
       this.card._config.loop_mode !== "infinite"
     ) {
@@ -101,7 +104,13 @@ export class CarouselView {
 
     // In carousel mode, we move by single card width + spacing
     const moveDistance = cardWidth + cardSpacing;
-    const transform = domPosition * moveDistance;
+    let transform = domPosition * moveDistance;
+
+    // Centered alignment: shift so the active card sits in the middle of the
+    // container, letting the previous/next cards peek in on both sides.
+    if (centered) {
+      transform -= (containerWidth - cardWidth) / 2;
+    }
 
     logDebug("SWIPE", "Carousel transform calculation:", {
       targetIndex,
@@ -113,6 +122,7 @@ export class CarouselView {
       moveDistance: moveDistance.toFixed(2),
       transform: transform.toFixed(2),
       loopMode,
+      centered,
     });
 
     return transform;
@@ -152,8 +162,10 @@ export class CarouselView {
         this.card._getTransitionStyle(animate);
     }
 
-    // Apply transform (carousel only supports horizontal)
-    this.card.sliderElement.style.transform = `translateX(-${transform}px)`;
+    // Apply transform (carousel only supports horizontal).
+    // Use negation rather than a "-" prefix so negative transforms (centered
+    // alignment shifts the slider right) produce valid CSS instead of "--Npx".
+    this.card.sliderElement.style.transform = `translateX(${-transform}px)`;
 
     logDebug(
       "SWIPE",

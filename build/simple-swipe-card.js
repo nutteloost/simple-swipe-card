@@ -20,6 +20,7 @@ const DEFAULT_CONFIG = {
   reset_after_timeout: 30000,
   reset_target_card: 1,
   view_mode: "single",
+  carousel_alignment: "start",
   cards_visible: 2.5,
   card_min_width: 200,
   auto_height: false,
@@ -10710,9 +10711,12 @@ class CarouselView {
 
     const totalCards = this.card.visibleCardIndices.length;
     const loopMode = this.card._config.loop_mode || "none";
+    const centered = this.card._config.carousel_alignment === "center";
 
-    // Edge case: If we have fewer cards than cards_visible, don't transform at all
+    // Edge case: If we have fewer cards than cards_visible, don't transform at all.
+    // In centered mode we still need the offset to keep the active card centered.
     if (
+      !centered &&
       totalCards <= Math.floor(cardsVisible) &&
       this.card._config.loop_mode !== "infinite"
     ) {
@@ -10744,7 +10748,13 @@ class CarouselView {
 
     // In carousel mode, we move by single card width + spacing
     const moveDistance = cardWidth + cardSpacing;
-    const transform = domPosition * moveDistance;
+    let transform = domPosition * moveDistance;
+
+    // Centered alignment: shift so the active card sits in the middle of the
+    // container, letting the previous/next cards peek in on both sides.
+    if (centered) {
+      transform -= (containerWidth - cardWidth) / 2;
+    }
 
     logDebug("SWIPE", "Carousel transform calculation:", {
       targetIndex,
@@ -10756,6 +10766,7 @@ class CarouselView {
       moveDistance: moveDistance.toFixed(2),
       transform: transform.toFixed(2),
       loopMode,
+      centered,
     });
 
     return transform;
@@ -10795,8 +10806,10 @@ class CarouselView {
         this.card._getTransitionStyle(animate);
     }
 
-    // Apply transform (carousel only supports horizontal)
-    this.card.sliderElement.style.transform = `translateX(-${transform}px)`;
+    // Apply transform (carousel only supports horizontal).
+    // Use negation rather than a "-" prefix so negative transforms (centered
+    // alignment shifts the slider right) produce valid CSS instead of "--Npx".
+    this.card.sliderElement.style.transform = `translateX(${-transform}px)`;
 
     logDebug(
       "SWIPE",
@@ -13861,6 +13874,11 @@ class SimpleSwipeCard extends LitElement {
           }
         }
         // If cards_visible is undefined, we'll use the responsive approach
+
+        // Validate carousel_alignment (start = left-aligned, center = peek neighbors)
+        if (!["start", "center"].includes(this._config.carousel_alignment)) {
+          this._config.carousel_alignment = "start";
+        }
       }
 
       // Store the card_mod configuration if present
@@ -16813,6 +16831,13 @@ class EditorConfigManager {
         }
       }
       // If cards_visible is undefined, we'll use the responsive approach
+
+      // Validate carousel_alignment (start = left-aligned, center = peek neighbors)
+      if (
+        !["start", "center"].includes(this.editor._config.carousel_alignment)
+      ) {
+        this.editor._config.carousel_alignment = "start";
+      }
     }
 
     delete this.editor._config.title;
@@ -17111,6 +17136,11 @@ class EditorConfigManager {
       ) {
         // New approach - include card_min_width (only if not default)
         cleanConfig.card_min_width = config.card_min_width;
+      }
+
+      // Include carousel alignment only when non-default (start)
+      if (config.carousel_alignment === "center") {
+        cleanConfig.carousel_alignment = config.carousel_alignment;
       }
     }
 
@@ -19059,6 +19089,28 @@ function renderViewModeOptions(config, valueChanged) {
               ${config.cards_visible !== undefined
                 ? "Changing this value will switch to responsive mode and remove the cards_visible setting"
                 : "Minimum width per card in pixels. Number of visible cards adjusts automatically based on screen size."}
+            </div>
+
+            <div class="option-row">
+              <div class="option-left">
+                <div class="option-label">Alignment</div>
+                <div class="option-help">
+                  ${(config.carousel_alignment || "start") === "center"
+                    ? "Active card centered, previous/next cards peek on both sides (enable a loop mode for peeks at the ends)"
+                    : "Active card aligned to the left edge"}
+                </div>
+              </div>
+              <div class="option-control">
+                ${renderSelect({
+                  value: config.carousel_alignment || "start",
+                  dataOption: "carousel_alignment",
+                  options: [
+                    { value: "start", label: "Start (left-aligned)" },
+                    { value: "center", label: "Centered (peek)" },
+                  ],
+                  valueChanged,
+                })}
+              </div>
             </div>
           `
         : ""}
