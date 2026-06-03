@@ -805,6 +805,42 @@ export class SwipeGestures {
   }
 
   /**
+   * Determines whether an element belongs to a nested simple-swipe-card that is
+   * different from this card. Walks up through light DOM and shadow DOM boundaries.
+   * Returns false as soon as this card's own container/host is reached, so it only
+   * reports elements that are inside a *deeper* swipe card. (#101)
+   * @param {Element} element - The element to check
+   * @returns {boolean} True if the element is inside a nested swipe card
+   * @private
+   */
+  _isInsideNestedSwipeCard(element) {
+    let current = element;
+    let depth = 0;
+    while (current && depth < 20) {
+      // Reached our own boundary first -> the element is ours, not nested.
+      if (
+        current === this.card ||
+        current === this.card.cardContainer ||
+        current === this.card.sliderElement
+      ) {
+        return false;
+      }
+      // A simple-swipe-card host encountered before our own boundary is a nested card.
+      if (current.localName?.toLowerCase() === "simple-swipe-card") {
+        return true;
+      }
+      current =
+        current.assignedSlot ||
+        current.parentNode ||
+        (current.getRootNode() instanceof ShadowRoot
+          ? current.getRootNode().host
+          : null);
+      depth++;
+    }
+    return false;
+  }
+
+  /**
    * Checks if an element is interactive or scrollable - SIMPLIFIED with robust slider detection
    * @param {Element} element - The element to check
    * @returns {boolean} True if the element is interactive or scrollable
@@ -817,6 +853,17 @@ export class SwipeGestures {
       element === this.card.sliderElement
     )
       return false;
+
+    // NESTED SWIPE CARD FIX (#101): If this element lives inside a *nested*
+    // simple-swipe-card, do not let it block THIS card's gesture. The nested card
+    // is a self-contained swipe region that handles its own interactive-control
+    // blocking, and the move-time axis detection (perpendicular vs parallel)
+    // decides which card actually consumes the gesture. Without this, an outer
+    // card aborts at start because the inner card's swipe surfaces look like a
+    // conflicting touch-action (pan-y) and a "slider-like" / scrollable ancestor.
+    if (this._isInsideNestedSwipeCard(element)) {
+      return false;
+    }
 
     const tagName = element.localName?.toLowerCase();
     const role = element.getAttribute("role");

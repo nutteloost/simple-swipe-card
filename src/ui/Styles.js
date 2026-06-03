@@ -154,8 +154,18 @@ export function getStyles() {
         background: transparent;
         will-change: contents; /* Hint browser for optimization */
         isolation: isolate; /* Create stacking context for proper z-index behavior */
-        /* Prevent horizontal scrolling while allowing vertical */
+        /* Horizontal swipe (default): let the browser handle vertical page scroll,
+           the card captures horizontal drags. */
         touch-action: pan-y pinch-zoom;
+     }
+
+     /* Vertical swipe: the card captures vertical drags, so the browser must NOT
+        own vertical panning (otherwise the page scrolls instead of the slides,
+        and nested vertical+horizontal cards fight each other). pan-x keeps any
+        horizontal page panning available. This also fixes vertical cards placed
+        on scrollable dashboards (e.g. Sections view). #101 */
+     .card-container:has(.slider[data-swipe-direction="vertical"]) {
+        touch-action: pan-x pinch-zoom;
      }
 
      /* Horizontal swipe: Clip horizontally but allow vertical overflow for dropdowns */
