@@ -5995,6 +5995,15 @@ function applyCardModStyles(
           "--simple-swipe-card-pagination-animation-easing",
         ];
 
+        // Per-slide pagination dot colors (slide1..slide15) — keep in sync with the
+        // :nth-child rules generated in getStyles().
+        for (let n = 1; n <= 15; n++) {
+          variablesToForward.push(
+            `--simple-swipe-card-pagination-dot-slide${n}-color`,
+            `--simple-swipe-card-pagination-dot-slide${n}-active-color`,
+          );
+        }
+
         shadowElements.forEach((element) => {
           if (!element) return;
 
@@ -6064,6 +6073,21 @@ function setupCardModObserver(shadowRoot, reapplyCallback) {
  * @returns {string} CSS styles
  */
 function getStyles() {
+  // Per-slide pagination dot colors (1-indexed, slide1..slide15). Each :nth-child rule
+  // only overrides the resolved color variables consumed by the dot state rules above,
+  // so it never fights their specificity or source order. `slideN-color` drives the
+  // base/inactive color (and the hover fallback); the active dot keeps the global
+  // active color unless `slideN-active-color` is also set.
+  const MAX_PAGINATION_SLIDE_COLORS = 15;
+  let paginationSlideColorRules = "";
+  for (let n = 1; n <= MAX_PAGINATION_SLIDE_COLORS; n++) {
+    paginationSlideColorRules += `
+    .pagination-dot:nth-child(${n}) {
+        --ssc-pagination-dot-inactive-resolved: var(--simple-swipe-card-pagination-dot-slide${n}-color, var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6)));
+        --ssc-pagination-dot-active-resolved: var(--simple-swipe-card-pagination-dot-slide${n}-active-color, var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4)));
+    }`;
+  }
+
   return `
      :host {
         display: block;
@@ -6392,10 +6416,17 @@ function getStyles() {
      }
 
     .pagination-dot {
+        /* Resolved per-slide colors. The base values fall back to the global
+           inactive/active colors; per-slide :nth-child rules below override these
+           two variables so the state rules (base/hover/active/active-hover) inherit
+           the right color without any specificity/ordering changes. */
+        --ssc-pagination-dot-inactive-resolved: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
+        --ssc-pagination-dot-active-resolved: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
+
         width: var(--simple-swipe-card-pagination-dot-size, 8px);
         height: var(--simple-swipe-card-pagination-dot-size, 8px);
         border-radius: var(--simple-swipe-card-pagination-border-radius, 50%);
-        background-color: var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6));
+        background-color: var(--ssc-pagination-dot-inactive-resolved);
         cursor: pointer;
         opacity: var(--simple-swipe-card-pagination-dot-inactive-opacity, 1);
         
@@ -6413,7 +6444,7 @@ function getStyles() {
     
     /* Hover effects */
     .pagination-dot:hover {
-        background-color: var(--simple-swipe-card-pagination-dot-hover-color, var(--simple-swipe-card-pagination-dot-inactive-color, rgba(127, 127, 127, 0.6)));
+        background-color: var(--simple-swipe-card-pagination-dot-hover-color, var(--ssc-pagination-dot-inactive-resolved));
         opacity: var(--simple-swipe-card-pagination-dot-hover-opacity, var(--simple-swipe-card-pagination-dot-inactive-opacity, 1));
         border-color: var(--simple-swipe-card-pagination-dot-hover-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent));
         transform: var(--simple-swipe-card-pagination-dot-hover-transform, none);
@@ -6422,7 +6453,7 @@ function getStyles() {
 
     /* Active hover state */
     .pagination-dot.active:hover {
-        background-color: var(--simple-swipe-card-pagination-dot-active-hover-color, var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4)));
+        background-color: var(--simple-swipe-card-pagination-dot-active-hover-color, var(--ssc-pagination-dot-active-resolved));
         opacity: var(--simple-swipe-card-pagination-dot-active-hover-opacity, var(--simple-swipe-card-pagination-dot-active-opacity, 1));
         border-color: var(--simple-swipe-card-pagination-dot-active-hover-border-color, var(--simple-swipe-card-pagination-dot-active-border-color, var(--simple-swipe-card-pagination-dot-border-color, transparent)));
         transform: var(--simple-swipe-card-pagination-dot-active-hover-transform, var(--simple-swipe-card-pagination-dot-hover-transform, none));
@@ -6440,7 +6471,7 @@ function getStyles() {
     }
     
     .pagination-dot.active {
-        background-color: var(--simple-swipe-card-pagination-dot-active-color, var(--primary-color, #03a9f4));
+        background-color: var(--ssc-pagination-dot-active-resolved);
         width: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
         height: var(--simple-swipe-card-pagination-dot-active-size, var(--simple-swipe-card-pagination-dot-size, 8px));
         opacity: var(--simple-swipe-card-pagination-dot-active-opacity, 1);
@@ -6456,6 +6487,7 @@ function getStyles() {
         /* Active box shadow support */
         box-shadow: var(--simple-swipe-card-pagination-dot-active-box-shadow, var(--simple-swipe-card-pagination-dot-box-shadow, none));
     }
+${paginationSlideColorRules}
 
      ha-alert {
         display: block;

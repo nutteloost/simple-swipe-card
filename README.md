@@ -378,6 +378,29 @@ All CSS variables listed below can be used in both Home Assistant themes and car
 --simple-swipe-card-pagination-dot-inactive-opacity: 1;                         /* Opacity of inactive pagination dots */
 ```
 
+#### Per-Slide Pagination Dot Colors
+You can give each slide's dot its own color (for example, to match the color of the card on that slide).
+
+```yaml
+--simple-swipe-card-pagination-dot-slide1-color: #ffed51;         /* Base/inactive color of slide 1's dot */
+--simple-swipe-card-pagination-dot-slide1-active-color: #ffed51;  /* Optional: color of slide 1's dot when it is the active slide */
+```
+
+Full card-mod example matching three dots to yellow / green / blue cards:
+
+```yaml
+type: custom:simple-swipe-card
+cards:
+  - # ... your three cards ...
+card_mod:
+  style: |
+    :host {
+      --simple-swipe-card-pagination-dot-slide1-color: #ffed51;
+      --simple-swipe-card-pagination-dot-slide2-color: #4caf50;
+      --simple-swipe-card-pagination-dot-slide3-color: #2196f3;
+    }
+```
+
 #### Pagination Dot Shape & Border Radius
 ```yaml
 --simple-swipe-card-pagination-border-radius: 50%;                              /* Border radius of dots (50% = circle, 0px = square) */

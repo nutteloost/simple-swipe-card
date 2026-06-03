@@ -288,6 +288,15 @@ export function applyCardModStyles(
           "--simple-swipe-card-pagination-animation-easing",
         ];
 
+        // Per-slide pagination dot colors (slide1..slide15) — keep in sync with the
+        // :nth-child rules generated in getStyles().
+        for (let n = 1; n <= 15; n++) {
+          variablesToForward.push(
+            `--simple-swipe-card-pagination-dot-slide${n}-color`,
+            `--simple-swipe-card-pagination-dot-slide${n}-active-color`,
+          );
+        }
+
         shadowElements.forEach((element) => {
           if (!element) return;
 
