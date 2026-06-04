@@ -1936,6 +1936,18 @@ export class SimpleSwipeCard extends LitElement {
       logDebug("MUSHROOM", "Mushroom-select observer cleaned up");
     }
 
+    // Clean up mini-media-player dropdown observers
+    if (this._miniMediaPlayerObserver) {
+      this._miniMediaPlayerObserver.disconnect();
+      this._miniMediaPlayerObserver = null;
+    }
+    if (Array.isArray(this._mmpDropdownObservers)) {
+      this._mmpDropdownObservers.forEach((observer) => observer.disconnect());
+      this._mmpDropdownObservers = [];
+      logDebug("DROPDOWN", "Mini-media-player dropdown observers cleaned up");
+    }
+    this._mmpObservedDropdowns = null;
+
     // Clear pagination DOM references
     if (this.pagination && this.pagination.paginationElement) {
       this.pagination.paginationElement = null;

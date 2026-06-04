@@ -1278,6 +1278,212 @@ export class CardBuilder {
   }
 
   /**
+   * Sets up detection for mini-media-player shortcut dropdowns.
+   *
+   * Recent mini-media-player versions render their shortcuts menu as a plain
+   * `<div class="mmp-dropdown__menu">` (toggled purely by an `open` attribute) whenever
+   * the legacy `mwc-menu`/`mwc-list-item` elements are not registered - which is the case
+   * on current Home Assistant. That fallback fires no open/close events and is never
+   * added to or removed from the DOM, so the generic detection in `_setupDropdownDetection()`
+   * never sees it and the menu gets clipped by the card's `overflow: hidden`. Here we watch
+   * the `open` attribute directly and reuse the same `_handleDropdownOpen()` /
+   * `_handleDropdownClose()` counter that toggles the `dropdown-open` class on the host.
+   * @private
+   */
+  _setupMiniMediaPlayerDropdownDetection() {
+    if (!this.card.sliderElement) return;
+
+    // Reset any observers/state left over from a previous build.
+    if (Array.isArray(this.card._mmpDropdownObservers)) {
+      this.card._mmpDropdownObservers.forEach((observer) =>
+        observer.disconnect(),
+      );
+    }
+    this.card._mmpDropdownObservers = [];
+    this.card._mmpObservedDropdowns = new WeakSet();
+
+    logDebug("DROPDOWN", "Checking for mini-media-player elements...");
+
+    const players =
+      this.card.sliderElement.querySelectorAll("mini-media-player");
+    logDebug(
+      "DROPDOWN",
+      `Found ${players.length} mini-media-player element(s)`,
+    );
+
+    players.forEach((player) => this._observeMiniMediaPlayer(player));
+
+    // Watch for mini-media-player cards added after the initial build (e.g. cards 3+).
+    this._setupMiniMediaPlayerObserver();
+  }
+
+  /**
+   * Locates the `mmp-dropdown` element(s) inside a mini-media-player (nested several
+   * shadow roots deep) and attaches an attribute observer to each. The dropdown renders
+   * slightly after the card mounts, so retry a few times and fall back to a
+   * MutationObserver on the player's shadow root.
+   * @param {Element} player - The mini-media-player element
+   * @private
+   */
+  _observeMiniMediaPlayer(player) {
+    if (!player) return;
+
+    let retryCount = 0;
+    const maxRetries = 10; // ~1s
+
+    const tryFind = () => {
+      const dropdowns = this._findDeep(player, "MMP-DROPDOWN");
+      if (dropdowns.length > 0) {
+        dropdowns.forEach((dropdown) => this._observeMmpDropdown(dropdown));
+        return;
+      }
+
+      retryCount++;
+      if (retryCount < maxRetries) {
+        setTimeout(tryFind, 100);
+      } else if (player.shadowRoot) {
+        // Not rendered yet - observe the player's shadow root for the shortcuts/dropdown
+        // being created, then re-scan.
+        logDebug(
+          "DROPDOWN",
+          "mini-media-player dropdown not found, observing for creation",
+        );
+        const observer = new MutationObserver(() => {
+          const found = this._findDeep(player, "MMP-DROPDOWN");
+          if (found.length > 0) {
+            found.forEach((dropdown) => this._observeMmpDropdown(dropdown));
+            observer.disconnect();
+          }
+        });
+        observer.observe(player.shadowRoot, {
+          childList: true,
+          subtree: true,
+        });
+        this.card._mmpDropdownObservers.push(observer);
+      }
+    };
+
+    tryFind();
+  }
+
+  /**
+   * Attaches an attribute observer to a single `mmp-dropdown` so the swipe card can react
+   * when its fallback `.mmp-dropdown__menu` opens/closes, reusing the host-level
+   * `dropdown-open` toggle via the shared open/close counter.
+   * @param {Element} dropdown - The mmp-dropdown element
+   * @private
+   */
+  _observeMmpDropdown(dropdown) {
+    if (!dropdown || !dropdown.shadowRoot) return;
+    if (this.card._mmpObservedDropdowns.has(dropdown)) return;
+    this.card._mmpObservedDropdowns.add(dropdown);
+
+    let wasOpen = false;
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        const target = mutation.target;
+        // Only react to the fallback menu container's `open` attribute. This element
+        // exists only in the non-legacy (event-less) branch, so the legacy mwc-menu path
+        // - already handled by _setupDropdownDetection - is left untouched.
+        if (
+          !target.classList ||
+          !target.classList.contains("mmp-dropdown__menu")
+        ) {
+          continue;
+        }
+
+        const isOpen = target.hasAttribute("open");
+        if (isOpen === wasOpen) continue;
+        wasOpen = isOpen;
+
+        if (isOpen) {
+          logDebug("DROPDOWN", "mini-media-player dropdown opened");
+          this.card._handleDropdownOpen();
+        } else {
+          logDebug("DROPDOWN", "mini-media-player dropdown closed");
+          this.card._handleDropdownClose();
+        }
+      }
+    });
+
+    observer.observe(dropdown.shadowRoot, {
+      attributes: true,
+      attributeFilter: ["open"],
+      subtree: true,
+    });
+
+    this.card._mmpDropdownObservers.push(observer);
+    logDebug("DROPDOWN", "mini-media-player dropdown observer attached");
+  }
+
+  /**
+   * Sets up a persistent MutationObserver to detect new mini-media-player elements being
+   * added to the DOM after the initial build.
+   * @private
+   */
+  _setupMiniMediaPlayerObserver() {
+    if (this.card._miniMediaPlayerObserver) {
+      this.card._miniMediaPlayerObserver.disconnect();
+      this.card._miniMediaPlayerObserver = null;
+    }
+
+    if (!this.card.sliderElement) return;
+
+    this.card._miniMediaPlayerObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type !== "childList") continue;
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType !== Node.ELEMENT_NODE) continue;
+          if (node.nodeName === "MINI-MEDIA-PLAYER") {
+            setTimeout(() => this._observeMiniMediaPlayer(node), 100);
+          } else if (node.querySelectorAll) {
+            const nested = node.querySelectorAll("mini-media-player");
+            if (nested.length > 0) {
+              setTimeout(() => {
+                nested.forEach((player) =>
+                  this._observeMiniMediaPlayer(player),
+                );
+              }, 100);
+            }
+          }
+        }
+      }
+    });
+
+    this.card._miniMediaPlayerObserver.observe(this.card.sliderElement, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  /**
+   * Recursively collects every element with the given upper-case tag name within an
+   * element's subtree, descending through nested shadow roots (MutationObservers and
+   * querySelectorAll do not cross shadow boundaries).
+   * @param {Element|ShadowRoot} root - Element or shadow root to search within
+   * @param {string} tagName - Upper-case tag name to match (e.g. "MMP-DROPDOWN")
+   * @returns {Element[]} Matching elements
+   * @private
+   */
+  _findDeep(root, tagName) {
+    const matches = [];
+    const start = root.shadowRoot || root;
+
+    const walk = (node) => {
+      const children = node.children ? Array.from(node.children) : [];
+      for (const el of children) {
+        if (el.tagName === tagName) matches.push(el);
+        if (el.shadowRoot) walk(el.shadowRoot);
+        walk(el);
+      }
+    };
+
+    walk(start);
+    return matches;
+  }
+
+  /**
    * Finishes the build process by setting up layout and observers
    * @param {number} buildTimestamp - Optional timestamp to validate this is not a stale build
    */
@@ -1468,6 +1674,9 @@ export class CardBuilder {
 
     // Fix mushroom-select dropdown positioning
     this._fixMushroomSelectPositioning();
+
+    // Detect mini-media-player shortcut dropdowns (event-less fallback menu)
+    this._setupMiniMediaPlayerDropdownDetection();
 
     // Update pagination after state sync to ensure active dot is set
     // This ensures the correct dot is active after state synchronization runs
