@@ -115,16 +115,17 @@ export class AutoHeight {
       }
     }
 
-    // Give the card additional time to render its content
-    // This handles cases where the element is defined but hasn't rendered yet
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Read an initial height on the next frame. Any later growth (e.g. mushroom
+    // or templated cards that render in stages) is handled reactively by the
+    // ResizeObserver installed in observeSlide(), so we no longer force fixed
+    // 100ms/200ms delays here.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    // Force a height check after render delay
     const currentHeight = slideElement.offsetHeight;
     if (currentHeight >= 10 && this.cardHeights[slideIndex] !== currentHeight) {
       logDebug(
         "AUTO_HEIGHT",
-        `Post-render height check for card ${slideIndex}: ${currentHeight}px`,
+        `Initial height for card ${slideIndex}: ${currentHeight}px`,
       );
       this.cardHeights[slideIndex] = currentHeight;
 
@@ -132,27 +133,6 @@ export class AutoHeight {
       if (slideIndex === this.card.currentIndex) {
         this.updateContainerHeight(currentHeight);
       }
-    } else if (currentHeight < 10) {
-      // Card still hasn't rendered - try again after a longer delay
-      logDebug(
-        "AUTO_HEIGHT",
-        `Card ${slideIndex} still not rendered, will retry after 200ms`,
-      );
-
-      setTimeout(() => {
-        const retryHeight = slideElement.offsetHeight;
-        if (retryHeight >= 10 && this.cardHeights[slideIndex] !== retryHeight) {
-          logDebug(
-            "AUTO_HEIGHT",
-            `Retry height check for card ${slideIndex}: ${retryHeight}px`,
-          );
-          this.cardHeights[slideIndex] = retryHeight;
-
-          if (slideIndex === this.card.currentIndex) {
-            this.updateContainerHeight(retryHeight);
-          }
-        }
-      }, 200);
     }
   }
 

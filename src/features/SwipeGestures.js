@@ -401,6 +401,18 @@ export class SwipeGestures {
     this._currentY = this._startY;
     this._lastMoveTime = this._gestureStartTime;
 
+    // Resolution-independent layout doesn't pre-measure slide pixel size at build
+    // time, so read the current container dimensions here (cheap, off the load
+    // path). Drag math — edge resistance, effect progress, end-of-drag thresholds —
+    // relies on these, keeping gestures pixel-accurate regardless of whether the
+    // resting transform was set in px or via calc().
+    if (this.card.cardContainer) {
+      const containerWidth = this.card.cardContainer.offsetWidth;
+      const containerHeight = this.card.cardContainer.offsetHeight;
+      if (containerWidth > 0) this.card.slideWidth = containerWidth;
+      if (containerHeight > 0) this.card.slideHeight = containerHeight;
+    }
+
     if (this.card.sliderElement) {
       const style = window.getComputedStyle(this.card.sliderElement);
       const matrix = new DOMMatrixReadOnly(style.transform);

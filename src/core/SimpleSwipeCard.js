@@ -49,6 +49,11 @@ export class SimpleSwipeCard extends LitElement {
       this.currentIndex = 0;
       this.slideWidth = 0;
       this.slideHeight = 0;
+      // When true, single/vertical slides size themselves at 100% of the container
+      // and the slider translates by percentages, so the initial render needs no
+      // pixel measurement (enables fast, instant reveal). Acts as a kill-switch for
+      // the resolution-independent layout.
+      this._resolutionIndependentLayout = true;
       this.cardContainer = null;
       this.sliderElement = null;
       this.initialized = false;
@@ -123,16 +128,24 @@ export class SimpleSwipeCard extends LitElement {
       logDebug("INIT", "firstUpdated: Initializing build.");
 
       try {
-        // IMPORTANT: Defer build to allow auto-entities to populate cards
-        // Auto-entities uses queueMicrotask to update config, so waiting 2 frames
-        // ensures we build with the final config (populated cards) rather than
-        // building immediately with empty cards and showing the preview.
-        // This prevents the "flash of preview" issue when using auto-entities with templates.
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
+        // IMPORTANT: Defer build to allow auto-entities to populate cards.
+        // Auto-entities uses queueMicrotask to update config, so when we currently
+        // have NO cards we wait the full 2 frames to build with the final
+        // (populated) config rather than flashing the preview / building empty.
+        // When cards are already present there's nothing to wait for, so we only
+        // yield a microtask + a single frame to keep startup fast.
+        const cardsPending =
+          !this._config.cards || this._config.cards.length === 0;
+        if (cardsPending) {
+          await new Promise((resolve) => {
+            requestAnimationFrame(() => {
+              requestAnimationFrame(resolve);
+            });
           });
-        });
+        } else {
+          await Promise.resolve();
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
 
         // Check if still connected after the delay
         if (!this.isConnected) {
@@ -2135,6 +2148,11 @@ export class SimpleSwipeCard extends LitElement {
       // and then update slider position. For other modes, update slide widths directly.
       if (this._config?.view_mode === "carousel" && this.cardBuilder) {
         this.cardBuilder.recalculateCarouselLayout();
+      } else if (this._resolutionIndependentLayout) {
+        // Resolution-independent single/vertical: slides are 100% and the transform
+        // is percentage-based, so resize needs no pixel re-layout — just refresh the
+        // percentage transform to keep everything in sync.
+        this.updateSlider(false);
       } else {
         // Update single mode slide widths directly on each slide element
         // CSS variables alone may not trigger re-layout in all browsers
@@ -2536,6 +2554,13 @@ export class SimpleSwipeCard extends LitElement {
     const stackedTransform = this.swipeEffects?.getSliderTransform(animate);
     if (stackedTransform) {
       this.sliderElement.style.transform = stackedTransform;
+    } else if (this._resolutionIndependentLayout) {
+      // Resolution-independent: translate by whole slides using percentages, so no
+      // pixel measurement is needed. 100% resolves to the slider's own size (one
+      // slide), so this equals domPosition * (slideSize + spacing) exactly. Using a
+      // negated number (not a "-" prefix) keeps negative offsets valid CSS.
+      const axis = isHorizontal ? "X" : "Y";
+      this.sliderElement.style.transform = `translate${axis}(calc(${-domPosition} * (100% + ${cardSpacing}px)))`;
     } else if (isHorizontal) {
       this.sliderElement.style.transform = `translateX(-${translateAmount}px)`;
     } else {
@@ -2877,5 +2902,37 @@ export class SimpleSwipeCard extends LitElement {
     }
     logDebug("CONFIG", "Calculated card size:", maxSize);
     return Math.max(3, maxSize);
+  }
+
+  /**
+   * Returns the grid footprint for Home Assistant's Sections view. Only consulted
+   * in Sections view — Masonry, Panel and layout-card ignore it and use
+   * getCardSize() instead.
+   *
+   * The swipe/carousel UX wants the full section width (12 columns, the default).
+   * As a WRAPPER card we generally don't know our children's heights, and a numeric
+   * `rows` would clip variable-height or auto_height content — so we omit `rows`
+   * ("ignore the grid rows", i.e. content/auto-height sized) EXCEPT for vertical
+   * mode with no grid_options, where the card renders at a fixed 250px height (see
+   * Styles.js) and a matching reserved box avoids a content-driven shift.
+   *
+   * HA merges the user's config `grid_options` over this return value
+   * ({ ...elementOptions, ...configOptions }), so explicit user grid_options win.
+   * @returns {{columns: number, rows?: number}} Grid options for the sections view
+   */
+  getGridOptions() {
+    const options = { columns: 12 };
+
+    // Mirror the data-vertical-no-grid condition in setConfig: vertical mode with
+    // no explicit grid_options renders at a fixed 250px height. The HA sections
+    // grid uses ~56px rows + 8px gaps, so 4 rows (4*56 + 3*8 = 248px) ≈ 250px.
+    if (
+      this._config?.swipe_direction === "vertical" &&
+      !this._config?.grid_options
+    ) {
+      options.rows = 4;
+    }
+
+    return options;
   }
 }

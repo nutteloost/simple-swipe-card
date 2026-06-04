@@ -293,8 +293,9 @@ export class SwipeEffects {
   }
 
   /**
-   * Initializes effect on first load
-   * Should be called AFTER the slider is visible and all cards are built
+   * Initializes effect on first load. Called once all cards are built, just before
+   * the slider is revealed, so stacked/fade effects establish their per-slide state
+   * before the card becomes visible (preventing a flash of the wrong slide).
    */
   initialize() {
     const currentEffectName = this.getEffectName();

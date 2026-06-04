@@ -660,13 +660,20 @@ export class CardBuilder {
       // Append card to slide
       slideDiv.appendChild(cardElement);
 
-      // CRITICAL FIX FOR CARD-MOD:
-      // Wait for browser paint cycle, then give card-mod time to detect and process the card
-      // This ensures card-mod's MutationObserver can detect the card and apply styles
+      // CARD-MOD COMPATIBILITY:
+      // card-mod applies styles via a global MutationObserver on inserted cards.
+      // Only when card-mod is actually installed do we yield an extra 30ms after
+      // paint so its observer can process this card; otherwise a single frame is
+      // enough and we avoid N×30ms of startup latency for everyone else.
+      const cardModPresent = !!customElements.get("card-mod");
       await new Promise((resolve) => {
         requestAnimationFrame(() => {
-          // After paint cycle, give card-mod's MutationObserver time to process
-          setTimeout(resolve, 30);
+          if (cardModPresent) {
+            // After paint cycle, give card-mod's MutationObserver time to process
+            setTimeout(resolve, 30);
+          } else {
+            resolve();
+          }
         });
       });
 
@@ -1284,21 +1291,27 @@ export class CardBuilder {
     }
     logDebug("INIT", "Finishing build layout...");
 
-    // ENHANCED: Wait for stable dimensions with validation
-    const dimensions = await this._waitForStableDimensions();
+    // Read the container width as soon as it's known (parent-determined, available
+    // on the first layout frame) instead of polling for height to "stabilise" —
+    // height keeps changing as child content loads (especially with auto_height)
+    // and would needlessly delay reveal. Height settling after reveal is handled
+    // by the ResizeObserver / the auto_height height transition.
+    const dimensions = await this._waitForInitialWidth();
 
     if (!dimensions) {
-      // Failed to get stable dimensions - use fallback but continue
-      console.warn(
-        "SimpleSwipeCard: Could not obtain stable dimensions after 3 seconds. " +
-          "Using fallback dimensions. The card may resize when content loads.",
+      // Width not available yet (hidden / inactive tab / detached). Use fallback
+      // dimensions and continue; the ResizeObserver set up below recalculates and
+      // lays the card out correctly once it becomes visible.
+      logDebug(
+        "INIT",
+        "Initial width unavailable - using fallback dimensions (will recalc on resize)",
       );
       this.card.slideWidth = 300;
       this.card.slideHeight = 100;
     } else {
       this.card.slideWidth = dimensions.width;
       this.card.slideHeight = dimensions.height;
-      logDebug("INIT", "Stable dimensions confirmed:", dimensions);
+      logDebug("INIT", "Initial dimensions:", dimensions);
     }
 
     // Handle carousel mode layout with dimension validation
@@ -1312,6 +1325,11 @@ export class CardBuilder {
           "SimpleSwipeCard: Carousel layout calculation produced invalid dimensions",
         );
       }
+    } else if (this.card._resolutionIndependentLayout) {
+      // Resolution-independent single mode: slides stay at 100% of the container
+      // (the CSS default for --single-slide-width), so no pixel width is needed and
+      // the layout reflows for free on resize.
+      this.card.style.setProperty("--single-slide-width", "100%");
     } else {
       // For single mode, set the slide width CSS variable for proper slide sizing
       this.card.style.setProperty(
@@ -1374,9 +1392,14 @@ export class CardBuilder {
       );
     }
 
-    // For single mode, set inline widths on slides to ensure proper sizing
-    // CSS variables alone may not work reliably across all browsers
-    if (viewMode !== "carousel" && this.card.sliderElement) {
+    // For single mode (pixel layout only), set inline widths on slides to ensure
+    // proper sizing — CSS variables alone may not work reliably across all browsers.
+    // Skipped under resolution-independent layout, where slides stay at 100%.
+    if (
+      viewMode !== "carousel" &&
+      !this.card._resolutionIndependentLayout &&
+      this.card.sliderElement
+    ) {
       const slideWidth = this.card.slideWidth;
       const slides = this.card.sliderElement.querySelectorAll(
         ".slide:not(.carousel-mode)",
@@ -1466,7 +1489,7 @@ export class CardBuilder {
     // rebuilds (no-op without UIX installed or without a top-level uix config).
     applyUix(this.card, this.card._config?.uix, this.card._config, "card");
 
-    await this._fadeInAfterLayoutSettles();
+    await this._revealSlider();
   }
 
   /**
@@ -1535,122 +1558,62 @@ export class CardBuilder {
   }
 
   /**
-   * Waits for container dimensions to stabilize (OPTIMIZED FOR SPEED)
-   * Checks multiple times to ensure dimensions aren't changing
-   * @returns {Promise<Object|null>} Object with width/height, or null if failed
+   * Reads the container width as soon as the browser has laid it out.
+   *
+   * Width is determined by the parent container and is available on the first
+   * layout frame(s); height, by contrast, keeps changing as child content loads
+   * (especially with auto_height), so we deliberately do NOT wait for it. We grab
+   * width within a few frames and let the card reveal; the ResizeObserver and the
+   * auto_height height transition handle any settling after reveal.
+   * @returns {Promise<{width: number, height: number}|null>} Dimensions, or null
+   *   if the card is hidden/detached (caller falls back to default dimensions).
    * @private
    */
-  async _waitForStableDimensions() {
-    const MAX_ATTEMPTS = 30; // 30 checks max (failsafe)
-    const CHECK_INTERVAL = 50; // Check every 50ms (faster than before)
-    const STABILITY_THRESHOLD = 2; // Dimensions must be stable within 2px
-    const REQUIRED_STABLE_CHECKS = 2; // Must be stable for 2 consecutive checks
+  async _waitForInitialWidth() {
+    const MAX_FRAMES = 5; // ~80ms worst case, vs. up to 1500ms polling before
 
-    let previousWidth = 0;
-    let previousHeight = 0;
-    let stableCount = 0;
-    let attempt = 0;
-    let useRAF = true; // Use RAF for first few checks (faster)
+    for (let attempt = 0; attempt < MAX_FRAMES; attempt++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    logDebug("INIT", "Starting dimension stability check (optimized)...");
-
-    while (attempt < MAX_ATTEMPTS) {
-      // Check if element is still connected
+      // Bail if the card went away during the wait
       if (!this.card.isConnected || !this.card.cardContainer) {
-        logDebug("INIT", "Card disconnected during dimension check");
+        logDebug("INIT", "Card disconnected during initial width read");
         return null;
       }
 
-      // Check if element is hidden
+      const width = this.card.cardContainer.offsetWidth;
+      if (width > 0) {
+        const height = this.card.cardContainer.offsetHeight;
+        logDebug("INIT", "Initial width acquired:", {
+          width,
+          height,
+          frames: attempt + 1,
+        });
+        return { width, height };
+      }
+
+      // Hidden / inactive tab: no layout happens until it is shown again, so do
+      // not burn frames waiting - the ResizeObserver reveals/recalcs on show.
       if (this.card.offsetParent === null) {
-        logDebug("INIT", "Element is hidden, skipping dimension check");
-        return null;
-      }
-
-      const currentWidth = this.card.cardContainer.offsetWidth;
-      const currentHeight = this.card.cardContainer.offsetHeight;
-
-      logDebug("INIT", `Dimension check ${attempt + 1}/${MAX_ATTEMPTS}:`, {
-        width: currentWidth,
-        height: currentHeight,
-        previousWidth,
-        previousHeight,
-        stableCount,
-      });
-
-      // Check if dimensions are valid (non-zero)
-      if (currentWidth > 0 && currentHeight > 0) {
-        // Check if dimensions are stable (within threshold)
-        const widthDiff = Math.abs(currentWidth - previousWidth);
-        const heightDiff = Math.abs(currentHeight - previousHeight);
-
-        if (
-          widthDiff <= STABILITY_THRESHOLD &&
-          heightDiff <= STABILITY_THRESHOLD
-        ) {
-          stableCount++;
-          logDebug(
-            "INIT",
-            `Dimensions stable (${stableCount}/${REQUIRED_STABLE_CHECKS})`,
-          );
-
-          if (stableCount >= REQUIRED_STABLE_CHECKS) {
-            logDebug("INIT", "Dimensions confirmed stable:", {
-              width: currentWidth,
-              height: currentHeight,
-              attempts: attempt + 1,
-              timeElapsed: `${attempt * CHECK_INTERVAL}ms`,
-            });
-            return { width: currentWidth, height: currentHeight };
-          }
-        } else {
-          // Dimensions changed - reset stable count
-          logDebug(
-            "INIT",
-            `Dimensions changed: widthÂ${widthDiff}px, height ${heightDiff}px (resetting stability counter)`,
-          );
-          stableCount = 0;
-        }
-
-        previousWidth = currentWidth;
-        previousHeight = currentHeight;
-      } else {
         logDebug(
           "INIT",
-          `Waiting for non-zero dimensions (${currentWidth}x${currentHeight})`,
+          "Element hidden during build - deferring to ResizeObserver",
         );
-        stableCount = 0; // Reset if dimensions go to zero
-      }
-
-      attempt++;
-
-      // OPTIMIZATION: Use RAF for first 3 checks (faster, synced with browser paint)
-      // Then fall back to setTimeout for remaining checks
-      if (useRAF && attempt < 3) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-      } else {
-        useRAF = false; // Switch to setTimeout after first few RAF checks
-        await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL));
+        return null;
       }
     }
 
-    // Max attempts reached without stable dimensions
-    logDebug(
-      "INIT",
-      `Failed to get stable dimensions after ${MAX_ATTEMPTS * CHECK_INTERVAL}ms`,
-    );
+    logDebug("INIT", "Initial width still 0 after MAX_FRAMES - using fallback");
     return null;
   }
 
   /**
-   * Waits for layout to settle, then fades in the slider smoothly (OPTIMIZED)
-   * Performs a final dimension check before revealing content
+   * Reveals the slider once layout is ready. Performs a final dimension check, then
+   * initializes swipe effects and snaps the slider visible instantly (no fade).
    * @returns {Promise<void>}
    * @private
    */
-  async _fadeInAfterLayoutSettles() {
-    await new Promise((resolve) => setTimeout(resolve, 50)); // Reduced from 150ms to 50ms
-
+  async _revealSlider() {
     if (
       !this.card.isConnected ||
       !this.card.cardContainer ||
@@ -1689,8 +1652,9 @@ export class CardBuilder {
       const viewMode = this.card._config.view_mode || "single";
       if (viewMode === "carousel") {
         this._setupCarouselLayoutWithValidation(finalWidth);
-      } else {
-        // Update single slide width CSS variable and inline styles
+      } else if (!this.card._resolutionIndependentLayout) {
+        // Update single slide width CSS variable and inline styles (pixel layout).
+        // Under resolution-independent layout slides stay at 100%, nothing to do.
         this.card.style.setProperty("--single-slide-width", `${finalWidth}px`);
         if (this.card.sliderElement) {
           const slides = this.card.sliderElement.querySelectorAll(
@@ -1705,21 +1669,22 @@ export class CardBuilder {
       }
     }
 
-    // Fade in smoothly (slightly faster animation)
-    logDebug("INIT", "Fading in slider");
-    this.card.sliderElement.style.transition = "opacity 0.15s ease-in";
-    this.card.sliderElement.style.opacity = "1";
+    const slider = this.card.sliderElement;
 
-    // Clean up transition after fade completes
-    setTimeout(() => {
-      if (this.card.sliderElement) {
-        this.card.sliderElement.style.transition = "";
-        logDebug("INIT", "Fade-in complete, card fully initialized");
+    // Initialize swipe effects BEFORE revealing. For stacked/fade effects this sets
+    // each slide's opacity/transform (via _setupStackedLayout + immediate transforms)
+    // so non-active slides don't flash into view at reveal; for the default slide
+    // effect it is a no-op. The slider was hidden during build, so this is the right
+    // moment to establish the initial per-slide state.
+    this.card.swipeEffects?.initialize();
 
-        // Initialize swipe effects AFTER slider is visible (e.g., fade effect needs initial opacity)
-        this.card.swipeEffects?.initialize();
-      }
-    }, 150);
+    // Instant reveal - no fade animation (user-chosen). The slider was hidden during
+    // build to avoid showing mid-layout/partly-loaded content; now that layout is
+    // ready we snap it visible. Any later height settle (auto_height / late child
+    // content) is handled smoothly by the ResizeObserver + height transition.
+    slider.style.transition = "";
+    slider.style.opacity = "1";
+    logDebug("INIT", "Slider revealed (instant), card fully initialized");
   }
 
   /**

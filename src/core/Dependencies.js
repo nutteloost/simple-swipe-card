@@ -31,13 +31,30 @@ export async function ensureDependencies() {
 }
 
 /**
+ * Cached promise for Home Assistant's real card helpers. Only the genuine
+ * loadCardHelpers() result is memoized (never the offline fallback), so a call
+ * made before HA defines loadCardHelpers can still pick up the real helpers later.
+ */
+let _helpersPromise = null;
+
+/**
  * Gets the card helpers
  * @returns {Promise<Object>} Card helpers object
  */
 export function getHelpers() {
-  // Try HA's built-in card helpers first
+  // Return the cached real helpers promise once we have it
+  if (_helpersPromise) {
+    return _helpersPromise;
+  }
+
+  // Try HA's built-in card helpers first — cache this (it's the real one)
   if (window.loadCardHelpers && typeof window.loadCardHelpers === "function") {
-    return window.loadCardHelpers();
+    _helpersPromise = window.loadCardHelpers();
+    // If it ever rejects, clear the cache so a later call can retry.
+    _helpersPromise.catch(() => {
+      _helpersPromise = null;
+    });
+    return _helpersPromise;
   }
 
   // Simple fallback that works offline
