@@ -183,6 +183,24 @@ export class CardBuilder {
       this.card._swipeDirection,
     );
 
+    // Native CSS scroll-snap strategy: tag the slider so the scroll-snap CSS
+    // rules apply, and set the per-slide snap alignment (centered carousel peeks
+    // both neighbours, everything else snaps to the start edge).
+    const scrollStrategy = this.card._config.scroll_strategy || "js";
+    this.card.sliderElement.setAttribute(
+      "data-scroll-strategy",
+      scrollStrategy,
+    );
+    if (scrollStrategy === "css") {
+      const centered =
+        this.card._config.view_mode === "carousel" &&
+        this.card._config.carousel_alignment === "center";
+      this.card.sliderElement.style.setProperty(
+        "--ssc-scroll-snap-align",
+        centered ? "center" : "start",
+      );
+    }
+
     // CRITICAL: Hide slider immediately to prevent flash of unstyled content
     this.card.sliderElement.style.opacity = "0";
     logDebug("INIT", "Slider hidden during build to prevent layout flash");
@@ -1415,11 +1433,15 @@ export class CardBuilder {
     this.card.updateSlider(false);
     this.card._setupResizeObserver();
 
-    // Add swipe gestures if needed (based on visible cards)
+    // Add swipe gestures if needed (based on visible cards). In css scroll mode
+    // addGestures is a no-op for the drag handlers; ScrollStrategy.attach wires
+    // the passive scroll listener that keeps index/pagination in sync instead.
     if (totalVisibleCards > 1) {
       this.card.swipeGestures?.addGestures();
+      this.card.scrollStrategy?.attach();
     } else {
       this.card.swipeGestures?.removeGestures();
+      this.card.scrollStrategy?.detach();
     }
 
     logDebug(

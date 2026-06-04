@@ -27,6 +27,7 @@ import { CarouselView } from "../features/CarouselView.js";
 import { LoopMode } from "../features/LoopMode.js";
 import { SwipeBehavior } from "../features/SwipeBehavior.js";
 import { SwipeEffects } from "../features/SwipeEffects.js";
+import { ScrollStrategy } from "../features/ScrollStrategy.js";
 import { TemplateEvaluator } from "../features/TemplateEvaluator.js";
 
 /**
@@ -84,6 +85,7 @@ export class SimpleSwipeCard extends LitElement {
       this.loopMode = new LoopMode(this);
       this.swipeBehavior = new SwipeBehavior(this);
       this.swipeEffects = new SwipeEffects(this);
+      this.scrollStrategy = new ScrollStrategy(this);
       this.autoHeight = new AutoHeight(this);
       this.templateEvaluator = new TemplateEvaluator(this);
 
@@ -231,6 +233,8 @@ export class SimpleSwipeCard extends LitElement {
 
       // Track previous cards count to detect when cards are added (for auto-entities support)
       const previousCardsCount = this._config?.cards?.length || 0;
+      // Track previous scroll_strategy to detect a strategy flip (rebuild needed)
+      const previousScrollStrategy = this._config?.scroll_strategy;
 
       this._config = JSON.parse(JSON.stringify(config));
 
@@ -257,6 +261,20 @@ export class SimpleSwipeCard extends LitElement {
         this._config.card_spacing =
           isNaN(spacing) || spacing < 0 ? 15 : spacing;
       }
+
+      // Set default and validate scroll_strategy.
+      // "js" (default) = transform-based JS gestures (current behavior);
+      // "css" = native CSS scroll-snap (compositor-thread scrolling, smoother on
+      // low-power devices). When css is active, features that depend on JS-driven
+      // transforms (swipe effects, loop modes, free swipe, auto-height) are
+      // force-defaulted below so YAML-only configs stay safe without the editor.
+      if (
+        this._config.scroll_strategy === undefined ||
+        !["js", "css"].includes(this._config.scroll_strategy)
+      ) {
+        this._config.scroll_strategy = "js";
+      }
+      const nativeScroll = this._config.scroll_strategy === "css";
 
       // Migrate enable_loopback to loop_mode
       if (
@@ -289,6 +307,16 @@ export class SimpleSwipeCard extends LitElement {
         this._config.loop_mode = "none";
       }
 
+      // Native scroll-snap can't drive the JS loop (clone + seamless jump),
+      // so force loop off when the css strategy is active.
+      if (nativeScroll && this._config.loop_mode !== "none") {
+        this._config.loop_mode = "none";
+        logDebug(
+          "CONFIG",
+          "loop_mode forced to 'none' for css scroll strategy",
+        );
+      }
+
       // Initialize loop mode after config is set
       this.loopMode?.initialize();
 
@@ -319,6 +347,15 @@ export class SimpleSwipeCard extends LitElement {
         ].includes(this._config.swipe_effect)
       ) {
         this._config.swipe_effect = "slide";
+      }
+
+      // Native scroll-snap only does plain sliding — force the slide effect.
+      if (nativeScroll && this._config.swipe_effect !== "slide") {
+        this._config.swipe_effect = "slide";
+        logDebug(
+          "CONFIG",
+          "swipe_effect forced to 'slide' for css scroll strategy",
+        );
       }
 
       // After setting swipe direction, check for grid options
@@ -376,13 +413,14 @@ export class SimpleSwipeCard extends LitElement {
         const isIncompatible =
           this._config.view_mode === "carousel" ||
           this._config.swipe_direction === "vertical" ||
-          this._config.loop_mode === "infinite";
+          this._config.loop_mode === "infinite" ||
+          nativeScroll;
 
         if (isIncompatible) {
           delete this._config.auto_height;
           logDebug(
             "CONFIG",
-            "auto_height removed: incompatible with current mode (carousel, vertical, or infinite loop)",
+            "auto_height removed: incompatible with current mode (carousel, vertical, infinite loop, or css scroll strategy)",
           );
         }
       }
@@ -532,6 +570,27 @@ export class SimpleSwipeCard extends LitElement {
           `Cards added after initial build (0 -> ${newCardsCount}) - triggering rebuild`,
         );
         // Use requestAnimationFrame to ensure DOM is ready and avoid immediate rebuild during setup
+        requestAnimationFrame(() => {
+          if (this.isConnected && this.initialized) {
+            this.cardBuilder.build();
+          }
+        });
+      }
+
+      // SCROLL STRATEGY CHANGE: js <-> css rewires the DOM (scroll container vs
+      // transform slider, gestures vs scroll listener), so rebuild when the
+      // strategy flips on an already-built card. Guarded so the first setConfig
+      // (no previous value) and initial setup never trigger a spurious rebuild.
+      if (
+        this.initialized &&
+        this.isConnected &&
+        previousScrollStrategy !== undefined &&
+        previousScrollStrategy !== this._config.scroll_strategy
+      ) {
+        logDebug(
+          "CONFIG",
+          `scroll_strategy changed (${previousScrollStrategy} -> ${this._config.scroll_strategy}) - triggering rebuild`,
+        );
         requestAnimationFrame(() => {
           if (this.isConnected && this.initialized) {
             this.cardBuilder.build();
@@ -1827,6 +1886,9 @@ export class SimpleSwipeCard extends LitElement {
         this.swipeGestures._isScrolling = false;
       }
 
+      // Detach the native scroll listener (css strategy); no-op otherwise.
+      this.scrollStrategy?.detach();
+
       if (this.autoSwipe) {
         this.autoSwipe.stop();
         // Clear internal timers
@@ -2429,6 +2491,22 @@ export class SimpleSwipeCard extends LitElement {
         init: this.initialized,
         building: this.building,
       });
+      return;
+    }
+
+    // Native CSS scroll-snap strategy: scroll to the target slide instead of
+    // writing transforms. The passive scroll listener keeps the index/pagination
+    // in sync during user scrolls; here we also update pagination immediately so
+    // programmatic moves (dot clicks, auto-swipe, reset-after) feel responsive.
+    if (this.scrollStrategy?.isNative()) {
+      // Keep the inter-slide gap in sync (the normal gap assignment below is
+      // skipped by this early return), then scroll to the target slide.
+      const gap = Math.max(0, parseInt(this._config.card_spacing)) || 0;
+      this.sliderElement.style.gap = `${gap}px`;
+      removeCardMargins(this.cards);
+      this.scrollStrategy.scrollToIndex(this.currentIndex, animate);
+      this.pagination.update(animate);
+      this._lastSkipCount = 1;
       return;
     }
 

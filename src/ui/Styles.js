@@ -312,6 +312,56 @@ export function getStyles() {
       position: relative;
     }
 
+    /* ========== NATIVE CSS SCROLL-SNAP STRATEGY (scroll_strategy: css) ========== */
+    /* The slider becomes an overflow scroll container so the browser drives
+       scrolling on the compositor thread — no JS transform per touchmove, far
+       smoother on low-power devices (#102). Placed after the direction/view-mode
+       rules above so these win on equal specificity. The one-axis scroll snap
+       container clips the cross axis, so absolutely-positioned in-card overlays
+       may be clipped; HA's fixed-position dropdowns (mwc/wa menus) escape. */
+    .slider[data-scroll-strategy="css"] {
+      transform: none !important;
+      transition: none !important;
+      will-change: auto;
+      pointer-events: auto; /* the scroll container must receive the gesture */
+      overscroll-behavior: contain;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* legacy Edge */
+    }
+    /* Hide the scrollbar (WebKit/Blink) — snapping is the affordance */
+    .slider[data-scroll-strategy="css"]::-webkit-scrollbar {
+      display: none;
+    }
+    .slider[data-scroll-strategy="css"][data-swipe-direction="horizontal"] {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+    }
+    .slider[data-scroll-strategy="css"][data-swipe-direction="vertical"] {
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+    }
+    .slider[data-scroll-strategy="css"] .slide {
+      scroll-snap-align: var(--ssc-scroll-snap-align, start);
+    }
+    /* Single mode: never skip past a slide. Carousel may fling across several. */
+    .slider[data-scroll-strategy="css"]:not([data-view-mode="carousel"]) .slide {
+      scroll-snap-stop: always;
+    }
+    /* Native vertical scroll must show every slide, so disable the inactive-slide
+       clip-path that the JS vertical mode uses to hide neighbours. */
+    :host(:not([data-enable-backdrop-filter]))
+      .slider[data-scroll-strategy="css"][data-swipe-direction="vertical"]
+      .slide {
+      clip-path: none !important;
+    }
+    /* Let the browser own the gesture in both axes while scrolling natively. */
+    .card-container:has(.slider[data-scroll-strategy="css"]) {
+      touch-action: auto;
+    }
+    /* ========== END NATIVE CSS SCROLL-SNAP STRATEGY ========== */
+
     /* Z-INDEX HIERARCHY (within .card-container stacking context):
     * 1. pagination (z-index: 1) - Bottom layer, behind all slide content
     * 2. .slider (z-index: 2) - Above pagination (transform creates stacking context)

@@ -27,6 +27,7 @@ export const DEFAULT_CONFIG = {
   swipe_direction: "horizontal",
   swipe_behavior: "single",
   swipe_effect: "slide",
+  scroll_strategy: "js",
   enable_auto_swipe: false,
   auto_swipe_interval: 2000,
   enable_reset_after: false,

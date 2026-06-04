@@ -136,6 +136,20 @@ export class SwipeGestures {
       });
       return;
     }
+
+    // Native CSS scroll-snap strategy: the browser owns scrolling on the
+    // compositor thread, so we attach NO touch/mouse drag handlers — this is the
+    // core low-power win (#102). Auto-hide pagination still works via its own
+    // passive listeners. Index/pagination sync is handled by ScrollStrategy.
+    if (this.card.scrollStrategy?.isNative()) {
+      logDebug(
+        "SWIPE",
+        "Native scroll strategy active - skipping JS swipe gestures",
+      );
+      this._setupAutoHideListeners();
+      return;
+    }
+
     logDebug("SWIPE", "Adding swipe listeners with click prevention.");
 
     // Add swipe gesture listeners

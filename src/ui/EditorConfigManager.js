@@ -114,6 +114,18 @@ export class EditorConfigManager {
       this.editor._config.swipe_effect = "slide";
     }
 
+    // Set default and validate scroll_strategy ("js" = JS gestures, "css" =
+    // native CSS scroll-snap). Incompatible options (effects, loop, free swipe,
+    // auto-height) are only greyed out in the editor, not rewritten here, so they
+    // are restored when the user switches back to "js". The runtime card
+    // force-defaults them for safety (see SimpleSwipeCard.setConfig).
+    if (
+      this.editor._config.scroll_strategy === undefined ||
+      !["js", "css"].includes(this.editor._config.scroll_strategy)
+    ) {
+      this.editor._config.scroll_strategy = "js";
+    }
+
     // Set default for swipe_behavior and validate based on loop_mode
     if (this.editor._config.swipe_behavior === undefined) {
       this.editor._config.swipe_behavior = "single";
@@ -559,6 +571,7 @@ export class EditorConfigManager {
     // Display Options section (matches UI order)
     const displayOptions = [
       "card_spacing",
+      "scroll_strategy",
       "swipe_direction",
       "swipe_behavior",
       "swipe_effect",
@@ -587,6 +600,7 @@ export class EditorConfigManager {
       swipe_direction: "horizontal",
       swipe_behavior: "single",
       swipe_effect: "slide",
+      scroll_strategy: "js",
       enable_auto_swipe: false,
       auto_swipe_interval: 2000,
       enable_reset_after: false,

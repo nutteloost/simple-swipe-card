@@ -20,6 +20,7 @@ Simple Swipe Card is a customizable container for Home Assistant that lets you p
 - Visual editor support
 - Multiple loop modes
 - Support for both horizontal and vertical swiping
+- Native scroll mode (CSS scroll-snap) for smooth swiping on low-powered devices such as wall panels
 - Template Support: Use Jinja2 or JavaScript templates for dynamic configuration values
 - Automatic Slideshow (Auto-Swipe):
     - Cards can cycle automatically at a user-defined interval
@@ -59,6 +60,29 @@ Swipe multiple cards at once based on how fast and far you swipe. A quick swipe 
 
 > [!NOTE]  
 > Free swipe behavior only works when `loop_mode` is set to `infinite`.
+
+## Scroll Strategy
+
+Simple Swipe Card can power its swiping in two different ways. By default it uses smooth, JavaScript-driven animations with full support for every feature. On less powerful hardware that animation can stutter, so an alternative strategy is available that hands scrolling over to the browser.
+
+### JavaScript (Default)
+The card animates between slides itself, enabling swipe effects, loop modes, free swipe behavior, and auto height. This is the right choice for the vast majority of setups.
+
+### Native CSS Scroll-Snap
+Scrolling is handled natively by the browser using CSS scroll-snap. Because the work runs on the browser's compositor instead of JavaScript, swiping stays smooth even on low-powered hardware. Touch swiping, mouse drag, the mouse wheel, and the pagination dots all continue to work.
+
+> [!TIP]
+> Only enable Native CSS scroll-snap if you notice lag or stutter while swiping, or if the card runs on a low-powered device such as a wall panel (e.g. Sonoff NS Panel Pro). On regular desktops, tablets, and phones the default JavaScript strategy looks and performs better.
+
+Because native scrolling does not animate the slides itself, some features are unavailable while it is active. When you select Native CSS scroll-snap in the visual editor, the affected options are automatically greyed out and disabled:
+
+- Swipe effects (forced to plain `slide`)
+- Loop modes (forced to `none`)
+- Free swipe behavior
+- Auto height
+
+> [!NOTE]
+> These options are only overridden at runtime — your other settings are preserved, so switching back to the JavaScript strategy restores them.
 
 ## Installation
 
@@ -101,6 +125,7 @@ The Simple Swipe Card includes a visual editor that appears when you add or edit
     - Single or Carousel view mode
     - Simple number input for card spacing
     - Selection for swipe direction (horizontal/vertical)
+    - Selection for scroll strategy (JavaScript or native CSS scroll-snap)
     - Visual on/off toggle for pagination dots
 - Advanced Options section:
     - Selection for loop behavior
@@ -148,6 +173,7 @@ This card can be configured using the visual editor or YAML.
 | `swipe_direction` | string | 'horizontal' | Direction for swiping. Options: 'horizontal' or 'vertical'. Only 'horizontal' is supported in carousel mode |
 | `swipe_behavior` | string | 'single' | Swipe behavior mode. Options: 'single' (one card at a time) or 'free' (multi-card based on velocity/distance). Free mode only available with infinite loop mode |
 | `swipe_effect` | string | 'slide' | Visual transition effect. Options: 'slide', 'bounce', 'spring', 'instant', 'fade', 'flip', 'cube', 'coverflow', 'creative', 'cards', 'reveal', 'push', 'zoom', 'swing'. Advanced effects (fade through swing) only work in single mode |
+| `scroll_strategy` | string | 'js' | How swiping is powered. Options: 'js' (smooth JavaScript animations, default) or 'css' (native CSS scroll-snap). Only use 'css' if you notice lag while swiping or run on a low-powered device such as a wall panel. With 'css', swipe effects, loop modes, free swipe, and auto height are unavailable |
 | `enable_auto_swipe` | boolean	| false | When enabled, the card will automatically swipe between slides |
 | `auto_swipe_interval` | number/template | 2000 | Time between automatic swipes in milliseconds (minimum 500ms). Only active if `enable_auto_swipe` is true. Supports Jinja2 and JavaScript templates |
 | `enable_reset_after` | boolean | false | Enable automatic return to target card after inactivity |

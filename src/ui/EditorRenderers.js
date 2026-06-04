@@ -22,6 +22,7 @@ import {
   mdiCompare,
   mdiMagnifyPlusOutline,
   mdiDoor,
+  mdiSpeedometer,
 } from "@mdi/js";
 
 /**
@@ -40,9 +41,16 @@ import {
  * @param {string} params.dataOption - Config key (rendered as data-option)
  * @param {Array<{value:string,label:string,iconPath?:string}>} params.options
  * @param {Function} params.valueChanged - Value change handler
+ * @param {boolean} [params.disabled=false] - Render greyed-out / non-interactive
  * @returns {TemplateResult} The dropdown template
  */
-function renderSelect({ value, dataOption, options, valueChanged }) {
+function renderSelect({
+  value,
+  dataOption,
+  options,
+  valueChanged,
+  disabled = false,
+}) {
   const useOptionsApi = !!customElements.get("ha-dropdown-item");
 
   if (useOptionsApi) {
@@ -51,6 +59,7 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
         .value=${value ?? ""}
         data-option=${dataOption}
         .options=${options}
+        .disabled=${disabled}
         @selected=${valueChanged}
         @closed=${(ev) => ev.stopPropagation()}
       ></ha-select>
@@ -61,6 +70,7 @@ function renderSelect({ value, dataOption, options, valueChanged }) {
     <ha-select
       .value=${value ?? ""}
       data-option=${dataOption}
+      .disabled=${disabled}
       @selected=${valueChanged}
       @change=${valueChanged}
       @closed=${(ev) => ev.stopPropagation()}
@@ -355,6 +365,8 @@ export function renderDisplayOptions(config, valueChanged) {
   const viewMode = config.view_mode || "single";
   const autoHeight = config.auto_height === true;
   const enableBackdropFilter = config.enable_backdrop_filter === true;
+  const scrollStrategy = config.scroll_strategy || "js";
+  const isCssScroll = scrollStrategy === "css";
 
   return html`
     <div class="section">
@@ -375,6 +387,45 @@ export function renderDisplayOptions(config, valueChanged) {
       })}
       <div class="help-text">Visual gap between cards</div>
 
+      <!-- Scroll strategy: JS gestures (default) vs native CSS scroll-snap -->
+      <div class="option-row">
+        <div class="option-left">
+          <div class="option-label">Scroll strategy</div>
+          <div class="option-help">How swiping is powered</div>
+        </div>
+        <div class="option-control">
+          ${renderSelect({
+            value: scrollStrategy,
+            dataOption: "scroll_strategy",
+            options: [
+              {
+                value: "js",
+                label: "JavaScript (default)",
+                iconPath: mdiGestureSwipe,
+              },
+              {
+                value: "css",
+                label: "Native CSS scroll-snap",
+                iconPath: mdiSpeedometer,
+              },
+            ],
+            valueChanged,
+          })}
+        </div>
+      </div>
+      ${isCssScroll
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:information" class="info-icon"></ha-icon>
+              <span>
+                Native scroll-snap uses the browser's built-in scrolling for
+                smoother performance on low-powered devices (e.g. wall panels).
+                Swipe effects, loop modes, free swipe and auto height are not
+                available in this mode and have been disabled.
+              </span>
+            </div>
+          `
+        : ""}
       ${viewMode === "single"
         ? html`
             <div class="option-row">
@@ -434,7 +485,8 @@ export function renderDisplayOptions(config, valueChanged) {
           <div class="option-help">
             ${viewMode === "single" &&
             swipeDirection === "horizontal" &&
-            config.loop_mode !== "infinite"
+            config.loop_mode !== "infinite" &&
+            !isCssScroll
               ? "Automatically adjust card height to match each card's content"
               : "Not available in current mode"}
           </div>
@@ -446,7 +498,8 @@ export function renderDisplayOptions(config, valueChanged) {
             @change=${valueChanged}
             .disabled=${viewMode !== "single" ||
             swipeDirection !== "horizontal" ||
-            config.loop_mode === "infinite"}
+            config.loop_mode === "infinite" ||
+            isCssScroll}
           ></ha-switch>
         </div>
       </div>
@@ -480,6 +533,17 @@ export function renderDisplayOptions(config, valueChanged) {
               <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
               <span>
                 Auto height is not compatible with infinite loop mode and has
+                been disabled.
+              </span>
+            </div>
+          `
+        : ""}
+      ${autoHeight && isCssScroll
+        ? html`
+            <div class="option-info warning">
+              <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+              <span>
+                Auto height is not available with Native scroll-snap and has
                 been disabled.
               </span>
             </div>
@@ -561,6 +625,7 @@ export function renderDisplayOptions(config, valueChanged) {
                 ${renderSelect({
                   value: config.swipe_effect || "slide",
                   dataOption: "swipe_effect",
+                  disabled: isCssScroll,
                   options: [
                     { value: "slide", label: "Slide", iconPath: mdiArrowRight },
                     {
@@ -599,6 +664,17 @@ export function renderDisplayOptions(config, valueChanged) {
                 })}
               </div>
             </div>
+            ${isCssScroll
+              ? html`
+                  <div class="option-info warning">
+                    <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+                    <span>
+                      Swipe effects are disabled because Native scroll-snap is
+                      active.
+                    </span>
+                  </div>
+                `
+              : ""}
           `
         : html`
             <div class="option-info">
@@ -687,6 +763,7 @@ export function renderAdvancedOptions(
   const resetTargetCard = config.reset_target_card ?? 1;
   const stateEntity = config.state_entity || "";
   const enableBackdropFilter = config.enable_backdrop_filter === true;
+  const isCssScroll = (config.scroll_strategy || "js") === "css";
 
   // Count active and blocked advanced features (now works for both modes)
   let activeFeatures = 0;
@@ -741,7 +818,7 @@ export function renderAdvancedOptions(
           ? "expanded"
           : "collapsed"}"
       >
-        ${renderLoopModeOption(loopMode, valueChanged)}
+        ${renderLoopModeOption(loopMode, valueChanged, isCssScroll)}
         ${renderAutoSwipeOptions(
           enableAutoSwipe,
           autoSwipeInterval,
@@ -768,25 +845,29 @@ export function renderAdvancedOptions(
  * Renders the loop mode options
  * @param {string} loopMode - Current loop mode setting
  * @param {Function} valueChanged - Value change handler
+ * @param {boolean} [isCssScroll=false] - Native CSS scroll-snap strategy active
  * @returns {TemplateResult} The loop mode options template
  */
-function renderLoopModeOption(loopMode, valueChanged) {
+function renderLoopModeOption(loopMode, valueChanged, isCssScroll = false) {
   return html`
     <div class="option-row">
       <div class="option-left">
         <div class="option-label">Loop behavior</div>
         <div class="option-help">
-          ${loopMode === "none"
-            ? "Stop at first/last card (no looping)"
-            : loopMode === "loopback"
-              ? "Jump back to first/last card"
-              : "Continuous loop navigation"}
+          ${isCssScroll
+            ? "Not available in current mode"
+            : loopMode === "none"
+              ? "Stop at first/last card (no looping)"
+              : loopMode === "loopback"
+                ? "Jump back to first/last card"
+                : "Continuous loop navigation"}
         </div>
       </div>
       <div class="option-control">
         ${renderSelect({
           value: loopMode,
           dataOption: "loop_mode",
+          disabled: isCssScroll,
           options: [
             { value: "none", label: "No looping" },
             { value: "loopback", label: "Jump to start/end" },
@@ -796,6 +877,17 @@ function renderLoopModeOption(loopMode, valueChanged) {
         })}
       </div>
     </div>
+    ${isCssScroll
+      ? html`
+          <div class="option-info warning">
+            <ha-icon icon="mdi:alert" class="info-icon"></ha-icon>
+            <span>
+              Loop modes are not available with Native scroll-snap and have been
+              disabled.
+            </span>
+          </div>
+        `
+      : ""}
   `;
 }
 
