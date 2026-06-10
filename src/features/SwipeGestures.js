@@ -202,8 +202,16 @@ export class SwipeGestures {
    * @private
    */
   _preventClick(e) {
-    // FIRST: Check if we're blocking clicks due to swipe - this takes priority over everything
-    if (this._isClickBlocked || this._isDragging) {
+    // FIRST: Check if we're blocking clicks due to swipe - this takes priority
+    // over everything. A drag only swallows clicks once the finger actually
+    // moved: gestures may now start on buttons/links (#87), and an engaged but
+    // motionless gesture must let the tap's click through (the #112 failure
+    // mode). Stuck drag state from a swallowed touchend must not eat taps
+    // either.
+    if (
+      this._isClickBlocked ||
+      (this._isDragging && this._hasMovedDuringGesture)
+    ) {
       logDebug("SWIPE", "Click prevented during/after swipe gesture");
       e.preventDefault();
       e.stopPropagation();
@@ -348,12 +356,28 @@ export class SwipeGestures {
 
     this.card.pagination?.showPagination();
 
-    if (this._isDragging || (e.type === "mousedown" && e.button !== 0)) {
-      logDebug(
-        "SWIPE",
-        "Swipe Start ignored (already dragging or wrong button)",
-      );
+    if (e.type === "mousedown" && e.button !== 0) {
+      logDebug("SWIPE", "Swipe Start ignored (wrong button)");
       return;
+    }
+
+    if (this._isDragging) {
+      // A touchstart with a single touch point while we still think we're
+      // dragging means the previous gesture's touchend/touchcancel was
+      // swallowed (kiosk browsers like Fully Kiosk do this, #87) - the old
+      // finger is gone or this event would report 2+ touches. Discard the
+      // stale gesture and settle the slider so the card doesn't stay frozen
+      // mid-slide with all further swipes ignored.
+      if (e.type === "touchstart" && e.touches.length === 1) {
+        logDebug("SWIPE", "Stale drag state on touchstart - recovering");
+        this._isDragging = false;
+        this._isScrolling = false;
+        this._hasMovedDuringGesture = false;
+        this.card.updateSlider();
+      } else {
+        logDebug("SWIPE", "Swipe Start ignored (already dragging)");
+        return;
+      }
     }
 
     // MOBILE BUTTON FIX: Check the ENTIRE event path for interactive elements
@@ -509,15 +533,14 @@ export class SwipeGestures {
 
       // Prevent default browser behavior during valid swipe gestures
       // For mouse events: always prevent default
-      // For touch events: prevent default when horizontal movement exceeds vertical
-      // This locks vertical page scrolling during horizontal card swipes
+      // For touch events: prevent default as soon as movement in the swipe
+      // direction dominates. Claiming the gesture on the first qualifying move
+      // matters on slow Android WebViews (Fully Kiosk, #87): any extra delay
+      // lets the browser commit to a native scroll and cancel our touches.
       if (!isTouch) {
         e.preventDefault();
-      } else if (
-        Math.abs(primaryDelta) > Math.abs(secondaryDelta) &&
-        Math.abs(primaryDelta) > 10
-      ) {
-        // Touch event: lock vertical scroll when horizontal swipe intent is clear
+      } else if (Math.abs(primaryDelta) > Math.abs(secondaryDelta)) {
+        // Touch event: lock perpendicular scrolling while the card swipes
         e.preventDefault();
       }
 
@@ -660,8 +683,14 @@ export class SwipeGestures {
         return;
       }
 
-      if (this._isScrolling || e.type === "touchcancel") {
-        logDebug("SWIPE", "Swipe End: Scrolling or Cancelled - Snapping back.");
+      // touchcancel is NOT treated as an abort: kiosk browsers (Fully Kiosk,
+      // #87) intercept gestures at the native Android layer and deliver
+      // ACTION_CANCEL mid-swipe. Snapping back here made every intercepted
+      // swipe rubber-band to the start. Evaluate distance/velocity like a
+      // normal touchend instead (Swiper does the same), and only snap back
+      // for a genuine perpendicular scroll.
+      if (this._isScrolling) {
+        logDebug("SWIPE", "Swipe End: Scrolling - Snapping back.");
         this.card.updateSlider();
         this._isScrolling = false;
         return;
@@ -900,12 +929,14 @@ export class SwipeGestures {
       return false;
     }
 
-    // Block swipes ONLY on actual button/icon elements and form-control hosts.
-    // INTERACTIVE_CONTROL_TAGS covers toggles/checkboxes/radios whose visible tap
-    // target (thumb/control/label spans) carries no interactive role of its own
-    // since the HA 2026.5 Web Awesome migration - see #112.
+    // Block swipe-start only on controls the user *drags* or whose taps proved
+    // fragile under an engaged gesture. Plain buttons/links are tap-only and
+    // deliberately NOT blocked (#87): the gesture may start there - taps still
+    // work because clicks are only suppressed after real movement, exactly like
+    // elements with role="button" (HA tile cards) have always behaved here.
+    // INTERACTIVE_CONTROL_TAGS (toggles/checkboxes/radios) must stay blocked:
+    // their Web Awesome taps break when a gesture engages on them - see #112.
     const blockSwipeElements = [
-      ...BUTTON_CONTROL_TAGS,
       "ha-cover-controls",
       ...INTERACTIVE_CONTROL_TAGS,
     ];
@@ -969,7 +1000,10 @@ export class SwipeGestures {
       // Ignore style errors
     }
 
-    if (["input", "textarea", "select", "a", "audio"].includes(tagName)) {
+    // "a" is intentionally absent: links are tap-only, so swipes may start on
+    // them (#87) - accidental navigation is prevented by post-swipe click
+    // blocking, same as buttons.
+    if (["input", "textarea", "select", "audio"].includes(tagName)) {
       logDebug(
         "SWIPE",
         "_isInteractiveOrScrollable: Found basic interactive element:",
@@ -978,13 +1012,14 @@ export class SwipeGestures {
       return true;
     }
 
+    // "link" (and "button") roles are tap-only and intentionally absent, like
+    // the "a" tag above (#87).
     if (
       role &&
       [
         "checkbox",
         "switch",
         "slider",
-        "link",
         "menuitem",
         "textbox",
         "combobox",
