@@ -59,6 +59,13 @@ export class SimpleSwipeCard extends LitElement {
       this.sliderElement = null;
       this.initialized = false;
       this.building = false;
+      // Build/reveal recovery state (#105): requests arriving while a build is in
+      // flight are queued instead of dropped, and a watchdog re-finishes the
+      // layout if the slider is left hidden by an interrupted build.
+      this._rebuildQueued = false;
+      this._visibilityCheckPendingAfterBuild = false;
+      this._revealWatchdogTimeout = null;
+      this._buildRetryCount = 0;
       this.resizeObserver = null;
       this._swipeDirection = "horizontal";
 
@@ -1107,6 +1114,10 @@ export class SimpleSwipeCard extends LitElement {
           "Performing debounced rebuild due to visibility changes",
         );
         this.cardBuilder.build();
+      } else if (this.building) {
+        // Don't drop the request - the in-flight build's finally will run it
+        logDebug("VISIBILITY", "Build in progress - queueing rebuild");
+        this._rebuildQueued = true;
       }
       this._visibilityRebuildTimeout = null;
     }, 300);
@@ -1370,6 +1381,11 @@ export class SimpleSwipeCard extends LitElement {
         "VISIBILITY",
         "Skipping visibility update during build to prevent rebuild flicker",
       );
+      if (hasOurRelevantChanges) {
+        // Don't lose the change: re-evaluated once the build finishes
+        // (consumed in CardBuilder.build's finally block)
+        this._visibilityCheckPendingAfterBuild = true;
+      }
       // Always update children - they need to react to entity changes
       if (hasStatesChanged || hasUIChanges) {
         this._updateChildCardsHass(hass);
@@ -1758,6 +1774,20 @@ export class SimpleSwipeCard extends LitElement {
         "connectedCallback: Handling reconnection with intact DOM",
       );
 
+      // Reveal safety: an interrupted build can leave the slider hidden
+      // (opacity 0 is set at build start and only cleared by _revealSlider)
+      if (
+        this.sliderElement?.isConnected &&
+        this.sliderElement.style.opacity === "0" &&
+        !this.building
+      ) {
+        logDebug(
+          "LIFECYCLE",
+          "Slider still hidden on reconnect - finishing layout",
+        );
+        this.cardBuilder.finishBuildLayout(this._currentBuildTimestamp);
+      }
+
       this._setupResizeObserver();
       if (this.visibleCardIndices.length > 1) {
         this.swipeGestures.removeGestures();
@@ -1855,6 +1885,7 @@ export class SimpleSwipeCard extends LitElement {
       "_visibilityRebuildTimeout",
       "_conditionalVisibilityTimeout",
       "_visibilityUpdateTimeout",
+      "_revealWatchdogTimeout",
       "_layoutRetryCount",
     ];
 
@@ -2351,6 +2382,9 @@ export class SimpleSwipeCard extends LitElement {
               "Triggering visibility update after child card visibility change",
             );
             this._updateVisibleCardIndices();
+          } else if (this.building) {
+            // Re-evaluated once the build finishes (CardBuilder.build finally)
+            this._visibilityCheckPendingAfterBuild = true;
           }
           this._childVisibilityDebounce = null;
         }, 150);

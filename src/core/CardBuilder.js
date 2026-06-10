@@ -61,7 +61,11 @@ export class CardBuilder {
    */
   async build() {
     if (this.card.building) {
-      logDebug("INIT", "Build already in progress, skipping.");
+      // Queue instead of dropping: a request arriving mid-build (e.g. a visibility
+      // change during the initial build) would otherwise be lost forever, leaving
+      // the card showing a stale - or never revealed - set of slides (#105).
+      logDebug("INIT", "Build already in progress - queueing follow-up build.");
+      this.card._rebuildQueued = true;
       return false;
     }
     if (
@@ -82,6 +86,67 @@ export class CardBuilder {
     this.card._currentBuildTimestamp = buildTimestamp;
     logDebug("INIT", `Build timestamp set: ${buildTimestamp}`);
 
+    try {
+      const result = await this._executeBuild(buildTimestamp);
+      if (result) {
+        this.card._buildRetryCount = 0;
+        if (this.card.sliderElement?.isConnected) {
+          this._armRevealWatchdog(buildTimestamp);
+        }
+      }
+      return result;
+    } catch (error) {
+      // Without this catch a throw mid-build would leave `building` stuck true,
+      // permanently blocking every future build and reveal for this element (#105).
+      console.error("SimpleSwipeCard: Build failed:", error);
+      this.card.initialized = false;
+      this.card._buildRetryCount = (this.card._buildRetryCount || 0) + 1;
+      if (
+        this.card._buildRetryCount <= 2 &&
+        this.card._currentBuildTimestamp === buildTimestamp
+      ) {
+        this.card._rebuildQueued = true; // retried once the flag clears below
+      }
+      return false;
+    } finally {
+      // Only the build that owns the current timestamp may clear the flag - a
+      // superseded build's tail must not unlock/relock a newer build's state.
+      if (this.card._currentBuildTimestamp === buildTimestamp) {
+        this.card.building = false;
+
+        if (this.card._rebuildQueued) {
+          this.card._rebuildQueued = false;
+          this.card._visibilityCheckPendingAfterBuild = false; // subsumed by rebuild
+          setTimeout(() => {
+            if (this.card.isConnected && !this.card.building) {
+              logDebug("INIT", "Running queued rebuild");
+              this.build();
+            }
+          }, 50);
+        } else if (this.card._visibilityCheckPendingAfterBuild) {
+          // hass updates that arrived during the build skipped their visibility
+          // evaluation; re-run it once so a changed condition is not lost.
+          this.card._visibilityCheckPendingAfterBuild = false;
+          setTimeout(() => {
+            if (this.card.isConnected && !this.card.building) {
+              this.card._updateVisibleCardIndices();
+            }
+          }, 50);
+        }
+      }
+    }
+  }
+
+  /**
+   * Build body, separated so build() can guarantee flag cleanup, queued rebuilds
+   * and crash retries via try/catch/finally regardless of where this throws or
+   * returns. The `building` flag is cleared exclusively by build()'s finally.
+   * @param {number} buildTimestamp - Timestamp identifying this build
+   * @returns {Promise<boolean>} True when the build rendered (or intentionally
+   *   emptied) the card, false when skipped/aborted/superseded
+   * @private
+   */
+  async _executeBuild(buildTimestamp) {
     // CLEAR CACHED CAROUSEL DIMENSIONS TO PREVENT STALE DATA
     this.card._carouselCardWidth = null;
     this.card._carouselCardsVisible = null;
@@ -134,7 +199,6 @@ export class CardBuilder {
           this.build();
         }
       }, 10);
-      this.card.building = false;
       return false;
     }
 
@@ -153,7 +217,6 @@ export class CardBuilder {
         "INIT",
         "Card disconnected while waiting for helpers, aborting build",
       );
-      this.card.building = false;
       this.card.initialized = false;
       return false;
     }
@@ -161,7 +224,6 @@ export class CardBuilder {
     if (!helpers) {
       console.error("SimpleSwipeCard: Card helpers not loaded.");
       root.innerHTML = `<ha-alert alert-type="error">Card Helpers are required for this card to function. Please ensure they are loaded.</ha-alert>`;
-      this.card.building = false;
       this.card.initialized = false;
       return false;
     }
@@ -242,7 +304,6 @@ export class CardBuilder {
       }
 
       this.card.initialized = true;
-      this.card.building = false;
       // No layout finish needed for empty/preview state
       return true; // Successfully handled empty state
     }
@@ -258,7 +319,6 @@ export class CardBuilder {
       root.innerHTML = "";
 
       this.card.initialized = true;
-      this.card.building = false;
       return true; // Successfully handled no visible cards state
     }
 
@@ -301,9 +361,6 @@ export class CardBuilder {
         `Detected ${layoutType} container - preventing duplicate cards bug`,
       );
 
-      // Use the build timestamp set at the start of build()
-      const buildTimestamp = this.card._currentBuildTimestamp;
-
       // Load all cards synchronously to prevent layout-card calculation issues
       const allCardsPromises = cardsToLoad.map((cardInfo) =>
         this.createCard(
@@ -329,9 +386,8 @@ export class CardBuilder {
           currentBuild: this.card._currentBuildTimestamp,
         });
 
-        // Clear any cards created by this superseded build
-        this.card.cards = [];
-
+        // Do NOT touch this.card.cards here: the newer build owns that array now
+        // and clearing it would wipe the cards the newer build already created.
         return false;
       }
 
@@ -348,9 +404,6 @@ export class CardBuilder {
 
         // Clear the cards array to prevent stale references
         this.card.cards = [];
-
-        // Mark as not building so reconnection can trigger new build
-        this.card.building = false;
 
         // Mark as not initialized to force proper rebuild on reconnection
         this.card.initialized = false;
@@ -386,7 +439,6 @@ export class CardBuilder {
         });
       }
 
-      this.card.building = false;
       logDebug("INIT", "Build completed successfully (layout-card mode)");
       return true;
     }
@@ -555,7 +607,6 @@ export class CardBuilder {
 
         // CRITICAL: Clear the cards array to prevent stale references
         this.card.cards = [];
-        this.card.building = false;
         this.card.initialized = false;
 
         return false;
@@ -608,7 +659,6 @@ export class CardBuilder {
       });
     }
 
-    this.card.building = false;
     logDebug("INIT", "Build completed successfully");
 
     // Setup input listeners for auto-swipe pause on text input
@@ -1522,6 +1572,20 @@ export class CardBuilder {
     // by the ResizeObserver / the auto_height height transition.
     const dimensions = await this._waitForInitialWidth();
 
+    // A newer build may have started while we waited for layout frames; bail out
+    // so this stale pass doesn't lay out (or reveal) the new build's half-built DOM.
+    if (
+      buildTimestamp &&
+      this.card._currentBuildTimestamp &&
+      buildTimestamp !== this.card._currentBuildTimestamp
+    ) {
+      logDebug(
+        "INIT",
+        "finishBuildLayout aborted - superseded during width wait",
+      );
+      return;
+    }
+
     if (!dimensions) {
       // Width not available yet (hidden / inactive tab / detached). Use fallback
       // dimensions and continue; the ResizeObserver set up below recalculates and
@@ -1720,6 +1784,17 @@ export class CardBuilder {
     // rebuilds (no-op without UIX installed or without a top-level uix config).
     applyUix(this.card, this.card._config?.uix, this.card._config, "card");
 
+    // Last staleness check before the reveal - a newer build owns the DOM now
+    // and will perform its own reveal when its layout is ready.
+    if (
+      buildTimestamp &&
+      this.card._currentBuildTimestamp &&
+      buildTimestamp !== this.card._currentBuildTimestamp
+    ) {
+      logDebug("INIT", "finishBuildLayout aborted before reveal - superseded");
+      return;
+    }
+
     await this._revealSlider();
   }
 
@@ -1866,8 +1941,17 @@ export class CardBuilder {
       actualMeasured: { width: finalWidth, height: finalHeight },
     });
 
-    // If dimensions changed significantly, update them one last time
-    if (
+    // If dimensions changed significantly, update them one last time.
+    // A 0 width means we measured while hidden (display:none ancestor, detached
+    // layout) - never adopt it, or the card reveals with 0-width slides and no
+    // guaranteed recovery; keep the stored/fallback dimensions and let the
+    // ResizeObserver correct once the card becomes visible.
+    if (finalWidth <= 0) {
+      logDebug(
+        "INIT",
+        "Final dimensions unavailable (hidden) - keeping stored dimensions",
+      );
+    } else if (
       Math.abs(finalWidth - this.card.slideWidth) > 2 ||
       Math.abs(finalHeight - this.card.slideHeight) > 2
     ) {
@@ -1876,7 +1960,8 @@ export class CardBuilder {
         "Final dimensions differ from stored - updating before fade-in",
       );
       this.card.slideWidth = finalWidth;
-      this.card.slideHeight = finalHeight;
+      this.card.slideHeight =
+        finalHeight > 0 ? finalHeight : this.card.slideHeight;
       this.card.updateSlider(false);
 
       // Re-calculate carousel/single mode layout if needed
@@ -1915,7 +2000,44 @@ export class CardBuilder {
     // content) is handled smoothly by the ResizeObserver + height transition.
     slider.style.transition = "";
     slider.style.opacity = "1";
+
+    // Reveal succeeded - the watchdog armed after build is no longer needed
+    if (this.card._revealWatchdogTimeout) {
+      clearTimeout(this.card._revealWatchdogTimeout);
+      this.card._revealWatchdogTimeout = null;
+    }
+
     logDebug("INIT", "Slider revealed (instant), card fully initialized");
+  }
+
+  /**
+   * Arms a one-shot watchdog that force-finishes the layout if the slider is
+   * still hidden (opacity 0) well after a successful build. Safety net for
+   * reveal paths lost to disconnect/reconnect or frame-timing races (#105).
+   * @param {number} buildTimestamp - Timestamp of the build to finish
+   * @private
+   */
+  _armRevealWatchdog(buildTimestamp) {
+    if (this.card._revealWatchdogTimeout) {
+      clearTimeout(this.card._revealWatchdogTimeout);
+    }
+    this.card._revealWatchdogTimeout = setTimeout(() => {
+      this.card._revealWatchdogTimeout = null;
+      const slider = this.card.sliderElement;
+      if (
+        this.card.isConnected &&
+        slider?.isConnected &&
+        slider.style.opacity === "0" &&
+        !this.card.building &&
+        this.card._currentBuildTimestamp === buildTimestamp
+      ) {
+        logDebug(
+          "INIT",
+          "Reveal watchdog fired - slider still hidden, finishing layout",
+        );
+        this.finishBuildLayout(buildTimestamp);
+      }
+    }, 1000);
   }
 
   /**

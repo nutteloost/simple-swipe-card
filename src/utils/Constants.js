@@ -3,7 +3,7 @@
  */
 
 // Version management
-export const CARD_VERSION = "3.0.0";
+export const CARD_VERSION = "3.0.1";
 
 // Debug configuration - set to false for production
 export const DEBUG = true;
