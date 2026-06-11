@@ -175,15 +175,26 @@ export class AutoHeight {
   }
 
   /**
-   * Cleanup all observers
+   * Reset observers and cached heights ahead of a rebuild. The slide DOM is
+   * recreated from scratch on every build, so existing observers watch detached
+   * elements and would block re-observation of the new slides (#114). Heights
+   * must be re-measured too: a rebuild can change which cards are visible,
+   * shifting the visibleIndex keys.
    */
-  cleanup() {
+  reset() {
     this.slideObservers.forEach((observer, index) => {
       observer.disconnect();
       logDebug("AUTO_HEIGHT", `Stopped observing slide ${index}`);
     });
     this.slideObservers.clear();
     this.cardHeights = {};
+  }
+
+  /**
+   * Cleanup all observers
+   */
+  cleanup() {
+    this.reset();
 
     // Reset container height
     if (this.card.cardContainer) {

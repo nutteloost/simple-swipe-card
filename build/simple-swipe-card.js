@@ -7790,9 +7790,15 @@ class CardBuilder {
     this.card._currentBuildTimestamp = buildTimestamp;
     logDebug("INIT", `Build timestamp set: ${buildTimestamp}`);
 
+    // Snapshot of the inputs this build renders from, used below to decide
+    // whether a request queued during the build still needs a full rebuild.
+    const configSignatureAtStart = JSON.stringify(this.card._config);
+    let buildSucceeded = false;
+
     try {
       const result = await this._executeBuild(buildTimestamp);
       if (result) {
+        buildSucceeded = true;
         this.card._buildRetryCount = 0;
         if (this.card.sliderElement?.isConnected) {
           this._armRevealWatchdog(buildTimestamp);
@@ -7820,11 +7826,30 @@ class CardBuilder {
 
         if (this.card._rebuildQueued) {
           this.card._rebuildQueued = false;
-          this.card._visibilityCheckPendingAfterBuild = false; // subsumed by rebuild
+          this.card._visibilityCheckPendingAfterBuild = false; // subsumed below
           setTimeout(() => {
             if (this.card.isConnected && !this.card.building) {
-              logDebug("INIT", "Running queued rebuild");
-              this.build();
+              // On a normal load the queued request is usually a redundant
+              // duplicate (firstUpdated and connectedCallback both ask for the
+              // initial build). A full rebuild then blanks and re-reveals an
+              // already-correct card - a visible flicker on every dashboard
+              // load (#114). Only rebuild when the config actually changed
+              // mid-build (e.g. auto-entities' second setConfig) or the build
+              // failed; otherwise downgrade to the visibility re-check, which
+              // triggers its own rebuild if the visible set changed (#105).
+              if (
+                buildSucceeded &&
+                JSON.stringify(this.card._config) === configSignatureAtStart
+              ) {
+                logDebug(
+                  "INIT",
+                  "Queued rebuild skipped (config unchanged) - re-checking visibility instead",
+                );
+                this.card._updateVisibleCardIndices();
+              } else {
+                logDebug("INIT", "Running queued rebuild");
+                this.build();
+              }
             }
           }, 50);
         } else if (this.card._visibilityCheckPendingAfterBuild) {
@@ -7906,6 +7931,13 @@ class CardBuilder {
       return false;
     }
 
+    // The slide DOM is recreated below: drop auto-height observers bound to the
+    // old slide elements so the new slides get observed and measured again (#114).
+    // Keep the old container's measured height to seed the new container with,
+    // so a rebuild doesn't visibly jump to the tallest slide while re-measuring.
+    const previousAutoHeight = this.card.cardContainer?.style.height;
+    this.card.autoHeight?.reset();
+
     if (this.card.shadowRoot) this.card.shadowRoot.innerHTML = "";
 
     const root = this.card.shadowRoot;
@@ -7940,6 +7972,12 @@ class CardBuilder {
     // Create container structure
     this.card.cardContainer = document.createElement("div");
     this.card.cardContainer.className = "card-container";
+
+    // Provisional height carried over from before the rebuild; the fresh
+    // auto-height measurements correct it once the new slides render (#114).
+    if (this.card.autoHeight?.enabled && previousAutoHeight) {
+      this.card.cardContainer.style.height = previousAutoHeight;
+    }
 
     this.card.sliderElement = document.createElement("div");
     this.card.sliderElement.className = "slider";
@@ -11110,15 +11148,26 @@ class AutoHeight {
   }
 
   /**
-   * Cleanup all observers
+   * Reset observers and cached heights ahead of a rebuild. The slide DOM is
+   * recreated from scratch on every build, so existing observers watch detached
+   * elements and would block re-observation of the new slides (#114). Heights
+   * must be re-measured too: a rebuild can change which cards are visible,
+   * shifting the visibleIndex keys.
    */
-  cleanup() {
+  reset() {
     this.slideObservers.forEach((observer, index) => {
       observer.disconnect();
       logDebug("AUTO_HEIGHT", `Stopped observing slide ${index}`);
     });
     this.slideObservers.clear();
     this.cardHeights = {};
+  }
+
+  /**
+   * Cleanup all observers
+   */
+  cleanup() {
+    this.reset();
 
     // Reset container height
     if (this.card.cardContainer) {
