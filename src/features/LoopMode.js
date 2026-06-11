@@ -17,6 +17,7 @@ export class LoopMode {
     this.virtualIndex = 0; // User-perceived position (0-based)
     this.realIndex = 0; // Actual DOM position (0-based)
     this.totalRealCards = 0; // Total cards in DOM (including duplicates)
+    this.domDuplicateCount = null; // Duplicates actually built into the DOM (null = no build yet)
 
     // Seamless jump state management
     this._pendingSeamlessJump = null; // Track pending jumps to prevent duplicates
@@ -58,6 +59,7 @@ export class LoopMode {
       this.virtualIndex = 0;
       this.realIndex = 0;
       this.totalRealCards = 0;
+      this.domDuplicateCount = 0;
 
       const mode = this.getMode();
       if (mode === "infinite") {
@@ -72,10 +74,31 @@ export class LoopMode {
   }
 
   /**
-   * Gets the number of cards to duplicate for infinite loop
-   * @returns {number} Number of cards to duplicate at each end
+   * Gets the number of duplicate cards at each end of the slide list.
+   *
+   * Returns the count that was actually built into the DOM, not a live
+   * recalculation: the ideal count depends on the container width, and any
+   * width change between DOM construction and positioning (hidden-element
+   * builds, window resizes) would otherwise make transforms point at the
+   * wrong slide (#113).
+   * @returns {number} Number of duplicated cards at each end of the DOM
    */
   getDuplicateCount() {
+    if (this.domDuplicateCount !== null) {
+      return this.domDuplicateCount;
+    }
+    // No build has stored a count yet - fall back to the live calculation
+    return this.calculateIdealDuplicateCount();
+  }
+
+  /**
+   * Calculates the ideal number of cards to duplicate for infinite loop,
+   * based on the current configuration and container width. Only
+   * prepareCardsForLoading() should use this to build the DOM; positioning
+   * code must use getDuplicateCount() so it matches the DOM that exists.
+   * @returns {number} Number of cards to duplicate at each end
+   */
+  calculateIdealDuplicateCount() {
     // Calculate directly instead of relying on cached isInfiniteMode
     // This ensures correct results even during early initialization
     const mode = this.getMode();
@@ -123,6 +146,8 @@ export class LoopMode {
     const cardsToLoad = [];
 
     if (!this.isInfiniteMode) {
+      this.domDuplicateCount = 0;
+
       // Normal mode - load only visible cards
       visibleCardIndices.forEach((originalIndex, visibleIndex) => {
         cardsToLoad.push({
@@ -135,8 +160,11 @@ export class LoopMode {
       return cardsToLoad;
     }
 
-    // Infinite loop mode - add duplicates
-    const duplicateCount = this.getDuplicateCount();
+    // Infinite loop mode - add duplicates. Freeze the count used for this DOM
+    // so later positioning (which may run at a different container width)
+    // stays aligned with the clones that actually exist (#113).
+    const duplicateCount = this.calculateIdealDuplicateCount();
+    this.domDuplicateCount = duplicateCount;
     const totalVisibleCards = visibleCardIndices.length;
 
     // Add leading duplicates (copies arranged to match seamless jump expectations)

@@ -620,11 +620,21 @@ export class SimpleSwipeCard extends LitElement {
    * @returns {number} Number of cards visible
    */
   _calculateCardsVisibleFromMinWidth() {
-    if (!this.cardContainer) return 2.5; // Default fallback
+    let containerWidth = this.cardContainer?.offsetWidth || 0;
 
-    const containerWidth = this.cardContainer.offsetWidth;
+    // Container not measurable yet (e.g. rebuild while the panel is still being
+    // laid out after navigating back). Fall back to the last measured container
+    // width - it survives disconnect/reconnect - before resorting to a blind
+    // default, so infinite-loop builds get a realistic duplicate count (#113).
+    if (containerWidth <= 0 && this.slideWidth > 0) {
+      containerWidth = this.slideWidth;
+      logDebug(
+        "LOOP",
+        "Container width not available, using last known width:",
+        containerWidth,
+      );
+    }
 
-    // SAFETY CHECK: If container not properly sized yet, use a reasonable default
     if (containerWidth <= 0) {
       logDebug(
         "LOOP",
