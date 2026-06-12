@@ -110,6 +110,7 @@ export class SwipeGestures {
     // Reset state flags
     this._isDragging = false;
     this._isScrolling = false;
+    this.card.sliderElement?.classList.remove("dragging");
 
     // Clear click blocking timer
     if (this._clickBlockTimer) {
@@ -373,6 +374,7 @@ export class SwipeGestures {
         this._isDragging = false;
         this._isScrolling = false;
         this._hasMovedDuringGesture = false;
+        this.card.sliderElement?.classList.remove("dragging");
         this.card.updateSlider();
       } else {
         logDebug("SWIPE", "Swipe Start ignored (already dragging)");
@@ -576,6 +578,16 @@ export class SwipeGestures {
       const newTransform = this._initialTransform + dragAmount;
 
       if (this.card.sliderElement) {
+        // Vertical drag in progress: lift the per-slide clipping so the
+        // neighbouring slide is visible while dragging, exactly like during the
+        // release animation. The .dragging CSS rules also clip the container at
+        // its top/bottom edges, so the dropdown-overflow behaviour at rest
+        // (#69/#106) is untouched. Added here (not on swipe start) so plain
+        // taps never toggle clip state; removed again on swipe end.
+        if (!isHorizontal) {
+          this.card.sliderElement.classList.add("dragging");
+        }
+
         // Check if effect uses stacked mode (no slider movement)
         const usesStackedMode = this.card.swipeEffects?.usesStackedMode();
 
@@ -677,6 +689,11 @@ export class SwipeGestures {
       this.card.sliderElement.style.transition =
         this.card._getTransitionStyle(true);
       this.card.sliderElement.style.cursor = "";
+      // Hand clipping control back to the animation lifecycle: every path
+      // below that settles the slider calls updateSlider()/goToSlide()
+      // synchronously, which re-adds .animating in this same microtask, so
+      // there is no painted frame without clipping.
+      this.card.sliderElement.classList.remove("dragging");
 
       if (!wasDragging) {
         logDebug("SWIPE", "Swipe End: Not dragging or already processed.");

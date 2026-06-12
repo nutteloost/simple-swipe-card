@@ -180,16 +180,17 @@ export function getStyles() {
      }
 
      /* Vertical swipe: No container clipping by default - we apply selective clipping to inactive slides */
-     /* But during animations, we temporarily enable container clipping via .animating class */
+     /* But during animations (.animating) and in-progress drags (.dragging), we temporarily enable container clipping */
      /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
      :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"]) {
         clip-path: none;
      }
 
-     /* Vertical swipe DURING ANIMATION: Use container clipping to show only viewport */
-     /* This prevents both slides from being visible during the transition */
+     /* Vertical swipe DURING ANIMATION OR DRAG: Use container clipping to show only viewport */
+     /* This keeps the slides bounded at the card's top/bottom edges during the transition/drag */
      /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
-     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"].animating) {
+     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"].animating),
+     :host(:not([data-enable-backdrop-filter])) .card-container:has(.slider[data-swipe-direction="vertical"].dragging) {
         clip-path: polygon(
           -100vw 0,                    /* top-left, extended leftward for dropdown overflow */
           calc(100% + 100vw) 0,        /* top-right, extended rightward */
@@ -257,17 +258,19 @@ export function getStyles() {
      }
 
      /* Vertical mode: Clip inactive slides to hide adjacent cards */
-     /* BUT: During animation, disable per-slide clipping to show smooth transition */
+     /* BUT: During animation (.animating) or an in-progress drag (.dragging), disable per-slide clipping */
+     /* so the neighbouring slide is visible while it moves into view */
      /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
-     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"]:not(.animating) .slide:not(.active-slide) {
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"]:not(.animating):not(.dragging) .slide:not(.active-slide) {
         /* Clip to zero height - makes slide invisible while keeping it in DOM */
         clip-path: inset(0 0 100% 0);
      }
 
-     /* Vertical mode DURING ANIMATION: All slides visible (no per-slide clipping) */
+     /* Vertical mode DURING ANIMATION OR DRAG: All slides visible (no per-slide clipping) */
      /* Container clipping handles viewport boundaries */
      /* NOTE: clip-path is disabled when enable_backdrop_filter is true (incompatible) */
-     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"].animating .slide {
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"].animating .slide,
+     :host(:not([data-enable-backdrop-filter])) .slider[data-swipe-direction="vertical"].dragging .slide {
         clip-path: none;
      }
 
